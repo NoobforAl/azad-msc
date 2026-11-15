@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 560" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- Resource-allocation graph: threads (user, teal circles), locks (data, green squares) -->
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3B4868"/>
+    </marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#B4123A"/>
+    </marker>
+  </defs>
+  <circle cx="360" cy="140" r="90" fill="#DFF4F8" stroke="#0E7490" stroke-width="4"/>
+  <text x="360" y="134" font-size="30" font-weight="700" fill="#0E7490" text-anchor="middle">T1</text>
+  <text x="360" y="172" font-size="22" font-family="JetBrains Mono, monospace" fill="#0A1633" text-anchor="middle">a_to_b</text>
+  <circle cx="1240" cy="420" r="90" fill="#DFF4F8" stroke="#0E7490" stroke-width="4"/>
+  <text x="1240" y="414" font-size="30" font-weight="700" fill="#0E7490" text-anchor="middle">T2</text>
+  <text x="1240" y="452" font-size="22" font-family="JetBrains Mono, monospace" fill="#0A1633" text-anchor="middle">b_to_a</text>
+
+  <rect x="1150" y="60" width="180" height="160" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="4"/>
+  <text x="1240" y="152" font-size="34" font-weight="700" fill="#047857" text-anchor="middle">lock B</text>
+  <rect x="270" y="340" width="180" height="160" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="4"/>
+  <text x="360" y="432" font-size="34" font-weight="700" fill="#047857" text-anchor="middle">lock A</text>
+
+  <!-- holds (lock -> thread), solid -->
+  <line x1="360" y1="336" x2="360" y2="236" stroke="#3B4868" stroke-width="4" marker-end="url(#ah)"/>
+  <text x="380" y="296" font-size="24" font-weight="700" fill="#0A1633">① held by</text>
+  <line x1="1240" y1="224" x2="1240" y2="326" stroke="#3B4868" stroke-width="4" marker-end="url(#ah)"/>
+  <text x="1260" y="286" font-size="24" font-weight="700" fill="#0A1633">① held by</text>
+
+  <!-- waits (thread -> lock), red dashed -->
+  <path d="M452 120 L1146 120" stroke="#B4123A" stroke-width="6" stroke-dasharray="16 10" fill="none" marker-end="url(#ahr)"/>
+  <text x="640" y="104" font-size="26" font-weight="700" fill="#B4123A">② waits for (futex_wait)</text>
+  <path d="M1148 440 L454 440" stroke="#B4123A" stroke-width="6" stroke-dasharray="16 10" fill="none" marker-end="url(#ahr)"/>
+  <text x="640" y="480" font-size="26" font-weight="700" fill="#B4123A">② waits for (futex_wait)</text>
+
+  <text x="560" y="290" font-size="30" font-weight="750" fill="#0A1633">③ cycle = deadlock</text>
+</svg>

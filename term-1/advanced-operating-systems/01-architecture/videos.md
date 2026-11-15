@@ -1,0 +1,18 @@
+# 01 — Videos: Architecture & Kernel Structure
+
+How these were checked (2026-11-15). Every URL was resolved through YouTube's oEmbed endpoint, which returned the title and channel shown here. Durations come from YouTube search results. The MIT URLs are the ones linked from the official schedule at `pdos.csail.mit.edu/6.S081/2020/schedule.html`. YouTube would not show the duration for those exact uploads without a login, so their durations are taken from the identical lecture re-uploaded by the channel "Haibo Yan" (mirror IDs given). I didn't watch the videos, so there are **no time ranges**, because I won't guess them. Every video is in **English**.
+
+| # | Title | Channel | URL | Duration | Level | Why it fits |
+|---|---|---|---|---|---|---|
+| 1 | 6.S081 Fall 2020 Lecture 3: OS Organization and System Calls | MIT 6.S081 (uploaded by David Morejon, linked from the course schedule) | https://youtu.be/o44d---Dk4o | ≈1:20:48 (mirror `bKfeeIRWrbQ`) | Beginner–Intermediate | Monolithic vs microkernel, user/kernel mode, and the system-call boundary in xv6. Same concepts as notes 01–02. **Arch:** RISC-V (`ecall`), not x86 `syscall`. |
+| 2 | 6.S081 Fall 2020 Lecture 6: Isolation & System Call Entry/Exit | MIT 6.S081 (David Morejon upload) | https://youtu.be/T26UuauaxWA | ≈1:27:31 (mirror `TwdtCvKB8RE`) | Intermediate | Steps through the trap path in gdb, including the trampoline page-table switch. It's the RISC-V version of `entry_SYSCALL_64` + PTI (note 04, walkthrough §2). |
+| 3 | cs5460/6460 Lecture 09 - Interrupts and exceptions | Anton Burtsev (Univ. of Utah) | https://www.youtube.com/watch?v=89fLiN1xc8o | 1:20:14 | Intermediate | **x86** IDT, gates, privilege-level change, and the hardware-pushed frame. Matches note 03 and walkthrough §6. Uses 32-bit xv6, so 64-bit details (IST, `syscall`) differ. |
+| 4 | Syscalls, Kernel vs. User Mode and Linux Kernel Source Code - bin 0x09 | LiveOverflow | https://www.youtube.com/watch?v=fLS99zJDHOc | 13:24 | Beginner | A short, practical tour: strace, the syscall table, and finding a syscall in the Linux source. Good before lab 01. **Outdated:** recorded around 2016 and shows the older `sys_call_table` dispatch. In v6.18 that dispatch is a `switch` (walkthrough §4). |
+| 5 | Context Switching in the Linux Kernel - Sharad | RITSEC | https://www.youtube.com/watch?v=QGcBNwrKiX0 | 22:34 | Intermediate | Student talk on Linux's `context_switch()`/`switch_to`. Check it against note 05 and walkthrough §7. VERSION-DEPENDENT: compare any code it shows with v6.18.63. |
+| 6 | Andrew Tanenbaum - MINIX 3: A Reliable and Secure Operating System - Codemotion Rome 2015 | Codemotion | https://www.youtube.com/watch?v=jiGjp7JHiYs | 1:13:22 | Beginner–Intermediate | The microkernel case from its best-known advocate: drivers as restartable user processes. Pair it with note 01's trade-off table. |
+| 7 | 3a: Gernot Heiser: seL4 Overview | The seL4 Microkernel | https://www.youtube.com/watch?v=xszOcZnR_lg | 44:54 | Advanced | A modern, formally verified microkernel. Covers IPC cost, capabilities, and why "microkernels are slow" is out of date (lesson misconceptions). |
+| 8 | Linux Performance Tools, Brendan Gregg, part 1 of 2 | Brendan Gregg | https://www.youtube.com/watch?v=FJW8nGV4jxY | 54:29 | Intermediate | The observability toolbox the labs use (`strace`, `perf`, `/proc`, tracing). **Outdated in parts** (2014, before most bpftrace tooling). Part 2 is at `zrr2nUln9Kk` (45:27). |
+
+## Suggested order
+
+1 → 2 (concepts, any architecture) → 4 (Linux, hands-on) → 3 (x86 IDT) → 5 (context switch) → 6, 7 (kernel-design debate) → 8 (before or alongside the labs).

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 03.3 · Readers-Writers and writer starvation</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">03.3</div>
+  <span class="eyebrow in-f">Lab 03.3 · Goal</span>
+  <h2 class="in">Readers-Writers and writer starvation</h2>
+  <p class="why in d1">Show that glibc&#x27;s default rwlock lets overlapping readers starve a writer, and that the writer-preferring kind fixes it.</p>
+  <div class="pills in d2"><span class="pill">Runs on: aos-lab VM (user space)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Show that glibc's default rwlock lets overlapping readers starve a writer, and that the writer-preferring kind fixes it.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.3 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>Readers</h3><p class="ltr-mono"><code>4 threads x 100 us read sections</code></p></div><div class="c-6 card edge r-user in d2"><h3>Writer</h3><p class="ltr-mono"><code>wrlock every 1 ms, wait timed</code></p></div><div class="c-6 card edge r-kernel in d3"><h3>Default kind</h3><p class="ltr-mono"><code>PTHREAD_RWLOCK_PREFER_READER_NP</code></p></div><div class="c-6 card edge r-data in d4"><h3>Fix</h3><p class="ltr-mono"><code>..._PREFER_WRITER_NONRECURSIVE_NP</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.3 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 03-readers-writers</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -pthread rw.c -o rw</span><span class="ln"><span class="p">$</span> ./rw reader 4 3</span><span class="ln"><span class="p">$</span> ./rw writer 4 3</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.3 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> ./rw reader 4 3</span><span class="ln hl">pref=reader readers=4 secs=3 reads=161806 writes=0 (+1 after stop)</span><span class="ln">              writer_wait max=4.281s avg=4.281458s</span><span class="ln"><span class="p">$</span> ./rw writer 4 3</span><span class="ln hl">pref=writer readers=4 secs=3 reads=270250 writes=188 (+1 after stop)</span><span class="ln">              writer_wait max=0.036s avg=0.003488s</span><span class="ln"><span class="dim"># more runs: reader writes=0, 0; writer max wait 2-36 ms</span></span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15; shared 8-vCPU guest, timings are noisy.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.3 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Reader preference: writer waits the whole run</b><br><span class="caption">a new reader is admitted while a writer waits</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>Writer preference: thousands of writes</b><br><span class="caption">readers queue behind a waiting writer</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>Starvation is not deadlock</b><br><span class="caption">readers progress; only the writer does not</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.3 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">PREFER_WRITER_NP changes nothing</span><span class="arrow-s">→</span><span class="tag r-ok">use PREFER_WRITER_NONRECURSIVE_NP</span></div><div class="pit in d2"><span class="tag r-danger">no starvation visible</span><span class="arrow-s">→</span><span class="tag r-ok"><bdi dir="ltr">readers must overlap:</bdi> ≥<bdi dir="ltr">2 readers</bdi>, <bdi dir="ltr">no gaps</bdi></span></div><div class="pit in d3"><span class="tag r-danger">writer-pref deadlock</span><span class="arrow-s">→</span><span class="tag r-ok">recursive read lock while a writer waits</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.3 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Build a starvation-free rwlock from three semaphores (a turnstile held by a waiting writer) and compare it with both glibc kinds.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 03 Concurrency" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

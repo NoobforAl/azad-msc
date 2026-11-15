@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 07.2 · Priority inversion and PTHREAD_PRIO_INHERIT</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">07.2</div>
+  <span class="eyebrow in-f">Lab 07.2 · Goal</span>
+  <h2 class="in">Priority inversion and PTHREAD_PRIO_INHERIT</h2>
+  <p class="why in d1">Make unbounded priority inversion happen on demand, then remove it with one mutex attribute.</p>
+  <div class="pills in d2"><span class="pill">Runs on: VM only — 1 s of RT busy-loop</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Make unbounded priority inversion happen on demand, then remove it with one mutex attribute.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.2 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3><bdi dir="ltr">L</bdi> · <bdi dir="ltr">FIFO 10</bdi></h3><p>holds the mutex, needs 200 ms CPU</p></div><div class="c-6 card edge r-user in d2"><h3><bdi dir="ltr">H</bdi> · <bdi dir="ltr">FIFO 30</bdi></h3><p>wants the mutex 20 ms later</p></div><div class="c-6 card edge r-user in d3"><h3><bdi dir="ltr">M</bdi> · <bdi dir="ltr">FIFO 20</bdi></h3><p>burns 800 ms, never locks</p></div><div class="c-6 card edge r-hardware in d4"><h3>One CPU</h3><p class="ltr-mono"><code>taskset -c 7 (else L runs elsewhere)</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.2 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 02-priority-inversion</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -pthread -o inversion inversion.c</span><span class="ln"><span class="p">$</span> sudo taskset -c 7 ./inversion none</span><span class="ln"><span class="p">$</span> sudo taskset -c 7 ./inversion inherit</span><span class="ln"><span class="p">$</span> sudo strace -f -e trace=futex taskset -c 7 \</span><span class="ln">    ./inversion inherit 2&gt;&amp;1 | grep LOCK_PI</span><span class="ln"><span class="p">$</span> sudo bpftrace -e &#x27;tracepoint:sched:sched_pi_setprio</span><span class="ln">    { printf(&quot;%s %d -&gt; %d\n&quot;, str(args.comm),</span><span class="ln">      args.oldprio, args.newprio); }&#x27; &amp;</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.2 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> sudo taskset -c 7 ./inversion none</span><span class="ln">    25.1 ms  M  start, burning 800 ms (no lock)</span><span class="ln">   825.2 ms  M  done</span><span class="ln hl">  1000.7 ms  H  got the lock after 977.6 ms</span><span class="ln"><span class="p">$</span> sudo taskset -c 7 ./inversion inherit</span><span class="ln hl">   202.2 ms  H  got the lock after 181.6 ms</span><span class="ln">  1002.3 ms  M  done</span><span class="ln"><span class="dim"># bpftrace, inherit run:</span></span><span class="ln hl">inversion pid=9760 prio 89 -&gt; 69</span><span class="ln">inversion pid=9760 prio 69 -&gt; 89</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.2 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">H waits 977.6 ms</bdi> → <bdi dir="ltr">181.6 ms</bdi></b><br><span class="caption">the difference is M&#x27;s 800 ms</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">Kernel boost 89</bdi> → <bdi dir="ltr">69</bdi></b><br><span class="caption mono"><bdi dir="ltr">prio = 99 - rt_priority</bdi> · <bdi dir="ltr">rt_mutex_setprio()</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>Only PI uses FUTEX_LOCK_PI</b><br><span class="caption">the futex word holds the owner TID</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.2 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">no inversion visible</span><span class="arrow-s">→</span><span class="tag r-ok">pin all threads: taskset -c N</span></div><div class="pit in d2"><span class="tag r-danger">bpftrace: %s expects a string</span><span class="arrow-s">→</span><span class="tag r-ok"><bdi dir="ltr">str(args.comm)</bdi> — <bdi dir="ltr">__data_loc field</bdi></span></div><div class="pit in d3"><span class="tag r-danger">inherit still slow</span><span class="arrow-s">→</span><span class="tag r-ok">set the protocol before pthread_mutex_init</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.2 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Add a &#x27;protect&#x27; mode (PTHREAD_PRIO_PROTECT, ceiling 30). When does L&#x27;s priority change, how long does H wait, and which syscall does glibc use?</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 07 Real-Time &amp; Research" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+#!/usr/bin/env bpftrace
+// switch_kinds.bt: classify every context switch on the machine for N seconds.
+//
+// tracepoint:sched:sched_switch fires from __schedule() (kernel/sched/core.c)
+// right before context_switch(). prev_state is the state of the task being
+// switched OUT:
+//   0 (TASK_RUNNING)  -> it was still runnable: it was PREEMPTED   (involuntary)
+//   anything else     -> it went to sleep / blocked                (voluntary)
+// This is the same split as nvcsw / nivcsw in /proc/<pid>/status.
+//
+// Run: sudo bpftrace switch_kinds.bt        (prints after 5 s)
+tracepoint:sched:sched_switch
+/args->prev_pid != 0/
+{
+  if (args->prev_state == 0) {
+    @involuntary[args->prev_comm] = count();
+  } else {
+    @voluntary[args->prev_comm] = count();
+  }
+}
+
+interval:s:5
+{
+  print(@involuntary, 6);
+  print(@voluntary, 6);
+  clear(@involuntary);
+  clear(@voluntary);
+  exit();
+}

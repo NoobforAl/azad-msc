@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>03 · Concurrency &amp; Synchronization — Advanced OS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<div class="reveal course-os">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">Concurrency &amp; Synchronization</h1>
+  <p class="subtitle in d1">Advanced Operating Systems · 03 · from count++ to qspinlock, futex and RCU</p>
+  <div class="fields">
+    <span><b>Course</b>[Course name]</span><span><b>Presenter</b>[Presenter]</span>
+    <span><b>Professor</b>[Professor]</span><span><b>Faculty</b>[Faculty / Branch]</span>
+    <span><b>Term</b>[Term]</span><span><b>Date</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (EN): Two threads, one counter, and the answer is wrong. This module explains why, and how the kernel makes shared memory safe without making it slow.
+SAY (FA): دو نخ، یک شمارنده، و جواب غلط است. این ماژول توضیح می‌دهد چرا، و کرنل چطور حافظهٔ مشترک را بدون کند کردنش امن می‌کند.
+KEY POINT: Every lock is built from one atomic instruction plus a policy for waiting.
+EXAMPLE: —
+PITFALL: Title fields are placeholders; never invent them.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">03</div>
+  <span class="eyebrow in-f">Module 03</span>
+  <h2 class="in">Concurrency &amp; Synchronization</h2>
+  <p class="why in d1">Every kernel data structure is shared by many CPUs; one wrong ordering corrupts it silently.</p>
+  <div class="pills in d2"><span class="pill">memory ordering</span><span class="pill">locks &amp; futex</span><span class="pill">RCU · deadlock</span></div>
+  <aside class="notes">
+SAY (EN): Depends on Module 01 (syscalls, interrupts) and Module 02 (threads, the scheduler). Modules 04, 05 and 07 use everything here.
+SAY (FA): به ماژول ۰۱ (syscall و وقفه) و ماژول ۰۲ (نخ و scheduler) وابسته است. ماژول‌های ۰۴، ۰۵ و ۰۷ از همهٔ این‌ها استفاده می‌کنند.
+KEY POINT: Concurrency bugs are timing bugs: tests rarely catch them.
+EXAMPLE: Lab 01 loses most increments on 4 threads.
+PITFALL: "It worked on my laptop."
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">03 · Concurrency</span>
+  <h2 class="in">Five questions, bottom up</h2>
+  <ol class="agenda">
+    <li class="current in d1">Why does count++ lose updates?</li>
+    <li class="in d2">What does x86 reorder?</li>
+    <li class="in d3">Spin or sleep: qspinlock vs mutex</li>
+    <li class="in d4">How a futex avoids the kernel</li>
+    <li class="in d5">RCU, and why everything stops (deadlock)</li>
+  </ol>
+  <aside class="notes">
+SAY (EN): We go from the hardware up: atomic instructions and ordering, then the kernel's locks, then user-space locks, then lock-free reading and failure modes.
+SAY (FA): از سخت‌افزار به بالا می‌رویم: دستورهای اتمی و ترتیب، بعد قفل‌های کرنل، بعد قفل‌های فضای کاربر، بعد خواندن بی‌قفل و حالت‌های شکست.
+KEY POINT: Each item is one or two labs.
+EXAMPLE: —
+PITFALL: —
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 TERMINAL_DEMO race -->
+<section>
+  <span class="eyebrow in-f">03 · Lab 01 · real output</span>
+  <h2 class="in">count++ on four threads loses most increments</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab:~/work/03-concurrency/01-data-race</div>
+<pre><code><span class="ln"><span class="p">$</span> ./race race 4 1000000</span><span class="ln hl">mode=race   got=2498418 lost=1501582 ns/inc=6.2</span><span class="ln"><span class="p">$</span> ./race mutex 4 1000000</span><span class="ln">mode=mutex  got=4000000 lost=0 ns/inc=89.6</span><span class="ln"><span class="p">$</span> ./race atomic 4 1000000</span><span class="ln">mode=atomic got=4000000 lost=0 ns/inc=24.4</span><span class="ln"><span class="p">$</span> ./race race 1 1000000</span><span class="ln">mode=race   got=1000000 lost=0 ns/inc=3.3</span><span class="ln"><span class="p">$</span> ./race-tsan race 2 1000</span><span class="ln hl">WARNING: ThreadSanitizer: data race (pid=4446)</span><span class="ln">  Read of size 8 ... by thread T2: race.c:33</span><span class="ln">  Previous write of size 8 ... by thread T1: race.c:33</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">Real output, aos-lab (Linux 6.18.63), 2026-11-15; lines cut with &quot;...&quot;. Shared 8-vCPU VM: timings are noisy.</p>
+  <aside class="notes">
+SAY (EN): Load, add, store: two threads read the same old value and one increment disappears. volatile doesn't help. The mutex and atomic versions are correct; the price is in ns per increment.
+SAY (FA): load، add، store: دو نخ یک مقدار قدیمی را می‌خوانند و یک افزایش ناپدید می‌شود. volatile کمکی نمی‌کند. نسخه‌های mutex و atomic درست‌اند؛ بها در نانوثانیه به ازای هر افزایش است.
+KEY POINT: A data race loses updates; atomic RMW and locks fix it at different costs.
+EXAMPLE: ./race race 4 1000000
+PITFALL: Measuring on a shared VM: absolute numbers are noisy.
+ASK: Why is the mutex not 10x slower than the atomic?
+TIME: 90
+  </aside>
+</section>
+
+<!-- 05 LAYER_STACK -->
+<section>
+  <span class="eyebrow in-f">03 · Concurrency</span>
+  <h2 class="in">Every lock = an atomic instruction + a waiting policy</h2>
+  <div class="layers">
+    <div class="band r-user in d1"><b>User space</b><div class="items"><span>pthread_mutex</span><span>pthread_cond</span><span>sem_t</span><span>Go chan</span></div></div>
+    <div class="boundary in-f d2"><span>futex() syscall</span></div>
+    <div class="band r-kernel in d2"><b>Kernel</b><div class="items"><span>spinlock_t</span><span>mutex</span><span>semaphore</span><span>RCU</span><span>futex buckets</span></div></div>
+    <div class="band r-hardware in d3"><b>Hardware</b><div class="items"><span>lock cmpxchg</span><span>lock xadd</span><span>xchg</span><span>store buffer</span></div></div>
+  </div>
+  <p class="takeaway in d4" style="margin-top:32px">glibc's locks are futexes; the kernel's futex buckets are spinlocks; spinlocks are cmpxchg.</p>
+  <aside class="notes">
+SAY (EN): Read it bottom up. Hardware gives a handful of atomic read-modify-write instructions. The kernel turns them into spinlocks, and builds sleeping locks on top. User space reaches the kernel only through futex() when it must wait.
+SAY (FA): از پایین بخوانید. سخت‌افزار چند دستور اتمی read-modify-write می‌دهد. کرنل از آن‌ها spinlock می‌سازد و قفل‌های خوابیدنی را روی آن. فضای کاربر فقط وقتی باید صبر کند از راه futex() به کرنل می‌رسد.
+KEY POINT: The futex syscall is the only boundary crossing.
+EXAMPLE: strace -f -e futex ./pc_cond
+PITFALL: Thinking mutex = syscall.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 06 CONCEPT_DIAGRAM store buffer -->
+<section>
+  <span class="eyebrow in-f">03 · Memory ordering</span>
+  <h2 class="in">x86 lets a later load pass a buffered store</h2>
+  <div class="diagram in-p d1" style="margin-top:-16px"><img src="assets/store-buffer.svg" alt="Two CPUs each put their store into a private store buffer, then load the other variable from memory, which is still 0; both loads return 0"></div>
+  <aside class="notes">
+SAY (EN): ① Each store goes into the core's private store buffer. ② The following load reads the other variable from cache, still 0. ③ The stores drain later. Both threads read 0, which no interleaving allows.
+SAY (FA): ① هر store به store buffer خصوصی هسته می‌رود. ② load بعدی متغیر دیگر را از cache می‌خواند که هنوز ۰ است. ③ storeها بعداً تخلیه می‌شوند. هر دو نخ ۰ می‌خوانند، چیزی که هیچ درهم‌آمیزی‌ای اجازه نمی‌دهد.
+KEY POINT: x86-TSO allows exactly one reordering: store then load.
+EXAMPLE: Lab 05 sb.c
+PITFALL: "x86 is sequentially consistent."
+TIME: 90
+  </aside>
+</section>
+
+<!-- 07 TERMINAL_DEMO litmus -->
+<section>
+  <span class="eyebrow in-f">03 · Lab 05 · real output</span>
+  <h2 class="in">A million runs: 0/0 appears, until a full fence</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab:~/work/03-concurrency/05-litmus-sb</div>
+<pre><code><span class="ln"><span class="p">$</span> ./sb relaxed 1000000 0 1</span><span class="ln hl">  r0=0 r1=0 :     35320  (3.5320%)  &lt;- forbidden under SC</span><span class="ln">  r0=0 r1=1 :    481390</span><span class="ln">  r0=1 r1=0 :    478033</span><span class="ln">  r0=1 r1=1 :      5257</span><span class="ln"><span class="p">$</span> ./sb fence 1000000 0 1</span><span class="ln hl">  r0=0 r1=0 :         0  (0.0000%)  &lt;- forbidden under SC</span><span class="ln"><span class="p">$</span> ./sb_rs relaxed 1000000</span><span class="ln">  r0=0 r1=0 :     17318  (1.7318%)  &lt;- forbidden under SC</span><span class="ln"><span class="p">$</span> objdump -d sb | grep -E &#x27;mfence|lock|xchg&#x27;</span><span class="ln">    1733:  xchg   %eax,(%rsi)</span><span class="ln hl">    1746:  lock orq $0x0,(%rsp)</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">35,320 / 1,000,000 relaxed runs reordered (3.5%); 0 with the fence. Real output, aos-lab (Linux 6.18.63), 2026-11-15; lines cut with &quot;...&quot;. Shared 8-vCPU VM: timings are noisy.</p>
+  <aside class="notes">
+SAY (EN): Relaxed atomics with only a compiler barrier: the forbidden outcome shows up. Add atomic_thread_fence(seq_cst), which gcc emits as a locked no-op on the stack, and it is gone.
+SAY (FA): atomicهای relaxed فقط با compiler barrier: نتیجهٔ ممنوع ظاهر می‌شود. atomic_thread_fence(seq_cst) را اضافه کنید که gcc آن را یک دستور بی‌اثرِ lockدار روی stack می‌کند، و ناپدید می‌شود.
+KEY POINT: The reordering is real, measurable, and fixed by a StoreLoad barrier.
+EXAMPLE: objdump -d sb | grep -E 'lock or|mfence|xchg'
+PITFALL: Without the compiler barrier you also measure compiler reordering.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 08 TWO_COLUMN_COMPARE -->
+<section>
+  <span class="eyebrow in-f">03 · Locks</span>
+  <h2 class="in">Spin when the wait is short and you may not sleep</h2>
+  <div class="compare">
+    <div class="in d1"><h3>spin_lock()</h3><ul>
+      <li>busy-waits on the CPU</li>
+      <li>preemption off while held</li>
+      <li>holder must not sleep</li>
+      <li>usable in IRQ context (_irqsave)</li>
+      <li>no owner field</li>
+    </ul></div>
+    <div class="in d2"><h3>mutex_lock()</h3><ul>
+      <li>spins only while the owner runs</li>
+      <li>preemptible</li>
+      <li>holder may sleep</li>
+      <li>process context only</li>
+      <li>owner = task pointer + 3 flags</li>
+    </ul></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Both fast paths are one cmpxchg with acquire ordering. They differ in what a loser does: queue and spin locally, or spin on the owner and then sleep.
+SAY (FA): مسیر سریع هر دو یک cmpxchg با ترتیب acquire است. فرقشان در کاری است که بازنده می‌کند: در صف بماند و محلی بچرخد، یا روی مالک بچرخد و بعد بخوابد.
+KEY POINT: Sleeping with a spinlock held is a bug (might_sleep warns).
+EXAMPLE: "BUG: scheduling while atomic"
+PITFALL: Using a spinlock in user space, where the holder can be preempted.
+TIME: 75
+  </aside>
+</section>
+
+<!-- 09 CODE_WALKTHROUGH qspinlock -->
+<section>
+  <span class="eyebrow in-f">03 · real source</span>
+  <h2 class="in">A spinlock is one acquire CAS and one release store</h2>
+  <div class="grid">
+    <div class="c-8 code-card in d1">
+      <div class="file-chip"><span>linux/include/asm-generic/qspinlock.h</span><span>v6.18.63 · L107-128</span></div>
+<pre class="code"><code><span class="ln"><span class="tok-k">static</span> <span class="tok-t">void</span> <span class="tok-f">queued_spin_lock</span>(<span class="tok-k">struct</span> <span class="tok-t">qspinlock</span> *lock)</span><span class="ln">{</span><span class="ln">	<span class="tok-t">int</span> val = <span class="tok-s">0</span>;</span><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-k">if</span> (<span class="tok-f">likely</span>(<span class="tok-f">atomic_try_cmpxchg_acquire</span>(&amp;lock-&gt;val,</span><span class="ln fragment hl-on" data-fragment-index="1">			&amp;val, _Q_LOCKED_VAL)))</span><span class="ln">		<span class="tok-k">return</span>;</span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-f">queued_spin_lock_slowpath</span>(lock, val);</span><span class="ln">}</span><span class="ln"><span class="tok-c">/* ... */</span></span><span class="ln"><span class="tok-k">static</span> <span class="tok-t">void</span> <span class="tok-f">queued_spin_unlock</span>(<span class="tok-k">struct</span> <span class="tok-t">qspinlock</span> *lock)</span><span class="ln">{</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-f">smp_store_release</span>(&amp;lock-&gt;locked, <span class="tok-s">0</span>);</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-4 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>whole word 0 → set locked byte: <code>lock cmpxchg</code></span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>contended: pending bit, then a per-CPU MCS queue</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>unlock is a plain byte store with release order</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): spin_lock disables preemption and lands here. One CAS when uncontended. In the slow path each waiter spins on its own per-CPU node, so the lock's cache line stops bouncing. Unlock needs no lock prefix on x86.
+SAY (FA): spin_lock preemption را خاموش می‌کند و به اینجا می‌رسد. بدون رقابت فقط یک CAS. در مسیر کند هر منتظر روی node مخصوص CPU خودش می‌چرخد، پس cache line قفل دیگر بین هسته‌ها پاس داده نمی‌شود. آزادکردن روی x86 به پیشوند lock نیاز ندارد.
+KEY POINT: The 32-bit word = locked byte · pending bit · tail (CPU + index).
+EXAMPLE: kernel/locking/qspinlock.c L277 xchg_tail()
+PITFALL: On the slide __always_inline and L116-122 (#endif, comment) are elided, and one line is wrapped to fit; the exact excerpt is in kernel-walkthrough.en.md §1.2.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 10 CODE_WALKTHROUGH mutex -->
+<section>
+  <span class="eyebrow in-f">03 · real source</span>
+  <h2 class="in">mutex_lock() is one CAS on the owner word</h2>
+  <div class="grid">
+    <div class="c-8 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/locking/mutex.c</span><span>v6.18.63 · L150-158, L269-275</span></div>
+<pre class="code"><code><span class="ln"><span class="tok-t">bool</span> <span class="tok-f">__mutex_trylock_fast</span>(<span class="tok-k">struct</span> <span class="tok-t">mutex</span> *lock)</span><span class="ln">{</span><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-t">unsigned long</span> curr = (<span class="tok-t">unsigned long</span>)current;</span><span class="ln">	<span class="tok-c">/* ... zero = 0UL; MUTEX_WARN_ON() ... */</span></span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-k">if</span> (<span class="tok-f">atomic_long_try_cmpxchg_acquire</span>(</span><span class="ln fragment hl-on" data-fragment-index="2">			&amp;lock-&gt;owner, &amp;zero, curr))</span><span class="ln">		<span class="tok-k">return</span> true;</span><span class="ln"><span class="tok-c">/* ... */</span></span><span class="ln"><span class="tok-t">void</span> __sched <span class="tok-f">mutex_lock</span>(<span class="tok-k">struct</span> <span class="tok-t">mutex</span> *lock)</span><span class="ln">{	<span class="tok-f">might_sleep</span>();</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-k">if</span> (!<span class="tok-f">__mutex_trylock_fast</span>(lock))</span><span class="ln fragment hl-on" data-fragment-index="3">		<span class="tok-f">__mutex_lock_slowpath</span>(lock);</span></code></pre>
+    </div>
+    <div class="c-4 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>owner word = <code>task_struct *</code>; low 3 bits are flags</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>unlocked means exactly 0</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>slow path: spin while owner on CPU, then FIFO wait_list + schedule()</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): Same shape as the spinlock. The slow path calls mutex_optimistic_spin, which spins only while owner_on_cpu(owner) and !need_resched(), with one spinner at a time thanks to the OSQ MCS lock.
+SAY (FA): همان شکل spinlock. مسیر کند mutex_optimistic_spin را صدا می‌زند که فقط تا وقتی owner_on_cpu(owner) و !need_resched() برقرار است می‌چرخد، و به لطف قفل OSQ از نوع MCS هر بار فقط یک نفر می‌چرخد.
+KEY POINT: Flags WAITERS/HANDOFF/PICKUP (mutex.h L32-36) make unlock's fast CAS fail when someone waits.
+EXAMPLE: mutex_spin_on_owner() L340
+PITFALL: The fast path is compiled out under CONFIG_DEBUG_LOCK_ALLOC (lockdep kernels).
+TIME: 120
+  </aside>
+</section>
+
+<!-- 11 CONCEPT_DIAGRAM futex -->
+<section>
+  <span class="eyebrow in-f">03 · Futex</span>
+  <h2 class="in">A futex enters the kernel only when someone must wait</h2>
+  <div class="diagram in-p d1" style="margin-top:-16px"><img src="assets/futex-split.svg" alt="lock and unlock are atomic operations on a user-space word; only on contention does FUTEX_WAIT enter futex_wait_setup, and unlock with waiters calls FUTEX_WAKE"></div>
+  <aside class="notes">
+SAY (EN): ① lock is a CAS in user space. ③ On failure the word becomes 2 and the thread calls FUTEX_WAIT. ② The kernel sleeps only if the word still equals 2. ④ Unlock: if the old value was 1, nobody waits, done. ⑤ Otherwise FUTEX_WAKE one thread.
+SAY (FA): ① گرفتن قفل یک CAS در فضای کاربر است. ③ اگر شکست بخورد کلمه ۲ می‌شود و نخ FUTEX_WAIT را صدا می‌زند. ② کرنل فقط اگر کلمه هنوز ۲ باشد می‌خوابد. ④ آزادکردن: اگر مقدار قبلی ۱ بود کسی منتظر نیست. ⑤ وگرنه FUTEX_WAKE برای یک نخ.
+KEY POINT: Uncontended lock/unlock = zero syscalls.
+EXAMPLE: Lab 04 futex_mutex.c (Drepper's mutex 3)
+PITFALL: Calling FUTEX_WAKE on every unlock: correct but slow.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 12 CODE_WALKTHROUGH futex_wait_setup -->
+<section>
+  <span class="eyebrow in-f">03 · real source</span>
+  <h2 class="in">The kernel re-reads the word under the bucket lock</h2>
+  <div class="grid">
+    <div class="c-8 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/futex/waitwake.c · futex_wait_setup()</span><span>v6.18.63 · L630-665</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-f">futex_q_lock</span>(q, hb);</span><span class="ln fragment hl-on" data-fragment-index="2">	ret = <span class="tok-f">futex_get_value_locked</span>(&amp;uval, uaddr);</span><span class="ln">	<span class="tok-c">/* ... fault: unlock, get_user(), retry ... */</span></span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-k">if</span> (uval != val) {</span><span class="ln">		<span class="tok-f">futex_q_unlock</span>(hb);</span><span class="ln">		<span class="tok-k">return</span> -EWOULDBLOCK;</span><span class="ln">	}</span><span class="ln">	<span class="tok-c">/* ... */</span></span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-f">set_current_state</span>(TASK_INTERRUPTIBLE|...);</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-f">futex_queue</span>(q, hb, task);</span></code></pre>
+    </div>
+    <div class="c-4 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>waiters++ with a full barrier, then <code>hb-&gt;lock</code></span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>value changed? return EAGAIN; user retries its CAS</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>state set before queueing: a wake can't be lost</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): If the kernel read the word before taking the bucket lock, a waker could change it and find an empty bucket in between, and the waiter would sleep forever. The file's top comment proves the waiters++/smp_mb pairing makes x==0 and y==0 impossible: the same store-buffering pattern as lab 05.
+SAY (FA): اگر کرنل کلمه را پیش از گرفتن قفل bucket می‌خواند، بیدارکننده می‌توانست در این فاصله آن را تغییر دهد و bucket خالی ببیند، و منتظر برای همیشه می‌خوابید. توضیح بالای فایل ثابت می‌کند جفت waiters++ و smp_mb حالت x==0 و y==0 را ناممکن می‌کند: همان الگوی store-buffering آزمایش ۰۵.
+KEY POINT: "It blocks ONLY if cond(var) is known to be true at the time of blocking" (L609-613).
+EXAMPLE: OpenBSD does the opposite order: queue first, then copyin32 + compare.
+PITFALL: Treating EAGAIN from FUTEX_WAIT as an error.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 13 TERMINAL_DEMO futex -->
+<section>
+  <span class="eyebrow in-f">03 · Lab 04 · real output</span>
+  <h2 class="in">One thread: zero futex calls. Four threads: only on contention</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab:~/work/03-concurrency/04-futex-mutex</div>
+<pre><code><span class="ln"><span class="p">$</span> ./futex_mutex 1 1000000</span><span class="ln hl">threads=1 ... OK futex_wait=0 futex_wake=0</span><span class="ln"><span class="p">$</span> ./futex_mutex 4 1000000</span><span class="ln">threads=4 ... OK futex_wait=37928 futex_wake=48919</span><span class="ln"><span class="p">$</span> sudo bpftrace futex-ops.bt -c &#x27;./futex_mutex 4 200000&#x27;</span><span class="ln">threads=4 ... OK futex_wait=6680 futex_wake=8949</span><span class="ln">@calls[0]: 6680</span><span class="ln">@calls[1]: 8949</span><span class="ln">@usecs[0]:</span><span class="ln hl">[0]                 6559 |@@@@@@@@@@@@@@@@@@@@...</span><span class="ln">[64, 128)             32 |</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">98% of FUTEX_WAITs returned in under 1 &micro;s: EAGAIN, the word had already changed. Real output, aos-lab (Linux 6.18.63), 2026-11-15; lines cut with &quot;...&quot;. Shared 8-vCPU VM: timings are noisy.</p>
+  <aside class="notes">
+SAY (EN): The single-threaded run makes no futex call at all: every lock is one CAS in user space. Under contention the kernel is entered only for the minority of operations that must sleep or wake.
+SAY (FA): اجرای تک‌نخی هیچ فراخوانی futex ندارد: هر قفل یک CAS در فضای کاربر است. هنگام رقابت فقط برای بخش کوچکی از عملیات که باید بخوابند یا بیدار کنند وارد کرنل می‌شویم.
+KEY POINT: The syscall count is proportional to contention, not to lock operations.
+EXAMPLE: sudo bpftrace futex-ops.bt -c './futex_mutex 4 200000'
+PITFALL: strace itself slows threads down and changes the contention.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 14 CONCEPT_DIAGRAM RCU -->
+<section>
+  <span class="eyebrow in-f">03 · RCU</span>
+  <h2 class="in">RCU readers take no lock; the writer waits a grace period</h2>
+  <div class="diagram in-p d1" style="margin-top:-16px"><img src="assets/rcu-grace.svg" alt="Readers on three CPUs; the writer publishes a new version, waits until every CPU that could see the old version passes a quiescent state, then frees the old version"></div>
+  <aside class="notes">
+SAY (EN): ① rcu_assign_pointer publishes the new version with a release store. ② The grace period ends when every CPU has passed a quiescent state; a preempted reader is tracked on blkd_tasks. ③ Only then is the old version freed. OpenBSD SMR detects the grace period by moving its thread onto each CPU in turn.
+SAY (FA): ① rcu_assign_pointer نسخهٔ تازه را با release store منتشر می‌کند. ② grace period وقتی تمام می‌شود که هر CPU از یک quiescent state گذشته باشد؛ خوانندهٔ preempt‌شده در blkd_tasks دنبال می‌شود. ③ فقط آن‌وقت نسخهٔ قدیم آزاد می‌شود. SMR در OpenBSD با بردن نخش روی تک‌تک CPUها grace period را تشخیص می‌دهد.
+KEY POINT: "Where is rcu_write_lock()? It does not exist" (rcupdate.h L872).
+EXAMPLE: synchronize_rcu() tree.c L3341; smr_grace_wait() kern_smr.c L146
+PITFALL: Calling synchronize_rcu() inside a reader: self-deadlock, lockdep warns.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 15 CONCEPT_DIAGRAM deadlock -->
+<section>
+  <span class="eyebrow in-f">03 · Deadlock</span>
+  <h2 class="in">AB-BA: a cycle in the wait-for graph stops both threads</h2>
+  <div class="grid">
+    <div class="c-8 diagram in-p d1"><img src="assets/deadlock-cycle.svg" alt="T1 holds lock A and waits for lock B; T2 holds lock B and waits for lock A: a cycle"></div>
+    <div class="c-4 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>mutual exclusion + hold-and-wait</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>no preemption of locks</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>circular wait: break it with a global order</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): All four Coffman conditions hold here. Lock ordering by address breaks circular wait. Lockdep, TSan and helgrind all report the inverted order even on runs that don't hang.
+SAY (FA): هر چهار شرط Coffman اینجا برقرار است. ترتیب قفل بر اساس آدرس انتظار چرخه‌ای را می‌شکند. lockdep، TSan و helgrind ترتیب وارونه را حتی در اجراهایی که قفل نمی‌شوند گزارش می‌کنند.
+KEY POINT: Detect the order, not the hang.
+EXAMPLE: Lab 06: gdb thread apply all bt shows both threads in futex_wait.
+PITFALL: Adding a timeout "fixes" the symptom and hides the bug.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 16 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">Quick check</span>
+  <h2>Which reordering does x86-TSO allow?</h2>
+  <div class="quiz-options">
+    <div><b>A</b> store → store</div>
+    <div><b>B</b> load → load</div>
+    <div><b>C</b> store → later load (other address)</div>
+    <div><b>D</b> none: x86 is SC</div>
+  </div>
+  <aside class="notes">
+SAY (EN): Think of slide 6 and the numbers on slide 7.
+SAY (FA): به اسلاید ۶ و عددهای اسلاید ۷ فکر کنید.
+KEY POINT: Answer on the next slide.
+EXAMPLE: —
+PITFALL: —
+ASK: Who picked D? What did lab 05 show?
+TIME: 45
+  </aside>
+</section>
+
+<!-- 17 QUIZ answer -->
+<section>
+  <span class="eyebrow">Answer: C</span>
+  <h2>Only store→load: the store buffer delays the store</h2>
+  <p class="quote">A full barrier (mfence or a locked instruction) drains the store buffer before the next load.</p>
+  <p class="source">linux/arch/x86/include/asm/barrier.h · __smp_mb() · L53 · v6.18.63</p>
+  <aside class="notes">
+SAY (EN): x86 keeps store order and load order; the only visible reordering is a store followed by a load from a different address. The kernel's smp_mb() on x86 is lock addl $0 on the stack.
+SAY (FA): x86 ترتیب storeها و ترتیب loadها را نگه می‌دارد؛ تنها جابه‌جایی دیدنی یک store و بعد loadی از آدرس دیگر است. smp_mb() کرنل روی x86 همان lock addl $0 روی stack است.
+KEY POINT: TSO = SC minus store→load.
+EXAMPLE: lab 05 solution/mp.c: message passing never fails on x86.
+PITFALL: Concluding relaxed code is portable because it works on x86.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 18 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">03 · Concurrency</span>
+  <h2 class="in">Summary</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>Atomicity and ordering are separate; x86 still reorders store→load</li>
+    <li class="in d2"><span class="callout-num">2</span>Every lock = one acquire CAS + a waiting policy (spin, queue, sleep)</li>
+    <li class="in d3"><span class="callout-num">3</span>Futex keeps the kernel out; RCU keeps locks out; ordering keeps deadlock out</li>
+  </ul>
+  <p class="next in d4">Module 04 · Memory Management</p>
+  <aside class="notes">
+SAY (EN): Next module: the page tables and LRU lists are protected by exactly these primitives, and the page-fault path uses mmap_lock and RCU.
+SAY (FA): ماژول بعد: جدول‌های صفحه و فهرست‌های LRU دقیقاً با همین ابزارها محافظت می‌شوند و مسیر page fault از mmap_lock و RCU استفاده می‌کند.
+KEY POINT: Labs 01-06 make each line concrete.
+EXAMPLE: —
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+<!-- REFERENCES:start (generated by _shared/tools/add_references.py from _shared/resources/awesome-os.json; do not edit by hand) -->
+<!-- 19 REFERENCES -->
+<section class="layout-refs">
+  <span class="eyebrow in-f">Go deeper</span>
+  <h2 class="in">Read more, picked from the GitHub “awesome-os” lists</h2>
+  <ul class="refs">
+    <li class="in d1"><span class="pill">Book</span> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/"><b>Operating Systems: Three Easy Pieces</b></a><span class="why">Part II, concurrency: locks, condition variables, semaphores, bugs.</span><span class="url ltr">pages.cs.wisc.edu/~remzi/OSTEP</span></li>
+    <li class="in d2"><span class="pill">Book</span> <a href="https://greenteapress.com/wp/think-os/"><b>Think OS (Allen B. Downey)</b></a><span class="why">A brief introduction to operating systems, written for programmers.</span><span class="url ltr">greenteapress.com/wp/think-os</span></li>
+    <li class="in d3"><span class="pill">Book</span> <a href="https://pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf"><b>xv6: a simple, Unix-like teaching operating system</b></a><span class="why">Chapters “Locking” and “Concurrency revisited”.</span><span class="url ltr">pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf</span></li>
+    <li class="in d4"><span class="pill">Paper</span> <a href="https://www.usenix.org/legacy/events/osdi08/tech/full_papers/boyd-wickizer/boyd_wickizer.pdf"><b>Corey: An Operating System for Many Cores</b></a><span class="why">OSDI &#x27;08: OS design for many cores, where applications control sharing.</span><span class="url ltr">usenix.org/legacy/events/osdi08/tech/full_papers/boyd-wickizer/b</span></li>
+    <li class="in d5"><span class="pill">Paper</span> <a href="https://www.sigops.org/s/conferences/sosp/2009/papers/baumann-sosp09.pdf"><b>The Multikernel: A new OS architecture for scalable multicore systems</b></a><span class="why">SOSP &#x27;09: treat a multicore machine as a network of cores that pass messages.</span><span class="url ltr">sigops.org/s/conferences/sosp/2009/papers/baumann-sosp09.pdf</span></li>
+    <li class="in d5"><span class="pill">Course</span> <a href="https://linux-kernel-labs.github.io/refs/heads/master/"><b>Linux Kernel Teaching</b></a><span class="why">University-style lectures and labs on the Linux kernel.</span><span class="url ltr">linux-kernel-labs.github.io/refs/heads/master</span></li>
+  </ul>
+  <p class="caption src">Lists: <span class="ltr">jubalh/awesome-os · penberg/awesome-os</span> · links checked <bdi dir="ltr">2026-11-15</bdi></p>
+  <aside class="notes">
+SAY (EN): These are the best next reads after this module. They come from two GitHub “awesome-os” lists and every link was opened and checked on 2026-11-15. You do not need all of them.
+SAY (FA): این‌ها بهترین منابع برای ادامه پس از این ماژول هستند. از دو فهرست «awesome-os» در GitHub انتخاب شده‌اند و همهٔ لینک‌ها در تاریخ 2026-11-15 باز و بررسی شده‌اند. لازم نیست همه را بخوانید.
+KEY POINT: Start with the first item. The papers and conference pages are for the curious.
+EXAMPLE: —
+PITFALL: Some links are PDFs; open them before class if the room has no internet.
+TIME: 30
+  </aside>
+</section>
+<!-- REFERENCES:end -->
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 03 Concurrency" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

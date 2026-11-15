@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 02.5 · nice, SCHED_FIFO and EEVDF slices</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">02.5</div>
+  <span class="eyebrow in-f">Lab 02.5 · Goal</span>
+  <h2 class="in">nice, SCHED_FIFO and EEVDF slices</h2>
+  <p class="why in d1">Measure that CPU share follows the nice weight table, that the fair server leaves ~5% under SCHED_FIFO, and that sched_setattr sets a clamped slice.</p>
+  <div class="pills in d2"><span class="pill">Runs on: VM only (RT busy loop, pinned to CPU 3)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Measure that CPU share follows the nice weight table, that the fair server leaves ~5% under SCHED_FIFO, and that sched_setattr sets a clamped slice.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.5 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>share.c</h3><p>N spinners pinned to one CPU</p></div><div class="c-6 card edge r-kernel in d2"><h3>Classes</h3><p>fair (nice) vs rt (FIFO 10) vs dl server</p></div><div class="c-6 card edge r-data in d3"><h3>Prediction</h3><p>sched_prio_to_weight[]: 1024, 335, 110</p></div><div class="c-6 card edge r-hardware in d4"><h3>Safety</h3><p>CPU 3 only, 3 s per run</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.5 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 05-sched-policies</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o share share.c</span><span class="ln"><span class="p">$</span> ./share 0 5</span><span class="ln"><span class="p">$</span> ./share 0 0 10</span><span class="ln"><span class="p">$</span> sudo ./share fifo 0</span><span class="ln"><span class="p">$</span> sudo cat /sys/kernel/debug/sched/fair_server/cpu3/runtime</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o slice slice.c</span><span class="ln"><span class="p">$</span> ./slice 50000 3000000 0</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.5 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> ./share 0 5</span><span class="ln">task   policy      cpu_s    share  fair_pred</span><span class="ln hl">0      nice:0      2.258    75.2%      75.3%</span><span class="ln">1      nice:5      0.743    24.8%      24.7%</span><span class="ln"><span class="p">$</span> sudo ./share fifo 0</span><span class="ln">0      FIFO:10     2.825    94.2%          -</span><span class="ln hl">1      nice:0      0.174     5.8%     100.0%</span><span class="ln"><span class="p">$</span> ./slice 50000 3000000 0</span><span class="ln hl">request 50000 ns  ... /proc se.slice=100000 ns</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.5 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">nice 0 vs 5</bdi> ≈ <bdi dir="ltr">75 / 25</bdi></b><br><span class="caption mono">1024 / (1024 + 335) = 75.4%</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">FIFO</bdi> ≈ <bdi dir="ltr">95</bdi>%, <bdi dir="ltr">fair</bdi> ≈ <bdi dir="ltr">5</bdi>%</b><br><span class="caption">fair_server: 50 ms per 1000 ms</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">50</bdi> µ<bdi dir="ltr">s</bdi> → <bdi dir="ltr">100</bdi> µ<bdi dir="ltr">s</bdi></b><br><span class="caption"><bdi dir="ltr">__setparam_fair() clamps 0.1</bdi>–<bdi dir="ltr">100 ms</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.5 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">SCHED_FIFO: Operation not permitted</span><span class="arrow-s">→</span><span class="tag r-ok">needs CAP_SYS_NICE: sudo</span></div><div class="pit in d2"><span class="tag r-danger">shares far from prediction</span><span class="arrow-s">→</span><span class="tag r-ok">busy CPU: pick another with -c</span></div><div class="pit in d3"><span class="tag r-danger">/sys/kernel/debug empty</span><span class="arrow-s">→</span><span class="tag r-ok">mount -t debugfs none /sys/kernel/debug</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.5 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Measure wakeup lateness of a 1 ms sleeper against two nice-0 spinners with the default slice vs a 0.1 ms slice (p50/p99 of 2,000 wakeups). Explain with vd = v + slice/w.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 02 Processes &amp; Threads" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 04.3 · mmap: اشتراکی یا خصوصی</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">04.3</div>
+  <span class="eyebrow in-f">آزمایش 04.3 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">mmap:</bdi> اشتراکی یا خصوصی</h2>
+  <p class="why in d1">۴ × ۱٬۰۰۰٬۰۰۰ افزایش اتمی را در چهار نوع <bdi dir="ltr">mapping</bdi> اجرا کنید و نشان دهید چه کسی نتیجه را می‌بیند و چه چیزی به فایل می‌رسد.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه · فضای کاربر</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Run 4 × 1 000 000 atomic increments through four kinds of mapping; show who sees the result and what reaches the file.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.3 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>برنامه</h3><p class="ltr-mono"><code>mapcount.c: fork 4, __atomic_fetch_add</code></p></div><div class="c-6 card edge r-data in d2"><h3>فایل</h3><p class="ltr-mono"><code>counter.bin (4 KiB, ftruncate)</code></p></div><div class="c-6 card edge r-kernel in d3"><h3>مسیر کرنل</h3><p class="ltr-mono"><code>do_shared_fault · do_cow_fault</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>بررسی</h3><p class="ltr-mono"><code>msync + pread · od -t u8</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.3 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 03-mmap-shared</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o mapcount mapcount.c</span><span class="ln"><span class="p">$</span> ./mapcount file-shared  counter.bin</span><span class="ln"><span class="p">$</span> od -A d -t u8 -N 8 counter.bin</span><span class="ln"><span class="p">$</span> ./mapcount file-private counter.bin</span><span class="ln"><span class="p">$</span> ./mapcount anon-shared</span><span class="ln"><span class="p">$</span> ./mapcount anon-private</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.3 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln hl">file-shared  children=4 iters=1000000  expected=4000000  parent sees=4000000  file has=4000000</span><span class="ln">file-private children=4 iters=1000000  expected=4000000  parent sees=0  file has=0</span><span class="ln hl">anon-shared  children=4 iters=1000000  expected=4000000  parent sees=4000000</span><span class="ln">anon-private children=4 iters=1000000  expected=4000000  parent sees=0</span><span class="ln"> </span><span class="ln"><span class="p">$</span> od -A d -t u8 -N 8 counter.bin   # after file-shared</span><span class="ln">0000000              4000000</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، اوبونتو <bdi dir="ltr">24.04</bdi>، لینوکس <bdi dir="ltr">6.18.63</bdi>)، <bdi dir="ltr">2026-11-15.</bdi></p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.3 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>فقط حالت‌های اشتراکی ۴٬۰۰۰٬۰۰۰ می‌شوند</b><br><span class="caption">یک صفحه، چند <bdi dir="ltr">PTE</bdi></span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>فقط <bdi dir="ltr">file-shared</bdi> فایل را عوض می‌کند</b><br><span class="caption"><bdi dir="ltr">page cache</bdi> و <bdi dir="ltr">msync</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>نوشتن خصوصی از بین می‌رود</b><br><span class="caption">کپی <bdi dir="ltr">COW</bdi> هنگام <bdi dir="ltr">_exit</bdi> آزاد می‌شود</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.3 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">مجموع کمتر از انتظار</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">++</bdi> به‌جای <bdi dir="ltr">atomic</bdi></span></div><div class="pit in d2"><span class="tag r-danger">Bus error</span><span class="arrow-s">←</span><span class="tag r-ok">فایل کوتاه‌تر از <bdi dir="ltr">mapping</bdi></span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">od</bdi> مقدار قدیمی را نشان می‌دهد</span><span class="arrow-s">←</span><span class="tag r-ok">فایل‌سیستم شبکه‌ای؛ فایل‌سیستم محلی <bdi dir="ltr">page cache</bdi> را شریک است</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.3 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">در <bdi dir="ltr">anon-shared</bdi> با ۴ × ۱۰٬۰۰۰٬۰۰۰ از <bdi dir="ltr">(*ctr)++</bdi> استفاده کنید و کم شدن عدد را توضیح دهید؛ بعد بین دو پردازهٔ بی‌ربط با <bdi dir="ltr">memfd_create</bdi> یا <bdi dir="ltr">shm_open</bdi> یک شمارنده شریک کنید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۴ حافظه" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

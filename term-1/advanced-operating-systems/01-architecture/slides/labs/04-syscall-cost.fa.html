@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 01.4 · هزینهٔ یک syscall چقدر است؟</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.4</div>
+  <span class="eyebrow in-f">آزمایش 01.4 · هدف</span>
+  <h2 class="in">هزینهٔ یک <bdi dir="ltr">syscall</bdi> چقدر است؟</h2>
+  <p class="why in d1">زمان هر فراخوانی را برای حلقهٔ خالی، <bdi dir="ltr">clock_gettime</bdi> از <bdi dir="ltr">vDSO</bdi>، همان فراخوانی با <bdi dir="ltr">syscall</bdi> و <bdi dir="ltr">getpid</bdi> اندازه بگیرید؛ بعد <bdi dir="ltr">strace</bdi> را اضافه کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM با نام aos-lab (بدون PMU؛ زمان‌سنجی با clock_gettime)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Measure ns per call for an empty loop, vDSO clock_gettime, the same call via syscall, and getpid; then add strace.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>زمان‌سنج</h3><p><bdi dir="ltr">CLOCK_MONOTONIC</bdi>، ۷ دور</p></div><div class="c-6 card edge r-data in d2"><h3>vDSO</h3><p>[<bdi dir="ltr">vdso</bdi>] و [<bdi dir="ltr">vvar</bdi>] در <bdi dir="ltr">/proc/self/maps</bdi></p></div><div class="c-6 card edge r-hardware in d3"><h3>منبع ساعت</h3><p><bdi dir="ltr">tsc</bdi> ← <bdi dir="ltr">vDSO</bdi> در <bdi dir="ltr">ring 3</bdi> کار می‌کند</p></div><div class="c-6 card edge r-kernel in d4"><h3>وصله‌ها</h3><p><bdi dir="ltr">meltdown: Not affected</bdi> ← بدون <bdi dir="ltr">PTI</bdi></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 04-syscall-cost</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o syscost syscost.c</span><span class="ln"><span class="p">$</span> taskset -c 2 ./syscost</span><span class="ln"><span class="p">$</span> grep -E &#x27;vdso|vvar&#x27; /proc/self/maps</span><span class="ln"><span class="p">$</span> strace -f -c -e trace=getpid,clock_gettime \</span><span class="ln">    ./syscost 200000 &gt; /dev/null</span><span class="ln"><span class="p">$</span> time ./syscost 200000 &gt; /dev/null</span><span class="ln"><span class="p">$</span> time strace -o /dev/null ./syscost 200000 &gt; /dev/null</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">clocksource            tsc</span><span class="ln">meltdown (PTI)         Not affected</span><span class="ln">empty loop                         min     2.2  median     3.2</span><span class="ln hl">clock_gettime() via vDSO           min    14.5  median    14.8</span><span class="ln hl">syscall(SYS_clock_gettime)         min   110.3  median   123.9</span><span class="ln">syscall(SYS_getpid)                min    91.4  median    96.8</span><span class="ln"> </span><span class="ln"><span class="p">$</span> strace -f -c -e trace=getpid,clock_gettime ./syscost 200000</span><span class="ln"> 68.71   21.308826     15   1420000   clock_gettime</span><span class="ln"> </span><span class="ln"><span class="p">$</span> time strace -o /dev/null ./syscost 200000   # vs 1.351s</span><span class="ln hl">real	1m10.384s</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، ۱۴۰۵/۰۸/۲۴.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">vDSO</bdi> حدود ۸ برابر ارزان‌تر</b><br><span class="caption">۱۴٫۸ در برابر ۱۲۳٫۹ نانوثانیه: بدون عبور از مرز</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">strace</bdi> فقط فراخوانی‌های اجباری را دید</b><br><span class="caption">۱٬۴۲۰٬۰۰۰ = فقط <bdi dir="ltr">syscall(SYS_clock_gettime)</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">strace:</bdi> ۱٫۳۵ ثانیه ← ۷۰٫۴ ثانیه</b><br><span class="caption">توقف <bdi dir="ltr">ptrace</bdi> در هر ورود و خروج</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">vDSO</bdi> به کندی <bdi dir="ltr">syscall</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">منبع ساعت <bdi dir="ltr">hpet/acpi_pm</bdi> ← برگشت به <bdi dir="ltr">syscall</bdi></span></div><div class="pit in d2"><span class="tag r-danger">حلقهٔ خالی = ۰ نانوثانیه</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">sink</bdi> از نوع <bdi dir="ltr">volatile</bdi> را نگه دارید</span></div><div class="pit in d3"><span class="tag r-danger">perf cycles &lt;not supported&gt;</span><span class="arrow-s">←</span><span class="tag r-ok">این مهمان <bdi dir="ltr">PMU</bdi> ندارد</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">زمان <bdi dir="ltr">syscall(1000)</bdi> (یعنی <bdi dir="ltr">-ENOSYS</bdi>) را با <bdi dir="ltr">getpid</bdi> مقایسه کنید. ببینید کدام کد در <bdi dir="ltr">syscall_64.c</bdi> برایش اجرا می‌شود و توضیح دهید چرا فقط کمی ارزان‌تر است.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۱ معماری" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

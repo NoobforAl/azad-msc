@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 05.2 · Page-cache hit vs miss</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">05.2</div>
+  <span class="eyebrow in-f">Lab 05.2 · Goal</span>
+  <h2 class="in">Page-cache hit vs miss</h2>
+  <p class="why in d1">Measure a cold and a warm read of the same file, evicting only that file.</p>
+  <div class="pills in d2"><span class="pill">Runs on: Lab VM or any Linux box</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Measure a cold and a warm read of the same file, evicting only that file.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.2 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>pcache.c</h3><p class="ltr-mono"><code>resident · evict · read</code></p></div><div class="c-6 card edge r-data in d2"><h3>Residency</h3><p>mmap + mincore, cross-check with fincore</p></div><div class="c-6 card edge r-kernel in d3"><h3>Eviction</h3><p class="ltr-mono"><code>posix_fadvise(POSIX_FADV_DONTNEED)</code></p></div><div class="c-6 card edge r-kernel in d4"><h3>Tracepoint</h3><p class="ltr-mono"><code>filemap:mm_filemap_add_to_page_cache</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.2 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 02-page-cache</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/05-filesystems-io/labs/02-page-cache</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o pcache pcache.c</span><span class="ln"><span class="p">$</span> ./pcache evict big.bin; ./pcache resident big.bin</span><span class="ln"><span class="p">$</span> ./pcache read big.bin     # cold</span><span class="ln"><span class="p">$</span> ./pcache read big.bin     # warm</span><span class="ln"><span class="p">$</span> bash run.sh               # all of it + bpftrace</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.2 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> bash run.sh</span><span class="ln">resident: 0/65536 pages (0.0%), 0 KiB of 262144 KiB</span><span class="ln hl">read: 256 MiB in 0.745 s = 344 MiB/s</span><span class="ln">@added_folios: 1049</span><span class="ln">@async_ra: 34</span><span class="ln">@sync_ra: 1</span><span class="ln">resident: 65536/65536 pages (100.0%), 262144 KiB of 262144 KiB</span><span class="ln hl">read: 256 MiB in 0.079 s = 3256 MiB/s</span><span class="ln">@added_folios: 0</span><span class="ln">read: 256 MiB in 0.098 s = 2605 MiB/s</span><span class="ln">read: 256 MiB in 0.161 s = 1590 MiB/s</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.2 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Warm is an order of magnitude faster</b><br><span class="caption">memcpy vs disk + readahead</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>Folios added only on the cold read</b><br><span class="caption">mm_filemap_add_to_page_cache count</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>Async readahead dominates</b><br><span class="caption mono">page_cache_async_ra &gt;&gt; sync_ra</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.2 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">drop_caches on a shared VM</span><span class="arrow-s">→</span><span class="tag r-ok">evict one file with fadvise</span></div><div class="pit in d2"><span class="tag r-danger">evict does nothing</span><span class="arrow-s">→</span><span class="tag r-ok">dirty or mmapped pages: fdatasync first</span></div><div class="pit in d3"><span class="tag r-danger">cold is suspiciously fast</span><span class="arrow-s">→</span><span class="tag r-ok">host-side disk cache in the hypervisor</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.2 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Read only the first 4 KiB after eviction, with and without POSIX_FADV_RANDOM. How many pages become resident each time, and why?</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 05 File Systems &amp; I/O" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

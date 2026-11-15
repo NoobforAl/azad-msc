@@ -1,0 +1,22 @@
+// futex-ops.bt: count futex() calls per op for one command and time them.
+// Run: sudo bpftrace futex-ops.bt -c './futex_mutex 4 200000'
+// op & 127 strips FUTEX_PRIVATE_FLAG (128): 0 = FUTEX_WAIT, 1 = FUTEX_WAKE.
+tracepoint:syscalls:sys_enter_futex /pid == cpid/
+{
+    @calls[args->op & 127] = count();
+    @start[tid] = nsecs;
+    @op[tid] = args->op & 127;
+}
+
+tracepoint:syscalls:sys_exit_futex /pid == cpid && @start[tid]/
+{
+    @usecs[@op[tid]] = hist((nsecs - @start[tid]) / 1000);
+    delete(@start[tid]);
+    delete(@op[tid]);
+}
+
+END
+{
+    clear(@start);
+    clear(@op);
+}

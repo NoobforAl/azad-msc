@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>۰۷ · Real-Time و پژوهش — سیستم‌عامل پیشرفته</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+  <style>
+    /* deck-local: compact data table for RMS vs EDF (theme has no table style) */
+    .reveal table.dt { border-collapse:collapse; font-size:30px; margin:0; }
+    .reveal table.dt th, .reveal table.dt td { border:3px solid var(--border); padding:12px 24px; text-align:start; }
+    .reveal table.dt th { background:var(--brand-soft); color:var(--brand-ink); }
+    /* deck-local: keep inline code on one line (p-&gt;prio broke in RTL) and show C operators literally */
+    .reveal :not(pre) > code { white-space:nowrap; }
+    .reveal code, .reveal pre { font-variant-ligatures:none; font-feature-settings:"liga" 0, "calt" 0; }
+    .reveal .diagram.short img { max-height:600px; }
+  </style>
+</head>
+<body>
+<div class="reveal course-os">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">تضمین در زمان و در دسترسی</h1>
+  <p class="subtitle in d1">سیستم‌عامل پیشرفته · ۰۷ ‏<bdi dir="ltr">Real-Time</bdi> و موضوعات پژوهشی</p>
+  <div class="fields">
+    <span><b>درس</b>[Course name]</span><span><b>ارائه‌دهنده</b>[Presenter]</span>
+    <span><b>استاد</b>[Professor]</span><span><b>دانشکده</b>[Faculty / Branch]</span>
+    <span><b>ترم</b>[Term]</span><span><b>تاریخ</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (FA): این ماژول می‌پرسد کرنل چه قولی می‌تواند به یک پردازه بدهد: اینکه به‌موقع اجرا شود، و اینکه فقط به چیزی برسد که باید. بعد یاد می‌گیریم ادعاهای پژوهشی دربارهٔ هر دو را قضاوت کنیم.
+SAY (EN): This module asks what a kernel can promise a process: that it runs on time, and that it can only reach what it should. Then we learn to judge research claims about both.
+KEY POINT: real-time یعنی تضمین در زمان؛ sandboxing یعنی تضمین در دسترسی.
+PITFALL: فیلدهای صفحهٔ عنوان جای‌نگهدارند؛ هرگز از خودتان پرشان نکنید.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">07</div>
+  <span class="eyebrow in-f">ماژول ۰۷</span>
+  <h2 class="in"><bdi dir="ltr">Real-Time</bdi> و موضوعات پژوهشی</h2>
+  <p class="why in d1">سرعت میانگین تضمین نیست: deadline، اولویت قفل و sandbox همه دربارهٔ بدترین حالت‌اند.</p>
+  <div class="pills in d2"><span class="pill"><bdi dir="ltr">PREEMPT_RT</bdi></span><span class="pill"><bdi dir="ltr">priority inheritance</bdi></span><span class="pill"><bdi dir="ltr">seccomp · Landlock</bdi></span></div>
+  <aside class="notes">
+SAY (FA): همه چیز این ماژول دربارهٔ بدترین حالت است: طولانی‌ترین بیدار شدن، طولانی‌ترین انتظار برای قفل، بیشترین چیزی که مهاجم به آن می‌رسد.
+SAY (EN): Everything here is about the worst case: the longest wake-up, the longest wait for a lock, the most an attacker can reach.
+KEY POINT: وابسته به ماژول ۰۲ (کلاس‌های زمان‌بندی) و ماژول ۰۳ (futex و mutex).
+EXAMPLE: کاوشگر Mars Pathfinder به خاطر یک باگ اولویت قفل reboot می‌شد.
+PITFALL: یکی گرفتن «سریع» با «real-time».
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">۰۷ · <bdi dir="ltr">Real-Time</bdi> و پژوهش</span>
+  <h2 class="in">پنج پرسش، پنج آزمایش</h2>
+  <ol class="agenda">
+    <li class="current in d1">سیستم کی real-time است و لینوکس چه چیزی به latency اضافه می‌کند؟</li>
+    <li class="in d2">کدام taskها به deadline می‌رسند؟ ‏<bdi dir="ltr">RMS · EDF · SCHED_DEADLINE</bdi></li>
+    <li class="in d3">چرا Pathfinder ‏reboot می‌شد؟ وارونگی و وراثت اولویت</li>
+    <li class="in d4">پردازه چطور خودش را محدود می‌کند؟ ‏<bdi dir="ltr">seccomp · Landlock · pledge</bdi></li>
+    <li class="in d5">مقالهٔ سیستم‌عامل را چطور مثل داور بخوانم؟</li>
+  </ol>
+  <aside class="notes">
+SAY (FA): هر ردیف به یک آزمایش وصل است: cyclictest، تمرین تکمیلی deadline، وارونگی اولویت، seccomp و Landlock، و داوری مقاله.
+SAY (EN): Each row maps to a lab: cyclictest, the deadline extension, priority inversion, seccomp and Landlock, and the paper review.
+KEY POINT: ردیف‌های ۱ تا ۳ دربارهٔ زمان‌اند، ردیف ۴ دربارهٔ دسترسی، ردیف ۵ دربارهٔ قضاوت ادعاها.
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 BENTO -->
+<section>
+  <span class="eyebrow in-f">۰۷ · رده‌های real-time</span>
+  <h2 class="in">از دست رفتن deadline یعنی شکست، نتیجهٔ بی‌ارزش، یا افت کیفیت</h2>
+  <div class="grid tight">
+    <div class="c-6 card edge r-danger in d1"><h3>Hard</h3><p>از دست رفتن = شکست سیستم · ترمز ABS، کنترل پرواز</p></div>
+    <div class="c-6 card edge r-kernel in d2"><h3>Firm</h3><p>نتیجهٔ دیر بی‌ارزش است · نمونهٔ رادار، فریم ویدیو</p></div>
+    <div class="c-6 card edge r-user in d3"><h3>Soft</h3><p>نتیجهٔ دیر کم‌کیفیت است · میکس صدا، فریم بازی</p></div>
+    <div class="c-6 card edge r-data in d4"><h3>مدل task</h3><p><code>(C, D, T)</code> · به‌موقع اگر <code>R ≤ D</code> · <code>U = C/T</code></p></div>
+  </div>
+  <p class="takeaway in d5">real-time دربارهٔ بیشینه است، هرگز میانگین.</p>
+  <aside class="notes">
+SAY (FA): سخت، نیمه‌سخت و نرم در ارزش نتیجهٔ دیر فرق دارند. مدل task عددهایی را می‌دهد که همهٔ اسلایدهای بعدی به کار می‌برند: بدترین زمان اجرا C، ‏deadline ‏D و دورهٔ T.
+SAY (EN): Hard, firm and soft differ by the value of a late result. The task model gives us the numbers every later slide uses.
+KEY POINT: WCET در لینوکس اندازه‌گیری می‌شود، نه اثبات.
+EXAMPLE: SCHED_DEADLINE دقیقاً runtime ≈ C و deadline = D و period = T می‌گیرد.
+PITFALL: «میانگین ۵ میکروثانیه» دربارهٔ deadline یک میلی‌ثانیه‌ای چیزی نمی‌گوید.
+TIME: 75
+  </aside>
+</section>
+
+<!-- 05 FLOW_TIMELINE -->
+<section>
+  <span class="eyebrow in-f">۰۷ · Latency</span>
+  <h2 class="in">در کرنل معمولی latency بیدار شدن یک گام نامحدود دارد</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>timer فعال می‌شود</div><code>hrtimer IRQ</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>task بیدار می‌شود</div><code>try_to_wake_up()</code></div>
+    <div class="step fragment current"><span class="callout-num">3</span><div>انتظار برای preempt</div><code>spin_lock · softirq</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>جابه‌جایی</div><code>__schedule()</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>task اجرا می‌شود</div><code>clock_gettime()</code></div>
+  </div>
+  <p class="takeaway"><bdi dir="ltr">PREEMPT_RT</bdi> گام ۳ را کوچک می‌کند: spinlockها می‌خوابند و IRQها thread می‌شوند.</p>
+  <aside class="notes">
+SAY (FA): ‏cyclictest از زمان برنامه‌ریزی‌شدهٔ بیدار شدن تا گام ۵ را اندازه می‌گیرد. گام‌های ۱، ۲ و ۴ چند میکروثانیه‌اند. گام ۳ جایی است که یک بخش غیرقابل‌preempt، یک softirq یا یک task پراولویت‌تر ما را منتظر می‌گذارد، و در کرنل معمولی هیچ چیز آن را محدود نمی‌کند.
+SAY (EN): cyclictest measures from the planned wake-up time to step 5. Only step 3 is unbounded on a normal kernel.
+KEY POINT: فقط گام ۳ نامحدود است.
+EXAMPLE: latency.c در آزمایش ۰۱ همین حلقه در حدود ۷۰ خط است.
+PITFALL: ‏nanosleep() نسبی رانش دارد؛ از TIMER_ABSTIME استفاده کنید.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 06 TERMINAL_DEMO: cyclictest -->
+<section>
+  <span class="eyebrow in-f">۰۷ · خروجی واقعی</span>
+  <h2 class="in">بار دُم توزیع را جابه‌جا می‌کند، نه کمینه را</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab · run-cyclictest.sh 60 2,3</div>
+<pre><code><span class="ln"><span class="p">$</span> sudo bash run-cyclictest.sh 60 2,3</span><span class="ln">[idle] # Min Latencies: 00030 00026</span><span class="ln">[idle] # Avg Latencies: 01236 01165</span><span class="ln hl">[idle] # Max Latencies: 395586 395126</span><span class="ln">[load] # Min Latencies: 00032 00031</span><span class="ln">[load] # Avg Latencies: 09389 09364</span><span class="ln hl">[load] # Max Latencies: 26624226 26624344</span><span class="ln"># µs; FIFO 80, 1 ms period, CPUs 2-3</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی روی aos-lab ‏(6.18.63، PREEMPT_DYNAMIC)، ۲۰۲۶-۱۱-۱۵. VMِ مشترک: بیشینهٔ ۲۶٫۶ ثانیه یعنی میزبان vCPUها را متوقف کرده، نه لینوکس.</p>
+  <aside class="notes">
+SAY (FA): دو اجرای cyclictest روی دو CPU، بیکار و با stress-ng روی همان CPUها. اول ردیف Max را بخوانید. این یک VMِ مشترک روی Hyper-V است، پس جهش‌ها بیشتر کار hypervisor است؛ شکل مهم است.
+SAY (EN): Two cyclictest runs, idle and loaded. Read Max first; on a shared VM the spikes are mostly the hypervisor.
+KEY POINT: بیشینه را زیر بار و همراه با طول اجرا گزارش کنید.
+EXAMPLE: sudo bash run-cyclictest.sh 60 2,3
+PITFALL: عددهای VM را کران فرض کردن.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 07 CODE_WALKTHROUGH: deadline admission -->
+<section>
+  <span class="eyebrow in-f">۰۷ · <bdi dir="ltr">SCHED_DEADLINE</bdi> · سورس واقعی</span>
+  <h2 class="in">EDF فقط وقتی task را می‌پذیرد که پهنای باند هنوز جا داشته باشد</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/sched/deadline.c</span><span>v6.18.63 · L212-217</span></div>
+<pre class="code"><code><span class="ln"><span class="tok-k">static inline</span> <span class="tok-t">bool</span></span><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-f">__dl_overflow</span>(<span class="tok-k">struct</span> <span class="tok-t">dl_bw</span> *dl_b, <span class="tok-t">unsigned long</span> cap,</span><span class="ln">	      <span class="tok-t">u64</span> old_bw, <span class="tok-t">u64</span> new_bw)</span><span class="ln">{</span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-k">return</span> dl_b-&gt;bw != -<span class="tok-s">1</span> &amp;&amp;</span><span class="ln fragment hl-on" data-fragment-index="3">	  <span class="tok-f">cap_scale</span>(dl_b-&gt;bw, cap) &lt;</span><span class="ln fragment hl-on" data-fragment-index="3">	  dl_b-&gt;total_bw - old_bw + new_bw;</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span><code>new_bw</code> = ‏runtime / period</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span><code>-1</code> یعنی پذیرش خاموش</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>مجموع بیش از ۹۵٪ × تعداد CPU ← <code>EBUSY</code></span></div>
+    </div>
+  </div>
+  <table class="dt in d5" style="margin-top:32px"><tr><th><bdi dir="ltr">τ = (2,5) (2,7) (2,9)</bdi></th><th><bdi dir="ltr">U = 0.908</bdi></th><th>RMS: ‏τ3 جا می‌ماند (<bdi dir="ltr">R = 10 &gt; 9</bdi>)</th><th>EDF: جا می‌شود (<bdi dir="ltr">U ≤ 1</bdi>)</th></tr></table>
+  <aside class="notes">
+SAY (FA): ‏sched_setattr با SCHED_DEADLINE اول runtime ≤ deadline ≤ period را بررسی می‌کند و بعد همین تابع را. اگر پهنای باند کل به‌اضافهٔ task جدید از حد بگذرد، فراخوانی با EBUSY شکست می‌خورد. جدول مثال کاربردی است: EDF مجموعه‌ای را زمان‌بندی می‌کند که اولویت ثابت نمی‌تواند.
+SAY (EN): sched_setattr checks runtime ≤ deadline ≤ period, then this function; too much total bandwidth → EBUSY.
+KEY POINT: EINVAL = پارامتر بد (__checkparam_dl)، ‏EBUSY = رد در پذیرش (__dl_overflow).
+EXAMPLE: chrt --deadline --sched-runtime ... در یادداشت ۰۲.
+PITFALL: روی SMP پذیرش فقط تأخیر محدود را تضمین می‌کند (اثر Dhall).
+TIME: 120
+  </aside>
+</section>
+
+<!-- 08 CONCEPT_DIAGRAM: inversion -->
+<section>
+  <span class="eyebrow in-f">۰۷ · وارونگی اولویت</span>
+  <h2 class="in">وراثت اولویت نمی‌گذارد M از L جلو بزند</h2>
+  <div class="diagram short in-p d1" style="margin-top:-16px"><img src="assets/inversion-timeline.svg" alt="دو خط زمانی روی یک CPU. بدون پروتکل، H منتظر می‌ماند تا M ‏۸۰۰ میلی‌ثانیه اجرا شود و L تمام کند. با PTHREAD_PRIO_INHERIT، ‏L به اولویت ۳۰ می‌رسد، H بعد از باقی کار L قفل را می‌گیرد و M بعد از آن اجرا می‌شود."></div>
+  <aside class="notes">
+SAY (FA): ① بدون پروتکل، M صاحب قفل یعنی L را کنار می‌زند، پس H منتظر M هم می‌ماند. ② با inheritance، ‏L تا unlock با اولویت H اجرا می‌شود؛ ‏H فقط منتظر باقی بخش بحرانی L است و M بعد از آن اجرا می‌شود.
+SAY (EN): ① Without a protocol M preempts L. ② With inheritance L runs at H's priority until unlock.
+KEY POINT: PI وارونگی را محدود می‌کند؛ انتظار برای L را حذف نمی‌کند.
+EXAMPLE: Mars Pathfinder ۱۹۹۷: semaphoreِ select() در VxWorks بدون PI ← resetهای تکراری.
+PITFALL: mutexهای پیش‌فرض pthread، ‏PI ندارند.
+ASK: چرا برای دیدن مشکل سه اولویت لازم است؟
+TIME: 120
+  </aside>
+</section>
+
+<!-- 09 CODE_WALKTHROUGH: rtmutex boost -->
+<section>
+  <span class="eyebrow in-f">۰۷ · <bdi dir="ltr">rt_mutex</bdi> · سورس واقعی</span>
+  <h2 class="in">منتظرِ اولِ جدید اولویتش را به صاحب قفل قرض می‌دهد</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/locking/rtmutex.c</span><span>v6.18.63 · L1265-1272</span></div>
+<pre class="code"><code><span class="ln"><span class="tok-f">raw_spin_lock</span>(&amp;owner-&gt;pi_lock);</span><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">if</span> (waiter == <span class="tok-f">rt_mutex_top_waiter</span>(lock)) {</span><span class="ln">	<span class="tok-f">rt_mutex_dequeue_pi</span>(owner, top_waiter);</span><span class="ln">	<span class="tok-f">rt_mutex_enqueue_pi</span>(owner, waiter);</span><span class="ln"> </span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-f">rt_mutex_adjust_prio</span>(lock, owner);</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-k">if</span> (owner-&gt;pi_blocked_on)</span><span class="ln fragment hl-on" data-fragment-index="3">		chain_walk = <span class="tok-s">1</span>;</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>فقط منتظرِ <b>اولِ</b> جدید چیزی را عوض می‌کند</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>← <code>rt_mutex_setprio()</code> فقط <code>p-&gt;prio</code> را عوض می‌کند</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>صاحب قفل هم مسدود است ← پیمایش زنجیره</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (FA): از task_blocks_on_rt_mutex. یک mutexِ PI در pthread از راه futex_lock_pi به اینجا می‌رسد. اولویت مؤثر صاحب قفل رأس درخت pi_waiters آن می‌شود؛ هنگام unlock همین تابع بدون منتظر اولویت را برمی‌گرداند.
+SAY (EN): From task_blocks_on_rt_mutex; reached from futex_lock_pi; de-boost on unlock.
+KEY POINT: وراثت تراگذر = rt_mutex_adjust_prio_chain() (خط ۶۷۸) که deadlock را هم تشخیص می‌دهد.
+EXAMPLE: tracepoint ‏sched:sched_pi_setprio در rt_mutex_setprio() (core.c خط ۷۴۰۷) فعال می‌شود.
+PITFALL: semaphore و condvar صاحب ندارند، پس PI هم ندارند.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 10 TERMINAL_DEMO: inversion -->
+<section>
+  <span class="eyebrow in-f">۰۷ · خروجی واقعی</span>
+  <h2 class="in">یک ویژگی mutex حدود ۱ ثانیه را به حدود ۰٫۲ ثانیه می‌رساند</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab · 02-priority-inversion</div>
+<pre><code><span class="ln"><span class="p">$</span> sudo taskset -c 7 ./inversion none</span><span class="ln">    23.1 ms  H  wants the lock</span><span class="ln">    25.1 ms  M  start, burning 800 ms (no lock)</span><span class="ln">   825.2 ms  M  done</span><span class="ln hl">  1000.7 ms  H  got the lock after 977.6 ms</span><span class="ln"><span class="p">$</span> sudo taskset -c 7 ./inversion inherit</span><span class="ln">    20.7 ms  H  wants the lock</span><span class="ln">   202.2 ms  L  unlock</span><span class="ln hl">   202.2 ms  H  got the lock after 181.6 ms</span><span class="ln">  1002.3 ms  M  done</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی روی aos-lab ‏(Linux 6.18.63)، ۲۰۲۶-۱۱-۱۵؛ چند خط L حذف شده (اجرای کامل در README آزمایش).</p>
+  <aside class="notes">
+SAY (FA): همان برنامه و همان CPU؛ فقط پروتکل mutex فرق دارد. بدون آن، H منتظر ۸۰۰ میلی‌ثانیهٔ M می‌ماند؛ با PTHREAD_PRIO_INHERIT فقط منتظر باقی کار L است و M آخر از همه تمام می‌شود.
+SAY (EN): Same program, same CPU; only the mutex protocol differs.
+KEY POINT: بستن به یک CPU (taskset) وارونگی را تکرارپذیر می‌کند.
+EXAMPLE: sudo taskset -c 7 ./inversion inherit
+PITFALL: روی ماشین چندهسته‌ای بیکار، L جای دیگری اجرا می‌شود و چیزی نمی‌بینید.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 11 TWO_COLUMN_COMPARE -->
+<section>
+  <span class="eyebrow in-f">۰۷ · <bdi dir="ltr">PREEMPT_RT</bdi></span>
+  <h2 class="in"><bdi dir="ltr">PREEMPT_RT</bdi> خود قفل‌ها را عوض می‌کند، نه فقط نقطه‌های preemption را</h2>
+  <div class="compare">
+    <div class="in d1"><h3><bdi dir="ltr">PREEMPT_DYNAMIC (full)</bdi></h3><ul>
+      <li><code>spin_lock()</code>: می‌چرخد، preemption خاموش</li>
+      <li>handlerهای IRQ در context وقفهٔ سخت</li>
+      <li>softirq با bottom half خاموش</li>
+      <li>جابه‌جایی در زمان اجرا: ‏<bdi dir="ltr">none / voluntary / full / lazy</bdi></li>
+    </ul></div>
+    <div class="in d2"><h3><bdi dir="ltr">PREEMPT_RT</bdi></h3><ul>
+      <li><code>spin_lock()</code> = <code>rt_mutex</code>: می‌خوابد، PI</li>
+      <li>threadهای IRQ ‏<code>irq/N</code> با FIFO 50</li>
+      <li>softirq در thread، با local lock</li>
+      <li>فقط زمان compile · در <code>uname -v</code> دیده می‌شود</li>
+    </ul></div>
+  </div>
+  <p class="takeaway in d3">فقط <code>raw_spinlock_t</code> هنوز می‌چرخد: زمان‌بند، هستهٔ IRQ و timer.</p>
+  <aside class="notes">
+SAY (FA): ‏kernel/locking/spinlock_rt.c تابع spin_lock را به شکل یک rt_mutex همراه با migrate_disable() پیاده می‌کند؛ ‏include/linux/interrupt.h زیر PREEMPT_RT مقدار force_irqthreads() را ثابتِ true می‌کند. VM ما PREEMPT_DYNAMIC است، پس عددهای RT در این ماژول UNVERIFIED‌اند؛ گونهٔ ‎--rt‎ را با آزمایش ۰۳ از 00-setup بسازید.
+SAY (EN): spin_lock is an rt_mutex on RT; force_irqthreads() is true. Our VM is PREEMPT_DYNAMIC: RT numbers are UNVERIFIED.
+KEY POINT: Kconfig: depends on EXPERT && ARCH_SUPPORTS_RT && !COMPILE_TEST.
+EXAMPLE: init/Makefile خط ۳۰: preempt-flag-$(CONFIG_PREEMPT_RT) := PREEMPT_RT
+PITFALL: در v6.18.63 فایل /sys/kernel/realtime وجود ندارد.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 12 CONCEPT_DIAGRAM: sandbox path -->
+<section>
+  <span class="eyebrow in-f">۰۷ · Sandboxing</span>
+  <h2 class="in">seccomp دربارهٔ عدد قضاوت می‌کند، Landlock دربارهٔ شیء</h2>
+  <div class="diagram short in-p d1" style="margin-top:-16px"><img src="assets/sandbox-path.svg" alt="فراخوانی openat() از یک پردازهٔ sandboxشده: اول فیلترهای seccomp در ورود syscall می‌توانند پیش از اجرا رد کنند؛ اگر مجاز باشد جستجوی مسیر فایل را پیدا می‌کند؛ بعد hookِ LSM یعنی security_file_open تابع hook_file_open در Landlock را صدا می‌زند که می‌تواند EACCES برگرداند."></div>
+  <aside class="notes">
+SAY (FA): ① ‏seccomp در syscall_trace_enter روی شماره و آرگومان‌های خام و پیش از هر کاری اجرا می‌شود. ② اگر مجاز باشد، کرنل مسیر را resolve می‌کند. ③ ‏hookِ LSMِ Landlock فایل resolveشده را می‌بیند و همهٔ لایه‌های قانون را بررسی می‌کند.
+SAY (EN): ① seccomp on raw numbers before anything runs. ② path lookup. ③ Landlock's LSM hook on the resolved file.
+KEY POINT: هر دو no_new_privs لازم دارند، روی هم جمع می‌شوند، فقط سخت‌تر می‌کنند و از execve() عبور می‌کنند.
+EXAMPLE: آزمایش‌های ۰۳ و ۰۴.
+PITFALL: seccomp نمی‌تواند رشتهٔ مسیر را بررسی کند: فقط یک اشاره‌گر کاربر است (TOCTOU).
+TIME: 90
+  </aside>
+</section>
+
+<!-- 13 CODE_WALKTHROUGH: seccomp_run_filters -->
+<section>
+  <span class="eyebrow in-f">۰۷ · <bdi dir="ltr">seccomp</bdi> · سورس واقعی</span>
+  <h2 class="in">همهٔ فیلترها اجرا می‌شوند؛ سخت‌گیرانه‌ترین جواب برنده است</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/seccomp.c · seccomp_run_filters()</span><span>v6.18.63 · L413-430</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">if</span> (<span class="tok-f">WARN_ON</span>(f == NULL))</span><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-k">return</span> SECCOMP_RET_KILL_PROCESS;</span><span class="ln"> </span><span class="ln"><span class="tok-k">if</span> (<span class="tok-f">seccomp_cache_check_allow</span>(f, sd))</span><span class="ln">	<span class="tok-k">return</span> SECCOMP_RET_ALLOW;</span><span class="ln"> </span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">for</span> (; f; f = f-&gt;prev) {</span><span class="ln">	<span class="tok-t">u32</span> cur_ret = <span class="tok-f">bpf_prog_run_pin_on_cpu</span>(f-&gt;prog, sd);</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-k">if</span> (<span class="tok-f">ACTION_ONLY</span>(cur_ret) &lt; <span class="tok-f">ACTION_ONLY</span>(ret)) {</span><span class="ln">		ret = cur_ret;</span><span class="ln">		*match = f;</span><span class="ln">	}</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>fail closed: بدون فیلتر ← kill</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>فیلترها با <code>f-&gt;prev</code> روی هم‌اند و حذف نمی‌شوند</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>کمترین action برنده است: فیلتر جدید فقط سخت‌تر می‌کند</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (FA): از __seccomp_filter روی هر syscallِ یک thread فیلترشده صدا زده می‌شود. ‏ACTION_ONLY مقدار را به s32 تبدیل می‌کند، پس KILL_PROCESS (‏0x80000000) کمترین مقدار است. cache بیتی برای syscallهایی که فیلتر همیشه اجازه می‌دهد BPF را رد می‌کند.
+SAY (EN): Called on every syscall of a filtered thread; ACTION_ONLY casts to s32 so KILL_PROCESS sorts lowest.
+KEY POINT: خط‌های ۴۱۹ تا ۴۲۲ (توضیح) روی اسلاید حذف شده‌اند؛ متن کامل در kernel-walkthrough بخش ۵.۲.
+EXAMPLE: ERRNO(EACCES) ← syscall رد می‌شود و کاربر -1/EACCES می‌بیند.
+PITFALL: فیلتر BPF خام بدون بررسی arch از راه ABIِ i386 دورزدنی است.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 14 TWO_COLUMN_COMPARE: Linux vs OpenBSD -->
+<section>
+  <span class="eyebrow in-f">۰۷ · لینوکس در برابر OpenBSD</span>
+  <h2 class="in">فیلتر انعطاف‌پذیر در برابر قول یک‌خطی</h2>
+  <div class="compare">
+    <div class="in d1"><h3><bdi dir="ltr">seccomp + Landlock</bdi></h3><ul>
+      <li>BPF روی شمارهٔ syscall و آرگومان خام</li>
+      <li>نویسندهٔ فیلتر syscallها را دسته‌بندی می‌کند</li>
+      <li><bdi dir="ltr">errno / trap / notify / kill</bdi></li>
+      <li>همیشه در exec به ارث می‌رسد</li>
+    </ul></div>
+    <div class="in d2"><h3><bdi dir="ltr">pledge + unveil</bdi></h3><ul>
+      <li>بیت‌های قول: <code>pledge("stdio rpath")</code></li>
+      <li>جدول کرنل <code>pledge_syscalls[]</code></li>
+      <li><code>SIGABRT</code> غیرقابل‌گرفتن و core</li>
+      <li><code>execpromises</code> جداگانه</li>
+    </ul></div>
+  </div>
+  <p class="takeaway in d3"><code>pledge_syscall()</code> یک AND بیتی است: <code>p_pledge &amp; pledge_syscalls[code]</code></p>
+  <aside class="notes">
+SAY (FA): ‏openbsd/sys/kern/kern_pledge.c تابع pledge_syscall() در 8cada8c خط ۵۳۷ تا ۵۵۴ که از mi_syscall در sys/sys/syscall_mi.h خط ۱۶۷ تا ۱۷۲ صدا زده می‌شود. ‏OpenBSD نگاشت syscall به دسته را در کرنل نگه می‌دارد؛ لینوکس آن را به نویسندهٔ فیلتر می‌سپارد. ‏unveil_check_final() در kern_unveil.c همتای Landlock است.
+SAY (EN): OpenBSD keeps the syscall-to-category map in the kernel; Linux leaves it to the filter author.
+KEY POINT: اصل یکنوای مشترک: محدودیت‌ها فقط سخت‌تر می‌شوند.
+EXAMPLE: syscall جدید لینوکس در یک فیلتر deny-list بی‌صدا مجاز می‌شود.
+PITFALL: OpenBSD اصلاً SCHED_FIFO ندارد (git grep در sys/ چیزی پیدا نمی‌کند).
+TIME: 90
+  </aside>
+</section>
+
+<!-- 15 FLOW_TIMELINE: reading papers -->
+<section>
+  <span class="eyebrow in-f">۰۷ · پژوهش</span>
+  <h2 class="in">مقاله را در سه گذر بخوانید، بعد کد امروز را بررسی کنید</h2>
+  <div class="flow">
+    <div class="step fragment current"><span class="callout-num">1</span><div>۱۰ دقیقه: پنج C</div><code>abstract · headings</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>۱ ساعت: شکل‌ها، محورها</div><code>baseline · variance</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>نگاشت روی <bdi dir="ltr">v6.18.63</bdi></div><code>git grep</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>چند ساعت: بازسازی</div><code>one experiment</code></div>
+  </div>
+  <p class="takeaway">‏<bdi dir="ltr">Wasted Cores (EuroSys '16)</bdi> ← امروز <code>sched_balance_rq()</code> در fair.c خط ۱۲۰۵۲.</p>
+  <aside class="notes">
+SAY (FA): سه گذر Keshav به‌اضافهٔ یک گام مخصوص سیستم‌ها: توابع مقاله را در درخت فعلی پیدا کنید. ‏load balancerِ ۲۰۱۶ هنوز برای هر دامنهٔ زمان‌بندی توازن برقرار می‌کند، با نام‌های تازه.
+SAY (EN): Keshav's three passes plus a systems step: find the paper's functions in today's tree.
+KEY POINT: داوری = مسئله، بینش، سازوکار، ارزیابی، محدودیت، امروز، نظر نهایی.
+EXAMPLE: ‏OSDI '10: ‏۴۸ هسته، sloppy counter، ‏۳۰۰۲ خط تغییر.
+PITFALL: نقل «۱۳۸ برابر» بدون گفتن اینکه حالتی گوشه‌ای است.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 16 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">پرسش کوتاه</span>
+  <h2>یک thread با <bdi dir="ltr">SCHED_FIFO 30</bdi> منتظر یک mutexِ پیش‌فرض pthread است که دست یک thread با <bdi dir="ltr">FIFO 10</bdi> است. چه چیزی انتظارش را محدود می‌کند؟</h2>
+  <div class="quiz-options">
+    <div><b>A</b> بخش بحرانی thread با FIFO 10</div>
+    <div><b>B</b> هیچ چیز: taskهای میانی می‌توانند جلو بزنند</div>
+    <div><b>C</b> مهلت زمانی futex</div>
+    <div><b>D</b> پذیرش <bdi dir="ltr">SCHED_DEADLINE</bdi></div>
+  </div>
+  <aside class="notes">
+SAY (FA): بیست ثانیه. به کلمهٔ «پیش‌فرض» دقت کنید.
+SAY (EN): Twenty seconds. Look at the word "default".
+KEY POINT: پاسخ در اسلاید بعد.
+ASK: چه کسی A را انتخاب کرد؟ چه چیزی A را درست می‌کند؟
+TIME: 45
+  </aside>
+</section>
+
+<!-- 17 QUIZ answer -->
+<section>
+  <span class="eyebrow">پاسخ: B</span>
+  <h2>بدون پروتکل، وارونگی نامحدود است</h2>
+  <p class="quote">mutexِ پیش‌فرض <bdi dir="ltr">PTHREAD_PRIO_NONE</bdi> است: هر task با FIFO بین ۱۱ و ۲۹ می‌تواند صاحب قفل را کنار بزند، در حالی که منتظرِ FIFO 30 مسدود مانده.</p>
+  <p class="source">با <bdi dir="ltr">PTHREAD_PRIO_INHERIT → futex_lock_pi() → rt_mutex</bdi> گزینهٔ A درست می‌شود (آزمایش ۰۲)</p>
+  <aside class="notes">
+SAY (FA): با PTHREAD_PRIO_INHERIT صاحب قفل با اولویت ۳۰ اجرا می‌شود و انتظار به بخش بحرانی آن محدود است: این گزینهٔ A است. ‏C غلط است: pthread_mutex_lock مهلت زمانی ندارد. ‏D بی‌ربط است.
+SAY (EN): With PTHREAD_PRIO_INHERIT the wait is bounded by the critical section (answer A). C and D are wrong.
+KEY POINT: وارونگی محدود عادی است؛ نامحدودش باگ است.
+EXAMPLE: inversion.c با none و inherit.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 18 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">۰۷ · <bdi dir="ltr">Real-Time</bdi> و پژوهش</span>
+  <h2 class="in">جمع‌بندی</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>real-time یعنی بدترین حالت: بیشینهٔ latency را زیر بار اندازه بگیرید؛ کرنل RT آن را محدود می‌کند</li>
+    <li class="in d2"><span class="callout-num">2</span>قفل پروتکل می‌خواهد: PI وارونگی را محدود می‌کند؛ ‏<bdi dir="ltr">SCHED_DEADLINE</bdi> بودجه‌ها را جدا می‌کند</li>
+    <li class="in d3"><span class="callout-num">3</span>sandbox فقط سخت‌تر می‌شود: seccomp روی عدد، Landlock روی شیء، pledge روی قول</li>
+  </ul>
+  <p class="next in d4">برنامهٔ مطالعه و برگهٔ خلاصه (پایان درس)</p>
+  <aside class="notes">
+SAY (FA): سه ایده را نگه دارید: بدترین حالت به‌جای میانگین، یک پروتکل برای هر قفلِ حساس به اولویت، و حداقل امتیازی که فقط سخت‌تر می‌شود. و هر مقاله را با کد امروز بسنجید.
+SAY (EN): Worst case over average, a lock protocol, least privilege that only tightens; read papers against today's code.
+KEY POINT: آزمایش‌های ۰۱ تا ۰۵ هر کدام یکی از این‌ها را تمرین می‌دهند.
+TIME: 30
+  </aside>
+</section>
+
+<!-- REFERENCES:start (generated by _shared/tools/add_references.py from _shared/resources/awesome-os.json; do not edit by hand) -->
+<!-- 19 REFERENCES -->
+<section class="layout-refs">
+  <span class="eyebrow in-f">ادامهٔ مطالعه</span>
+  <h2 class="in">برای مطالعهٔ بیشتر، منتخب از فهرست‌های <bdi dir="ltr">awesome-os</bdi></h2>
+  <ul class="refs">
+    <li class="in d1"><span class="pill">کنفرانس</span> <a href="https://sosp.org/"><b>SOSP: Symposium on Operating Systems Principles</b></a><span class="why">کنفرانس شاخص پژوهش در سیستم‌عامل.</span><span class="url ltr">sosp.org</span></li>
+    <li class="in d2"><span class="pill">کنفرانس</span> <a href="https://www.usenix.org/conferences"><b>USENIX conferences (OSDI, ATC)</b></a><span class="why">خانهٔ <bdi dir="ltr">OSDI</bdi> و <bdi dir="ltr">ATC</bdi>؛ دو رویداد اصلی دیگر پژوهش <bdi dir="ltr">OS</bdi>.</span><span class="url ltr">usenix.org/conferences</span></li>
+    <li class="in d3"><span class="pill">کنفرانس</span> <a href="https://www.asplos-conference.org/"><b>ASPLOS</b></a><span class="why">جایی که پژوهش <bdi dir="ltr">OS</bdi> با معماری و زبان‌های برنامه‌نویسی تلاقی می‌کند.</span><span class="url ltr">asplos-conference.org</span></li>
+    <li class="in d4"><span class="pill">کنفرانس</span> <a href="https://sigops.org/s/conferences/hotos/"><b>HotOS: Workshop on Hot Topics in Operating Systems</b></a><span class="why">مقاله‌های کوتاه و آینده‌نگر دربارهٔ مسیر پژوهش در <bdi dir="ltr">OS</bdi>.</span><span class="url ltr">sigops.org/s/conferences/hotos</span></li>
+    <li class="in d5"><span class="pill">مقاله</span> <a href="https://www.usenix.org/conference/osdi18/presentation/cutler"><b>The benefits and costs of writing a POSIX kernel in a high-level language</b></a><span class="why"><bdi dir="ltr">OSDI &#x27;18</bdi>: کرنلی که با <bdi dir="ltr">C</bdi> نوشته نشده چه چیزی به‌دست می‌آورد و چه چیزی از دست می‌دهد.</span><span class="url ltr">usenix.org/conference/osdi18/presentation/cutler</span></li>
+    <li class="in d5"><span class="pill">مقاله</span> <a href="https://www.tockos.org/assets/papers/tock-sosp2017.pdf"><b>Multiprogramming a 64 kB Computer Safely and Efficiently</b></a><span class="why"><bdi dir="ltr">SOSP &#x27;17 (Tock)</bdi>: اجرای امن چند برنامه روی یک میکروکنترلر بسیار کوچک.</span><span class="url ltr">tockos.org/assets/papers/tock-sosp2017.pdf</span></li>
+    <li class="in d5"><span class="pill">کنفرانس</span> <a href="https://lpc.events/"><b>Linux Plumbers Conference</b></a><span class="why">جایی که توسعه‌دهنده‌های کرنل کارشان را ارائه و بحث می‌کنند.</span><span class="url ltr">lpc.events</span></li>
+  </ul>
+  <p class="caption src">فهرست‌ها: <span class="ltr">jubalh/awesome-os · penberg/awesome-os</span> · لینک‌ها بررسی شده <bdi dir="ltr">2026-11-15</bdi></p>
+  <aside class="notes">
+SAY (EN): These are the best next reads after this module. They come from two GitHub “awesome-os” lists and every link was opened and checked on 2026-11-15. You do not need all of them.
+SAY (FA): این‌ها بهترین منابع برای ادامه پس از این ماژول هستند. از دو فهرست «awesome-os» در GitHub انتخاب شده‌اند و همهٔ لینک‌ها در تاریخ 2026-11-15 باز و بررسی شده‌اند. لازم نیست همه را بخوانید.
+KEY POINT: Start with the first item. The papers and conference pages are for the curious.
+EXAMPLE: —
+PITFALL: Some links are PDFs; open them before class if the room has no internet.
+TIME: 30
+  </aside>
+</section>
+<!-- REFERENCES:end -->
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۷ Real-Time و پژوهش" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

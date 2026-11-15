@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 04.1 · Count page faults</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">04.1</div>
+  <span class="eyebrow in-f">Lab 04.1 · Goal</span>
+  <h2 class="in">Count page faults</h2>
+  <p class="why in d1">Count the faults it costs to touch every page of a mapping, and explain each count: demand paging, zero page, readahead, THP.</p>
+  <div class="pills in d2"><span class="pill">Runs on: aos-lab VM · user space</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Count the faults it costs to touch every page of a mapping, and explain each count: demand paging, zero page, readahead, THP.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.1 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>Program</h3><p class="ltr-mono"><code>touch.c: 1 byte per 4 KiB page</code></p></div><div class="c-6 card edge r-kernel in d2"><h3>Kernel path</h3><p class="ltr-mono"><code>do_anonymous_page · filemap_fault</code></p></div><div class="c-6 card edge r-hardware in d3"><h3>Counters</h3><p class="ltr-mono"><code>getrusage · perf software events</code></p></div><div class="c-6 card edge r-data in d4"><h3>Modes</h3><p class="ltr-mono"><code>anon · anon-read · thp · file · file-rand</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.1 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 01-page-faults</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o touch touch.c</span><span class="ln"><span class="p">$</span> ./touch anon      256</span><span class="ln"><span class="p">$</span> ./touch anon-read 256</span><span class="ln"><span class="p">$</span> ./touch thp       256</span><span class="ln"><span class="p">$</span> dd if=/dev/urandom of=data.bin bs=1M count=256</span><span class="ln"><span class="p">$</span> ./touch file      256 data.bin</span><span class="ln"><span class="p">$</span> ./touch file-rand 256 data.bin</span><span class="ln"><span class="p">$</span> perf stat -e page-faults,minor-faults,major-faults \</span><span class="ln">    ./touch anon 256</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.1 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln hl">mode=anon      pages=65536  minflt=65539  majflt=0  rss: 1540 -&gt; 263816 KiB  131.5 ms</span><span class="ln hl">mode=anon-read pages=65536  minflt=65539  majflt=0  rss: 1540 -&gt; 1672 KiB  62.9 ms</span><span class="ln hl">mode=thp       pages=65536  minflt=131  majflt=0  rss: 1536 -&gt; 263812 KiB  67.1 ms</span><span class="ln">mode=file      pages=65536  minflt=537  majflt=1  rss: 1540 -&gt; 263816 KiB  321.9 ms</span><span class="ln hl">mode=file-rand pages=65536  minflt=3  majflt=65536  rss: 1540 -&gt; 263816 KiB  149234.3 ms</span><span class="ln"> </span><span class="ln"><span class="p">$</span> perf stat -e page-faults,... ./touch anon 256</span><span class="ln">             65600      page-faults</span><span class="ln">                 0      major-faults</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.1 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Same faults, different RSS</b><br><span class="caption">anon-read maps the zero page</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>THP: ~pages/512 faults</b><br><span class="caption">one PMD maps 2 MiB</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>file vs file-rand</b><br><span class="caption">readahead + fault-around vs 1 major fault per page</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.1 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">thp = anon fault count</span><span class="arrow-s">→</span><span class="tag r-ok">THP set to never; check enabled</span></div><div class="pit in d2"><span class="tag r-danger">file: 0 major faults</span><span class="arrow-s">→</span><span class="tag r-ok">pages still cached; DONTNEED after fdatasync</span></div><div class="pit in d3"><span class="tag r-danger">perf: &lt;not supported&gt;</span><span class="arrow-s">→</span><span class="tag r-ok">no PMU here: software events only</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.1 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Make anon mode fault once per 64 KiB without THP (mTHP hugepages-64kB, or MAP_POPULATE). Which removes faults and which only moves them?</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 04 Memory" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

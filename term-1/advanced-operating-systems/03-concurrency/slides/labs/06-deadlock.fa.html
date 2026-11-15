@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 03.6 · Deadlock: ساختن، خواندن، تشخیص</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">03.6</div>
+  <span class="eyebrow in-f">آزمایش 03.6 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">Deadlock:</bdi> ساختن، خواندن، تشخیص</h2>
+  <p class="why in d1">یک <bdi dir="ltr">deadlock</bdi> از نوع <bdi dir="ltr">AB-BA</bdi> بسازید، آن را از <bdi dir="ltr">gdb</bdi> و <bdi dir="ltr">/proc</bdi> بخوانید، ترتیب وارونه را با <bdi dir="ltr">TSan</bdi> و <bdi dir="ltr">helgrind</bdi> تشخیص دهید و با ترتیب آدرس درستش کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM با نام aos-lab؛ بخش lockdep فقط روی VM با کرنل --lockdep</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Create an AB-BA deadlock, read it from gdb and /proc, detect the inverted order with TSan and helgrind, fix it with address ordering.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.6 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>برنامه</h3><p class="ltr-mono"><code>deadlock.c: hang | quick | ordered</code></p></div><div class="c-6 card edge r-kernel in d2"><h3>thread dump</h3><p class="ltr-mono"><code>gdb -p · /proc/PID/task/*/stack</code></p></div><div class="c-6 card edge r-data in d3"><h3>بررسی‌کنندهٔ ترتیب</h3><p class="ltr-mono"><code>TSan · helgrind · lockdep</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>ماژول کرنل</h3><p><bdi dir="ltr">lockdep_abba.ko:</bdi> فقط <bdi dir="ltr">VM</bdi> با <bdi dir="ltr">PROVE_LOCKING</bdi></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.6 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 06-deadlock</div><pre><code><span class="ln"><span class="p">$</span> ./deadlock hang &amp;  P=$!; sleep 1</span><span class="ln"><span class="p">$</span> ps -L -o pid,lwp,stat,wchan:20,comm -p $P</span><span class="ln"><span class="p">$</span> sudo cat /proc/$P/task/*/stack</span><span class="ln"><span class="p">$</span> sudo gdb -p $P -batch -ex &#x27;thread apply all bt&#x27;</span><span class="ln"><span class="p">$</span> kill -9 $P</span><span class="ln"><span class="p">$</span> ./deadlock-tsan quick</span><span class="ln"><span class="p">$</span> valgrind --tool=helgrind ./deadlock quick</span><span class="ln"><span class="p">$</span> ./deadlock ordered</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.6 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> ps -L -o pid,lwp,stat,wchan:20,comm -p $P</span><span class="ln hl">  27823   27826 Sl   futex_do_wait        deadlock</span><span class="ln">  27823   27827 Sl   futex_do_wait        deadlock</span><span class="ln">#0 futex_wait (... futex_word=0x...020 &lt;g_acc_b&gt;)</span><span class="ln">#4 ... in transfer (from=...&lt;g_acc_a&gt;, to=...&lt;g_acc_b&gt;, ...) at deadlock.c:39</span><span class="ln">#0 futex_wait (... futex_word=0x...060 &lt;g_acc_a&gt;)</span><span class="ln">#4 ... in transfer (from=...&lt;g_acc_b&gt;, to=...&lt;g_acc_a&gt;, ...) at deadlock.c:39</span><span class="ln"><span class="p">$</span> setarch x86_64 -R ./deadlock-tsan quick</span><span class="ln hl">WARNING: ThreadSanitizer: lock-order-inversion (potential deadlock)</span><span class="ln">  Cycle in lock order graph: M0 =&gt; M1 =&gt; M0</span><span class="ln"><span class="p">$</span> valgrind --tool=helgrind ./deadlock quick</span><span class="ln hl">Thread #3: lock order &quot;0x10C060 before 0x10C020&quot; violated</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15</bdi>؛ مهمان مشترک ۸ <bdi dir="ltr">vCPU</bdi>، زمان‌ها نویز دارند.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.6 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>هر دو نخ در <bdi dir="ltr">futex_wait</bdi> خوابیده‌اند</b><br><span class="caption">وضعیت <bdi dir="ltr">S</bdi> و ۰٪ <bdi dir="ltr">CPU: deadlock</bdi> نمی‌چرخد</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">TSan</bdi> بدون گیرکردن گزارش می‌دهد</b><br><span class="caption mono">lock-order-inversion (potential deadlock)</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">lockdep:</bdi> همین ایده در کرنل</b><br><span class="caption">گزارش <bdi dir="ltr">UNVERIFIED:</bdi> کرنل <bdi dir="ltr">VM</bdi> فاقد <bdi dir="ltr">PROVE_LOCKING</bdi> است</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.6 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">gdb: ptrace not permitted</span><span class="arrow-s">←</span><span class="tag r-ok">sudo gdb -p (Yama ptrace_scope=1)</span></div><div class="pit in d2"><span class="tag r-danger">حالت <bdi dir="ltr">quick</bdi> کار می‌کند</span><span class="arrow-s">←</span><span class="tag r-ok">ترتیب هنوز وارونه است؛ زمان‌بندی پنهانش کرد</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">lockdep</bdi> ساکت است</span><span class="arrow-s">←</span><span class="tag r-ok">grep PROVE_LOCKING /boot/config-$(uname -r)</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.6 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">فیلسوف‌های غذاخور: ۵ فیلسوف را به <bdi dir="ltr">deadlock</bdi> برسانید، بعد به دو روش درستش کنید (ترتیب چنگال‌ها؛ حداکثر ۴ نفر نشسته با <bdi dir="ltr">semaphore</bdi>) و هر کدام را ۱۰ ثانیه بدون هشدار <bdi dir="ltr">TSan</bdi> اجرا کنید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ هم‌روندی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

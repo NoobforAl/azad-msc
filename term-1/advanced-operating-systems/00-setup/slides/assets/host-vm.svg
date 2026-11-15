@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 620" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- Roles (Advanced OS): user=teal #0E7490, kernel=amber #B45309, hardware=violet #6D28D9, data=green #047857 -->
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3B4868"/>
+    </marker>
+  </defs>
+
+  <!-- Hardware band -->
+  <rect x="20" y="520" width="1560" height="80" rx="14" fill="#EEE6FB" stroke="#6D28D9" stroke-width="3"/>
+  <text x="50" y="570" font-size="28" font-weight="700" fill="#6D28D9">Hardware</text>
+  <text x="250" y="570" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">x86-64 CPU · VT-x / AMD-V · EPT · RAM · disk</text>
+
+  <!-- Host -->
+  <rect x="20" y="20" width="760" height="470" rx="28" fill="#FFFFFF" stroke="#8C9DBF" stroke-width="3"/>
+  <text x="50" y="72" font-size="34" font-weight="750" fill="#0A1633">① Ubuntu server (host)</text>
+  <rect x="50" y="100" width="700" height="150" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="76" y="146" font-size="28" font-weight="700" fill="#0E7490">user-space labs</text>
+  <text x="76" y="190" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">strace · perf · bpftrace · gdb</text>
+  <text x="76" y="228" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">qemu-system-x86_64 (vCPU = thread)</text>
+  <rect x="50" y="280" width="700" height="90" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="76" y="336" font-size="28" font-weight="700" fill="#B45309">Ubuntu kernel + kvm.ko</text>
+  <rect x="50" y="395" width="700" height="75" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+  <text x="76" y="442" font-size="26" font-family="JetBrains Mono, monospace" fill="#047857">_shared/sources/linux @ v6.18.63</text>
+
+  <!-- VM boundary -->
+  <rect x="840" y="20" width="740" height="470" rx="28" fill="none" stroke="#1F4FA8" stroke-width="4" stroke-dasharray="16 12"/>
+  <rect x="1250" y="6" width="300" height="34" fill="#FFFFFF"/>
+  <text x="1266" y="32" font-size="24" font-weight="700" fill="#1F4FA8">VM boundary</text>
+  <text x="870" y="72" font-size="34" font-weight="750" fill="#0A1633">② aos-lab VM</text>
+  <rect x="870" y="100" width="680" height="150" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="896" y="146" font-size="28" font-weight="700" fill="#0E7490">kernel-level labs</text>
+  <text x="896" y="190" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">modules · lockdep · OOM · RT</text>
+  <text x="896" y="228" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">cyclictest · dm-flakey</text>
+  <rect x="870" y="280" width="680" height="90" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="896" y="336" font-size="28" font-weight="700" font-family="JetBrains Mono, monospace" fill="#B45309">6.18.63-aos-lab</text>
+  <rect x="870" y="395" width="680" height="75" rx="14" fill="#E6EEFC" stroke="#1F4FA8" stroke-width="3"/>
+  <text x="896" y="442" font-size="26" fill="#123A86" font-weight="700">③ snapshot: fresh → revert in 10 s</text>
+
+  <!-- arrows -->
+  <path d="M750 325 L862 325" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <text x="760" y="310" font-size="22" fill="#3B4868" font-family="JetBrains Mono, monospace">KVM</text>
+  <path d="M750 432 C800 432, 800 330, 862 330" stroke="#3B4868" stroke-width="4" fill="none" stroke-dasharray="12 10" marker-end="url(#ah)"/>
+  <text x="640" y="500" font-size="22" fill="#3B4868">same tag → built</text>
+</svg>

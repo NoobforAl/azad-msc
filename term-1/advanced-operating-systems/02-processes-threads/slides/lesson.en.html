@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>02 · Processes &amp; Threads — Advanced OS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+  <style>/* module 02: six-band LAYER_STACK must fit above the footer */ .layers.compact { gap:12px; } .layers.compact .band { padding:14px 40px; }</style>
+</head>
+<body>
+<div class="reveal course-os">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">One task_struct per thread, one scheduler for all of them</h1>
+  <p class="subtitle in d1">Advanced Operating Systems · 02 Processes &amp; Threads</p>
+  <div class="fields">
+    <span><b>Course</b>[Course name]</span><span><b>Presenter</b>[Presenter]</span>
+    <span><b>Professor</b>[Professor]</span><span><b>Faculty</b>[Faculty / Branch]</span>
+    <span><b>Term</b>[Term]</span><span><b>Date</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (EN): This module is about how Linux represents running programs and decides which one runs next. Everything is a task; processes and threads are just sharing patterns.
+SAY (FA): این ماژول دربارهٔ این است که لینوکس برنامه‌های در حال اجرا را چطور نمایش می‌دهد و چطور تصمیم می‌گیرد کدام بعدی اجرا شود. همه‌چیز task است؛ پردازه و نخ فقط الگوهای اشتراک‌اند.
+KEY POINT: Linux schedules tasks, not processes.
+EXAMPLE: ls /proc/$$/task
+PITFALL: Title fields are placeholders; never invent them.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">02</div>
+  <span class="eyebrow in-f">Module 02</span>
+  <h2 class="in">Processes &amp; Threads</h2>
+  <p class="why in d1">Every latency bug, thread explosion and zombie you will debug comes down to fork, exec, wait and the scheduler.</p>
+  <div class="pills in d2"><span class="pill">kernel_clone()</span><span class="pill">EEVDF</span><span class="pill">context switch</span></div>
+  <aside class="notes">
+SAY (EN): Depends on Module 01: user/kernel mode and what a context switch saves. Used by Module 03 (races need threads) and Module 04 (copy-on-write).
+SAY (FA): به ماژول ۱ وابسته است: حالت کاربر و کرنل و آنچه context switch ذخیره می‌کند. ماژول ۳ (race به نخ نیاز دارد) و ماژول ۴ (copy-on-write) از آن استفاده می‌کنند.
+KEY POINT: Kernel pin v6.18.63, fair class = EEVDF.
+EXAMPLE: cat /sys/kernel/debug/sched/base_slice_ns
+PITFALL: Old material says CFS; that is history since 6.6.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">02 · Processes &amp; Threads</span>
+  <h2 class="in">Five questions, in the order the kernel answers them</h2>
+  <ol class="agenda">
+    <li class="current in d1">What is a task, and what do threads share?</li>
+    <li class="in d2">What do fork, exec and wait really do?</li>
+    <li class="in d3">Which class runs first: dl, rt, fair, ext?</li>
+    <li class="in d4">How does EEVDF pick among fair tasks?</li>
+    <li class="in d5">What does a context switch cost?</li>
+  </ol>
+  <aside class="notes">
+SAY (EN): We follow a task from birth to death, then look at who decides when it runs and what that costs.
+SAY (FA): یک task را از تولد تا مرگ دنبال می‌کنیم، بعد می‌بینیم چه کسی زمان اجرایش را تعیین می‌کند و هزینه‌اش چیست.
+KEY POINT: Six labs back these five questions.
+EXAMPLE: —
+PITFALL: —
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 CONCEPT_DIAGRAM: sharing -->
+<section>
+  <span class="eyebrow in-f">02 · Tasks</span>
+  <h2 class="in">A thread is a task that points at the same objects</h2>
+  <div class="diagram in-p d1" style="margin-top:-24px"><img src="assets/task-sharing.svg" alt="Three task_structs: pid 1200 and 1201 share tgid 1200 and point to the same mm_struct, files and signal; pid 1300 has its own mm and files"></div>
+  <p class="takeaway in d2">Gold arrows: <code>CLONE_VM | CLONE_FILES | CLONE_THREAD</code> share the pointers.</p>
+  <aside class="notes">
+SAY (EN): Each box in amber is a task_struct, one per thread. Process A has two of them with the same tgid; they point at the same mm_struct, file table and signal state. Process B has its own.
+SAY (FA): هر جعبهٔ نارنجی یک task_struct است، یکی برای هر نخ. پردازهٔ A دو تا با tgid یکسان دارد که به همان mm_struct، جدول فایل و وضعیت سیگنال اشاره می‌کنند. پردازهٔ B مال خودش را دارد.
+KEY POINT: getpid() returns tgid; gettid() returns pid.
+EXAMPLE: grep -E 'Tgid|Pid|Threads' /proc/self/status
+PITFALL: "Threads are lighter processes" — they are the same object with shared pointers.
+ASK: Which field tells the kernel two tasks are one process?
+TIME: 90
+  </aside>
+</section>
+
+<!-- 05 CODE_WALKTHROUGH: copy_mm -->
+<section>
+  <span class="eyebrow in-f">02 · fork · real source</span>
+  <h2 class="in">CLONE_VM is one if: share the mm or copy it</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/fork.c · copy_mm()</span><span>v6.18.63 · L1540</span></div>
+<pre class="code"><code><span class="ln">oldmm = current-&gt;mm;</span><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">if</span> (!oldmm)</span><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-k">return</span> <span class="tok-s">0</span>;</span><span class="ln"> </span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">if</span> (clone_flags &amp; CLONE_VM) {</span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-f">mmget</span>(oldmm);</span><span class="ln fragment hl-on" data-fragment-index="2">	mm = oldmm;</span><span class="ln">} <span class="tok-k">else</span> {</span><span class="ln fragment hl-on" data-fragment-index="3">	mm = <span class="tok-f">dup_mm</span>(tsk, current-&gt;mm);</span><span class="ln">	<span class="tok-k">if</span> (!mm)</span><span class="ln">		<span class="tok-k">return</span> -ENOMEM;</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>Kernel thread: no user memory</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>Thread / vfork: same <code>mm</code>, refcount +1</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>fork: copy VMAs, pages become copy-on-write</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): Every resource in copy_process works like this. With the flag, take a reference to the parent's object; without it, duplicate. For memory the duplicate is lazy: copy-on-write.
+SAY (FA): همهٔ منابع در copy_process همین‌طورند. با پرچم، به شیء والد ارجاع گرفته می‌شود؛ بدون آن، کپی ساخته می‌شود. برای حافظه این کپی تنبل است: copy-on-write.
+KEY POINT: fork cost grows with page-table size, not RSS.
+EXAMPLE: Lab 02.2 prints mem=yes only for CLONE_VM rows.
+PITFALL: Believing fork copies all memory up front.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 06 TERMINAL_DEMO: cloneflags -->
+<section>
+  <span class="eyebrow in-f">02 · clone · real output</span>
+  <h2 class="in">Each flag shares exactly one thing; only CLONE_THREAD keeps the tgid</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab · ~/work/02-processes-threads</div>
+<pre><code><span class="ln"><span class="p">$</span> ./cloneflags</span><span class="ln">0 (like fork)         mem=no  fds=no  cwd=no   n/a</span><span class="ln">CLONE_VM              mem=yes fds=no  cwd=no   other</span><span class="ln">CLONE_FILES           mem=no  fds=yes cwd=no   n/a</span><span class="ln">CLONE_FS              mem=no  fds=no  cwd=yes  n/a</span><span class="ln">CLONE_VM|FILES|FS     mem=yes fds=yes cwd=yes  other</span><span class="ln hl">pthread set           mem=yes fds=yes cwd=yes  same</span><span class="ln">                                     ^ child_tgid</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">Lab 02.2, captured on aos-lab (Linux 6.18.63). Columns trimmed.</p>
+  <aside class="notes">
+SAY (EN): The child writes a global, opens a file and changes directory. The parent checks what it can see. Each flag shares one resource; the pthread flag set additionally puts the child in our thread group.
+SAY (FA): فرزند یک متغیر سراسری می‌نویسد، فایلی باز می‌کند و دایرکتوری را عوض می‌کند. والد بررسی می‌کند چه چیزی را می‌بیند. هر پرچم یک منبع را مشترک می‌کند؛ مجموعه‌پرچم pthread فرزند را در گروه نخ ما هم می‌گذارد.
+KEY POINT: thread = sharing flags + CLONE_THREAD.
+EXAMPLE: ./cloneflags
+PITFALL: A CLONE_THREAD child cannot be waitpid()ed; we wait on the futex word.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 07 FLOW_TIMELINE: execve -->
+<section>
+  <span class="eyebrow in-f">02 · exec</span>
+  <h2 class="in">execve keeps the task and replaces the program</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>Credentials, LSM</div><code>bprm_execve</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>Find a format</div><code>search_binary_handler</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>No return now</div><code>begin_new_exec</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>Kill threads, close CLOEXEC</div><code>de_thread</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>New mm, map ELF</div><code>exec_mmap</code></div>
+    <div class="step fragment"><span class="callout-num">6</span><div>Jump to ld.so</div><code>START_THREAD</code></div>
+  </div>
+  <p class="takeaway">Kept: PID, parent, non-CLOEXEC fds, nice, cgroup. Gone: memory, threads, handlers.</p>
+  <aside class="notes">
+SAY (EN): Up to step 2 an error returns to the old program. From begin_new_exec on, the old image is gone, so a late error kills the task with SIGSEGV.
+SAY (FA): تا گام ۲ خطا به برنامهٔ قدیمی برمی‌گردد. از begin_new_exec به بعد تصویر قدیمی از بین رفته است، پس خطای دیرهنگام task را با SIGSEGV می‌کشد.
+KEY POINT: The fd table survives exec; that is how shells wire pipes.
+EXAMPLE: Lab 02.1: ls -l /proc/self/fd after exec shows fd 1 -> pipe.
+PITFALL: Forgetting O_CLOEXEC leaks fds into every exec'd child.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 08 STATE_MACHINE -->
+<section>
+  <span class="eyebrow in-f">02 · states</span>
+  <h2 class="in">A task is runnable, sleeping, or a zombie waiting for wait()</h2>
+  <div class="diagram in-p d1" style="margin-top:-24px"><img src="assets/states.svg" alt="States: R on run queue, R on CPU, S/D sleeping, Z zombie, reaped; arrows pick_next, preempt (nivcsw++), schedule (nvcsw++), try_to_wake_up, do_exit, wait"></div>
+  <aside class="notes">
+SAY (EN): R means runnable, whether or not it is on a CPU. Going to sleep counts a voluntary switch; being preempted counts an involuntary one. After exit the task is a zombie until the parent calls wait.
+SAY (FA): R یعنی قابل اجرا، چه روی CPU باشد چه نه. خوابیدن یک switch داوطلبانه حساب می‌شود و preempt شدن یک switch غیرداوطلبانه. بعد از exit، task تا زمانی که والد wait کند zombie است.
+KEY POINT: kill -9 cannot remove a zombie; only its parent can.
+EXAMPLE: Lab 02.1 prints State: Z (zombie) before waitpid.
+PITFALL: Thinking zombies hold memory; they hold a PID.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 09 LAYER_STACK: classes -->
+<section>
+  <span class="eyebrow in-f">02 · scheduling classes</span>
+  <h2 class="in">The scheduler asks six classes in a fixed order</h2>
+  <div class="layers compact">
+    <div class="band r-kernel in d1"><b>stop</b><div class="items"><span>migration/N</span></div></div>
+    <div class="band r-kernel in d1"><b>dl</b><div class="items"><span>SCHED_DEADLINE</span><span>fair_server 50ms/1s</span></div></div>
+    <div class="band r-kernel in d2"><b>rt</b><div class="items"><span>SCHED_FIFO</span><span>SCHED_RR</span><span>prio 1-99</span></div></div>
+    <div class="band r-user in d3"><b>fair</b><div class="items"><span>SCHED_OTHER</span><span>BATCH</span><span>IDLE</span><span>EEVDF</span></div></div>
+    <div class="band r-data in d4"><b>ext</b><div class="items"><span>SCHED_EXT</span><span>BPF</span></div></div>
+    <div class="band r-hardware in d5"><b>idle</b><div class="items"><span>swapper/N</span></div></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Classes are const structs laid out by the linker in priority order; the core walks them top-down and runs the first task offered. The fair server, a deadline reservation, keeps 5% for fair tasks under RT load.
+SAY (FA): کلاس‌ها ساختارهای const هستند که linker به ترتیب اولویت می‌چیند؛ هسته از بالا به پایین می‌پرسد و اولین task پیشنهادی را اجرا می‌کند. fair server که یک رزرو deadline است، زیر بار RT پنج درصد برای taskهای fair نگه می‌دارد.
+KEY POINT: Higher class always wins on its CPU.
+EXAMPLE: Lab 02.5: FIFO spinner vs nice 0 task on one CPU.
+PITFALL: Expecting nice -20 to beat SCHED_FIFO 1.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 10 CODE_WALKTHROUGH: __schedule -->
+<section>
+  <span class="eyebrow in-f">02 · __schedule · real source</span>
+  <h2 class="in">prev_state decides: sleep (voluntary) or preempted (involuntary)</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/sched/core.c · __schedule()</span><span>v6.18.63 · L6858</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1">switch_count = &amp;prev-&gt;nivcsw;</span><span class="ln"><span class="tok-c">/* ... */</span></span><span class="ln">prev_state = <span class="tok-f">READ_ONCE</span>(prev-&gt;__state);</span><span class="ln"><span class="tok-k">if</span> (sched_mode == SM_IDLE) {</span><span class="ln">	<span class="tok-c">/* ... */</span></span><span class="ln fragment hl-on" data-fragment-index="2">} <span class="tok-k">else if</span> (!preempt &amp;&amp; prev_state) {</span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-f">try_to_block_task</span>(rq, prev, &amp;prev_state,</span><span class="ln fragment hl-on" data-fragment-index="2">			  !<span class="tok-f">task_is_blocked</span>(prev));</span><span class="ln fragment hl-on" data-fragment-index="3">	switch_count = &amp;prev-&gt;nvcsw;</span><span class="ln">}</span><span class="ln">next = <span class="tok-f">pick_next_task</span>(rq, &amp;rf);</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>Default: involuntary</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>Task asked to sleep: dequeue it</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>Count voluntary: <code>/proc/&lt;pid&gt;/status</code></span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): The same counters you see as voluntary_ctxt_switches and nonvoluntary_ctxt_switches are chosen here. The tracepoint sched_switch also gets prev_state, which is how lab 04's bpftrace script tells them apart.
+SAY (FA): همان شمارنده‌هایی که با نام voluntary_ctxt_switches و nonvoluntary_ctxt_switches می‌بینید همین‌جا انتخاب می‌شوند. tracepoint با نام sched_switch هم prev_state را می‌گیرد و اسکریپت bpftrace آزمایش ۴ با آن این دو را از هم جدا می‌کند.
+KEY POINT: prev_state == 0 means preempted while runnable.
+EXAMPLE: grep ctxt /proc/self/status
+PITFALL: The proxy-exec lines (task_is_blocked) are no-ops without CONFIG_SCHED_PROXY_EXEC.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 11 CONCEPT_DIAGRAM: EEVDF -->
+<section>
+  <span class="eyebrow in-f">02 · EEVDF</span>
+  <h2 class="in">EEVDF: the earliest deadline among eligible tasks</h2>
+  <div class="grid tight">
+    <div class="c-12 diagram in-p d1" style="margin-top:-24px"><img style="max-height:520px" src="assets/eevdf.svg" alt="Virtual time axis with average V; tasks A and B left of V are eligible; B has the shorter slice and earliest deadline and is picked; C is right of V and not eligible"></div>
+    <div class="c-4 row in d2"><span class="callout-num">1</span><span>eligible: <code>v ≤ V</code></span></div>
+    <div class="c-4 row in d3"><span class="callout-num">2</span><span><code>vd = v + slice/w</code></span></div>
+    <div class="c-4 row in d4"><span class="callout-num">3</span><span>nice = share, slice = latency</span></div>
+  </div>
+  <aside class="notes">
+SAY (EN): V is the weighted average virtual time. Tasks at or behind it are owed CPU and are eligible. Among them the earliest virtual deadline wins. A short slice gives an early deadline, so B runs first, but its long-run share is the same.
+SAY (FA): V میانگین وزنی زمان مجازی است. taskهایی که عقب‌تر از آن یا روی آن هستند طلب CPU دارند و eligible هستند. بین آن‌ها زودترین virtual deadline برنده است. slice کوتاه deadline زودتری می‌دهد، پس B اول اجرا می‌شود، اما سهم بلندمدتش همان است.
+KEY POINT: Two knobs: weight and slice.
+EXAMPLE: base_slice_ns = 2800000 on the 8-vCPU VM.
+PITFALL: Tuning sched_latency_ns: it no longer exists.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 12 CODE_WALKTHROUGH: update_deadline -->
+<section>
+  <span class="eyebrow in-f">02 · EEVDF · real source</span>
+  <h2 class="in">A used-up slice moves the deadline and asks for a reschedule</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/sched/fair.c · update_deadline()</span><span>v6.18.63 · L1127</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">if</span> (<span class="tok-f">vruntime_cmp</span>(se-&gt;vruntime, <span class="tok-s">"&lt;"</span>, se-&gt;deadline))</span><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-k">return</span> false;</span><span class="ln"> </span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">if</span> (!se-&gt;custom_slice)</span><span class="ln fragment hl-on" data-fragment-index="2">	se-&gt;slice = sysctl_sched_base_slice;</span><span class="ln"> </span><span class="ln tok-c">/* EEVDF: vd_i = ve_i + r_i / w_i */</span><span class="ln fragment hl-on" data-fragment-index="3">se-&gt;deadline = se-&gt;vruntime +</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-f">calc_delta_fair</span>(se-&gt;slice, se);</span><span class="ln"><span class="tok-f">avg_vruntime</span>(cfs_rq);</span><span class="ln"><span class="tok-k">return</span> true;</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>Slice not used up yet</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span><code>sched_setattr</code> sets <code>custom_slice</code></span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>Weight scales the request</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): Called from update_curr on every accounting update. When the running task reaches its deadline, it gets a new deadline one slice further and the CPU is rescheduled; pick_eevdf then chooses.
+SAY (FA): از update_curr در هر به‌روزرسانی حساب‌داری صدا زده می‌شود. وقتی task در حال اجرا به deadline خود می‌رسد، deadline جدیدی یک slice جلوتر می‌گیرد و CPU دوباره زمان‌بندی می‌شود؛ سپس pick_eevdf انتخاب می‌کند.
+KEY POINT: custom slice is clamped to 0.1–100 ms in __setparam_fair().
+EXAMPLE: Lab 02.5 ./slice 50000 → 100000 ns.
+PITFALL: The comment line is the formula from the 1995 paper, in kernel notation.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 13 TERMINAL_DEMO: ping-pong -->
+<section>
+  <span class="eyebrow in-f">02 · context switch · real output</span>
+  <h2 class="in">A blocking round trip costs microseconds, and two CPUs are not faster</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab · labs/03-ctxsw-pingpong</div>
+<pre><code><span class="ln"><span class="p">$</span> bash run.sh   # 5 runs per mode</span><span class="ln">mode=same  round_trip=2717 ns  vcsw=115381 ivcsw=84623</span><span class="ln hl">== same: median round_trip 2717 ns</span><span class="ln">mode=split round_trip=195549 ns  vcsw=19989 ivcsw=1</span><span class="ln hl">== split: median round_trip 195549 ns</span><span class="ln">mode=free  round_trip=20619 ns  vcsw=122909 ivcsw=77052</span><span class="ln">== free: median round_trip 20619 ns</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">Median of 5 runs each (200 000 round trips; split 20 000), captured on aos-lab, a shared 8-vCPU VirtualBox guest. Expect different absolute numbers.</p>
+  <aside class="notes">
+SAY (EN): Same CPU: 2.7 µs for two real context switches and four syscalls. Split: about 70 times slower, 196 µs, because each wakeup must reach another vCPU that has gone idle, and on this VM that wake goes through the hypervisor.
+SAY (FA): روی یک CPU در هر رفت‌وبرگشت دو context switch واقعی داریم. در حالت split نیازی به switch نیست، اما هر بیدارسازی باید به vCPU دیگری برسد که idle شده، و روی VM این بیدارسازی از hypervisor می‌گذرد.
+KEY POINT: Wakeup latency across CPUs can exceed switch cost.
+EXAMPLE: bash run.sh
+PITFALL: Comparing single runs on a shared VM; use the median.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 14 TWO_COLUMN_COMPARE: OpenBSD -->
+<section>
+  <span class="eyebrow in-f">02 · Linux vs OpenBSD</span>
+  <h2 class="in">Linux shares per resource; OpenBSD splits process and thread</h2>
+  <div class="compare">
+    <div class="in d1"><h3>Linux v6.18.63</h3><ul>
+      <li>one <code>task_struct</code> per thread</li>
+      <li><code>kernel_clone()</code> + <code>CLONE_*</code> flags</li>
+      <li>classes: dl, rt, fair, ext</li>
+      <li>EEVDF, RB-tree, O(log n)</li>
+    </ul></div>
+    <div class="in d2"><h3>OpenBSD 8cada8c</h3><ul>
+      <li><code>struct process</code> + <code>struct proc</code></li>
+      <li><code>fork1()</code> vs <code>thread_fork()</code></li>
+      <li>one scheduler, no RT class</li>
+      <li>32 queues, <code>ffs()</code>, O(1)</li>
+    </ul></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Linux's design is maximally flexible: containers and vfork come from the same flags. OpenBSD's is simpler to reason about: a thread can only be created inside an existing process, and the 4.4BSD decay-usage priority is cheap but not exactly proportional.
+SAY (FA): طراحی لینوکس بیشترین انعطاف را دارد: container و vfork از همان پرچم‌ها می‌آیند. طراحی OpenBSD ساده‌تر قابل استدلال است: نخ فقط داخل یک پردازهٔ موجود ساخته می‌شود و اولویت decay-usage در 4.4BSD ارزان است ولی دقیقاً متناسب نیست.
+KEY POINT: Full trade-off table in kernel-walkthrough §9.4.
+EXAMPLE: openbsd/sys/kern/kern_sched.c sched_chooseproc(): queue = ffs(spc_whichqs) - 1
+PITFALL: —
+TIME: 90
+  </aside>
+</section>
+
+<!-- 15 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">Quick check</span>
+  <h2>A task blocks in read() on an empty pipe. Which counter goes up?</h2>
+  <div class="quiz-options">
+    <div><b>A</b> <code>nivcsw</code>, it was preempted</div>
+    <div><b>B</b> <code>nvcsw</code>, it chose to sleep</div>
+    <div><b>C</b> neither, no switch happens</div>
+    <div><b>D</b> both, one per direction</div>
+  </div>
+  <aside class="notes">
+SAY (EN): Twenty seconds. Think of the branch in __schedule we just read.
+SAY (FA): بیست ثانیه؛ به شاخه‌ای از __schedule فکر کنید که همین حالا خواندیم.
+KEY POINT: Answer on the next slide.
+EXAMPLE: —
+PITFALL: —
+ASK: What is prev_state for a task in TASK_INTERRUPTIBLE?
+TIME: 45
+  </aside>
+</section>
+
+<!-- 16 QUIZ answer -->
+<section>
+  <span class="eyebrow">Answer: B</span>
+  <h2>A non-zero prev_state without preemption is a voluntary switch</h2>
+  <p class="quote">wait_event sets TASK_INTERRUPTIBLE and calls schedule(); __schedule dequeues the task and increments nvcsw.</p>
+  <p class="source">linux/kernel/sched/core.c · __schedule() L6874–6883 · fs/pipe.c · anon_pipe_read() L388 · v6.18.63</p>
+  <aside class="notes">
+SAY (EN): The reader announced a sleep; nobody took the CPU away. That is voluntary. A CPU-bound task kicked off by a wakeup has prev_state 0 and counts nivcsw.
+SAY (FA): خواننده خودش اعلام خواب کرده و کسی CPU را از او نگرفته است؛ این داوطلبانه است. task پرمصرفی که با یک wakeup کنار زده می‌شود prev_state برابر ۰ دارد و nivcsw می‌شمارد.
+KEY POINT: voluntary = blocked, involuntary = preempted.
+EXAMPLE: Lab 02.4 bpftrace under load: pingpong @voluntary 703563 vs @involuntary 3260.
+PITFALL: C is wrong: blocking always switches (to another task or idle).
+TIME: 60
+  </aside>
+</section>
+
+<!-- 17 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">02 · Processes &amp; Threads</span>
+  <h2 class="in">Summary</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>Task = <code>task_struct</code>; process = tasks sharing <code>tgid</code>, <code>mm</code>, <code>files</code></li>
+    <li class="in d2"><span class="callout-num">2</span>fork / clone share or copy per flag; exec replaces the program, not the task</li>
+    <li class="in d3"><span class="callout-num">3</span>Classes in order, EEVDF inside fair: weight = share, slice = latency</li>
+  </ul>
+  <p class="next in d4">Module 03 · Concurrency &amp; Synchronization</p>
+  <aside class="notes">
+SAY (EN): Now you have threads that share memory. Next module: what goes wrong when two of them touch it at once, and how futexes, spinlocks and RCU fix it.
+SAY (FA): حالا نخ‌هایی داریم که حافظه را مشترک دارند. ماژول بعد: وقتی دو تا از آن‌ها همزمان به آن دست بزنند چه خرابی‌ای پیش می‌آید و futex، spinlock و RCU چطور درستش می‌کنند.
+KEY POINT: Labs 02.1–02.6 in labs/.
+EXAMPLE: —
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+<!-- REFERENCES:start (generated by _shared/tools/add_references.py from _shared/resources/awesome-os.json; do not edit by hand) -->
+<!-- 18 REFERENCES -->
+<section class="layout-refs">
+  <span class="eyebrow in-f">Go deeper</span>
+  <h2 class="in">Read more, picked from the GitHub “awesome-os” lists</h2>
+  <ul class="refs">
+    <li class="in d1"><span class="pill">Book</span> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/"><b>Operating Systems: Three Easy Pieces</b></a><span class="why">Part I, virtualization: processes, scheduling, address spaces.</span><span class="url ltr">pages.cs.wisc.edu/~remzi/OSTEP</span></li>
+    <li class="in d2"><span class="pill">Book</span> <a href="https://greenteapress.com/wp/think-os/"><b>Think OS (Allen B. Downey)</b></a><span class="why">A brief introduction to operating systems, written for programmers.</span><span class="url ltr">greenteapress.com/wp/think-os</span></li>
+    <li class="in d3"><span class="pill">Book</span> <a href="https://pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf"><b>xv6: a simple, Unix-like teaching operating system</b></a><span class="why">Chapter “Scheduling”.</span><span class="url ltr">pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf</span></li>
+    <li class="in d4"><span class="pill">Course</span> <a href="https://linux-kernel-labs.github.io/refs/heads/master/"><b>Linux Kernel Teaching</b></a><span class="why">University-style lectures and labs on the Linux kernel.</span><span class="url ltr">linux-kernel-labs.github.io/refs/heads/master</span></li>
+    <li class="in d5"><span class="pill">Book</span> <a href="https://0xax.gitbooks.io/linux-insides/content/"><b>linux-insides</b></a><span class="why">A book-style walk through Linux internals: booting, interrupts, system calls, memory.</span><span class="url ltr">0xax.gitbooks.io/linux-insides/content</span></li>
+    <li class="in d5"><span class="pill">Post</span> <a href="https://nakryiko.com/posts/retsnoop-intro/"><b>Tracing Linux kernel with retsnoop</b></a><span class="why">Blog post on tracing kernel function calls and returns with a BPF tool.</span><span class="url ltr">nakryiko.com/posts/retsnoop-intro</span></li>
+  </ul>
+  <p class="caption src">Lists: <span class="ltr">jubalh/awesome-os · penberg/awesome-os</span> · links checked <bdi dir="ltr">2026-11-15</bdi></p>
+  <aside class="notes">
+SAY (EN): These are the best next reads after this module. They come from two GitHub “awesome-os” lists and every link was opened and checked on 2026-11-15. You do not need all of them.
+SAY (FA): این‌ها بهترین منابع برای ادامه پس از این ماژول هستند. از دو فهرست «awesome-os» در GitHub انتخاب شده‌اند و همهٔ لینک‌ها در تاریخ 2026-11-15 باز و بررسی شده‌اند. لازم نیست همه را بخوانید.
+KEY POINT: Start with the first item. The papers and conference pages are for the curious.
+EXAMPLE: —
+PITFALL: Some links are PDFs; open them before class if the room has no internet.
+TIME: 30
+  </aside>
+</section>
+<!-- REFERENCES:end -->
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 02 Processes &amp; Threads" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+name: Publish the course site
+
+# Builds the static site (Home > Term > Course > slides) and publishes it with GitHub Pages.
+# One-time setup in the repository: Settings > Pages > Build and deployment > Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege: the workflow can only read the code. Only the deploy job may publish.
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # No submodules: the Linux and OpenBSD sources (about 1 GB) are not part of the site.
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Code quality gate: formatting and lint must be clean (fix locally with `make fix`).
+      - name: Lint and format check
+        run: |
+          pip install ruff==0.15.16
+          python _shared/tools/fix.py --check
+
+      # Stop before publishing anything if a secret or private detail slipped into the repository.
+      - name: Scan the repository for secrets and private data
+        run: python _shared/tools/security_scan.py
+
+      # Downloads reveal.js and the fonts (pinned by checksum) so the site serves everything itself.
+      - name: Build the site
+        run: python _shared/tools/build_site.py --out site
+
+      - name: Scan the built site
+        run: python _shared/tools/security_scan.py --site site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

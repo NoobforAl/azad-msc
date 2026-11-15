@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 02.2 · پرچم‌های clone(): چه چیزی مشترک است</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">02.2</div>
+  <span class="eyebrow in-f">آزمایش 02.2 · هدف</span>
+  <h2 class="in">پرچم‌های <bdi dir="ltr">clone():</bdi> چه چیزی مشترک است</h2>
+  <p class="why in d1">پرچم به پرچم ثابت کنید هر پرچم <bdi dir="ltr">CLONE_*</bdi> کدام منبع (<bdi dir="ltr">mm</bdi>، جدول <bdi dir="ltr">fd</bdi>، <bdi dir="ltr">cwd</bdi>، گروه نخ) را مشترک می‌کند.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (aos-lab)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Prove flag by flag which resource (mm, fd table, cwd, thread group) each CLONE_* flag shares.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.2 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>کار فرزند</h3><p>نوشتن متغیر سراسری · <bdi dir="ltr">open()</bdi> · <bdi dir="ltr">chdir(/tmp)</bdi></p></div><div class="c-6 card edge r-kernel in d2"><h3>کرنل</h3><p class="ltr-mono"><code>copy_process: copy_mm/files/fs</code></p></div><div class="c-6 card edge r-data in d3"><h3>شیءهای مشترک</h3><p class="ltr-mono"><code>mm_struct · files_struct · fs_struct</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>خروج نخ</h3><p><bdi dir="ltr">futex</bdi> روی کلمهٔ <bdi dir="ltr">CLONE_CHILD_CLEARTID</bdi></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.2 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 02-clone-flags</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/02-processes-threads/labs/02-clone-flags</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o cloneflags cloneflags.c</span><span class="ln"><span class="p">$</span> ./cloneflags</span><span class="ln"> </span><span class="ln"><span class="dim"># what does glibc pass for a thread?</span></span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -pthread -o t t.c</span><span class="ln"><span class="p">$</span> strace -f -e trace=clone,clone3 ./t</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.2 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">0 (like fork)          mem=no  fds=no  cwd=no  child_tgid=n/a</span><span class="ln">CLONE_VM               mem=yes fds=no  cwd=no  child_tgid=other</span><span class="ln">CLONE_FILES            mem=no  fds=yes cwd=no  child_tgid=n/a</span><span class="ln">CLONE_FS               mem=no  fds=no  cwd=yes child_tgid=n/a</span><span class="ln">CLONE_VM|FILES|FS      mem=yes fds=yes cwd=yes child_tgid=other</span><span class="ln hl">pthread set            mem=yes fds=yes cwd=yes child_tgid=same</span><span class="ln"> </span><span class="ln"><span class="p">$</span> strace -f -e trace=clone3 ./t</span><span class="ln hl">clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|</span><span class="ln">  CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|...}) = 5107</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15.</bdi></p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.2 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>یک پرچم، یک منبع</b><br><span class="caption mono">copy_mm / copy_files / copy_fs</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">CLONE_VM</bdi> به‌تنهایی نخ نیست</b><br><span class="caption"><bdi dir="ltr">TGID</bdi> دیگر؛ همان که <bdi dir="ltr">vfork</bdi> و <bdi dir="ltr">posix_spawn</bdi> به کار می‌برند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>نخ <bdi dir="ltr">= TGID</bdi> یکسان</b><br><span class="caption mono">fork.c L2261: p-&gt;tgid = current-&gt;tgid</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.2 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">clone: Invalid argument</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">THREAD</bdi> به <bdi dir="ltr">SIGHAND</bdi> و آن به <bdi dir="ltr">VM</bdi> نیاز دارد</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">segfault</bdi> در فرزند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">stack + STACK_SIZE</bdi> (بالای پشته) را بدهید</span></div><div class="pit in d3"><span class="tag r-danger">waitpid: No child processes</span><span class="arrow-s">←</span><span class="tag r-ok">برای نخ روی <bdi dir="ltr">futex</bdi> مربوط به <bdi dir="ltr">CLEARTID</bdi> صبر کنید</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.2 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">پرچم <bdi dir="ltr">CLONE_VFORK</bdi>|<bdi dir="ltr">CLONE_VM</bdi> را اضافه کنید و با زمان‌سنجی نشان دهید <bdi dir="ltr">clone()</bdi> در والد فقط بعد از <bdi dir="ltr">_exit()</bdi> فرزند برمی‌گردد (فرزند ۱ ثانیه می‌خوابد).</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

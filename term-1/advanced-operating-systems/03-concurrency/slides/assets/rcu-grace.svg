@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 600" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- Roles: user=teal readers, kernel=amber writer, data=green versions -->
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3B4868"/>
+    </marker>
+  </defs>
+  <!-- time axis -->
+  <line x1="200" y1="560" x2="1560" y2="560" stroke="#3B4868" stroke-width="4" marker-end="url(#ah)"/>
+  <text x="1480" y="545" font-size="24" font-weight="700" fill="#3B4868">time</text>
+
+  <!-- lanes -->
+  <text x="20" y="96" font-size="28" font-weight="700" fill="#0E7490">CPU 0</text>
+  <text x="20" y="206" font-size="28" font-weight="700" fill="#0E7490">CPU 1</text>
+  <text x="20" y="316" font-size="28" font-weight="700" fill="#0E7490">CPU 2</text>
+  <text x="20" y="446" font-size="28" font-weight="700" fill="#B45309">writer</text>
+
+  <!-- reader sections -->
+  <rect x="220" y="60" width="420" height="56" rx="12" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="240" y="98" font-size="24" font-family="JetBrains Mono, monospace" fill="#0A1633">reader: sees old</text>
+  <rect x="330" y="170" width="640" height="56" rx="12" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="350" y="208" font-size="24" font-family="JetBrains Mono, monospace" fill="#0A1633">reader: sees old (preempted)</text>
+  <rect x="800" y="280" width="420" height="56" rx="12" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+  <text x="820" y="318" font-size="24" font-family="JetBrains Mono, monospace" fill="#0A1633">reader: sees new</text>
+
+  <!-- quiescent states -->
+  <circle cx="700" cy="88" r="14" fill="#6D28D9"/>
+  <circle cx="1010" cy="198" r="14" fill="#6D28D9"/>
+  <circle cx="760" cy="308" r="14" fill="#6D28D9"/>
+  <text x="1260" y="96" font-size="24" font-weight="700" fill="#6D28D9">● quiescent state</text>
+
+  <!-- writer actions -->
+  <rect x="560" y="410" width="250" height="60" rx="12" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="576" y="450" font-size="24" font-family="JetBrains Mono, monospace" fill="#0A1633">① publish new</text>
+  <rect x="1060" y="410" width="250" height="60" rx="12" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="1080" y="450" font-size="24" font-family="JetBrains Mono, monospace" fill="#0A1633">③ free old</text>
+
+  <!-- grace period band -->
+  <rect x="810" y="490" width="250" height="40" rx="8" fill="#FFF1C2" stroke="#F5B301" stroke-width="4"/>
+  <text x="826" y="518" font-size="24" font-weight="700" fill="#0A1633">② grace period</text>
+  <line x1="810" y1="40" x2="810" y2="540" stroke="#1F4FA8" stroke-width="4" stroke-dasharray="16 12"/>
+  <line x1="1060" y1="40" x2="1060" y2="540" stroke="#1F4FA8" stroke-width="4" stroke-dasharray="16 12"/>
+  <text x="818" y="34" font-size="22" font-weight="700" fill="#1F4FA8">rcu_assign_pointer</text>
+  <text x="1068" y="34" font-size="22" font-weight="700" fill="#1F4FA8">synchronize_rcu returns</text>
+</svg>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 02.6 · goroutine در برابر نخ سیستم‌عامل</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">02.6</div>
+  <span class="eyebrow in-f">آزمایش 02.6 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">goroutine</bdi> در برابر نخ سیستم‌عامل</h2>
+  <p class="why in d1">نشان دهید کرنل فقط نخ‌های سیستم‌عامل را می‌بیند و <bdi dir="ltr">Go goroutine</bdi>ها را روی تعداد کمی از آن‌ها سوار می‌کند، مگر هنگام <bdi dir="ltr">syscall</bdi>های مسدودکننده.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (aos-lab)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Show that the kernel sees only OS threads and that Go multiplexes goroutines onto few of them, except during blocking syscalls.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.6 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>gvt.go</h3><p>حالت‌ها<bdi dir="ltr">: sleep</bdi> · <bdi dir="ltr">cpu</bdi> · <bdi dir="ltr">syscall</bdi></p></div><div class="c-6 card edge r-kernel in d2"><h3>دید کرنل</h3><p><bdi dir="ltr">/proc/self/task =</bdi> هر کدام یک <bdi dir="ltr">task_struct</bdi></p></div><div class="c-6 card edge r-hardware in d3"><h3><bdi dir="ltr">P</bdi>ها</h3><p><bdi dir="ltr">GOMAXPROCS</bdi> (پیش‌فرض <bdi dir="ltr">NumCPU = 8</bdi>)</p></div><div class="c-6 card edge r-data in d4"><h3>مقایسه</h3><p><bdi dir="ltr">threads.c: N</bdi> عدد <bdi dir="ltr">pthread</bdi></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.6 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 06-goroutines-vs-threads</div><pre><code><span class="ln"><span class="p">$</span> go build -o gvt gvt.go</span><span class="ln"><span class="p">$</span> ./gvt sleep 10000</span><span class="ln"><span class="p">$</span> GOMAXPROCS=2 ./gvt cpu 100</span><span class="ln"><span class="p">$</span> ./gvt syscall 200</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -pthread -o threads threads.c</span><span class="ln"><span class="p">$</span> ./threads 10000</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.6 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> ./gvt sleep 10000</span><span class="ln hl">after 1s: goroutines=10001  os_threads=10   VmRSS=28760 kB</span><span class="ln"><span class="p">$</span> GOMAXPROCS=2 ./gvt cpu 100</span><span class="ln">after 1s: goroutines=101    os_threads=5    VmRSS=2264 kB</span><span class="ln"><span class="p">$</span> ./gvt syscall 200</span><span class="ln hl">after 1s: goroutines=201    os_threads=204  VmRSS=5776 kB</span><span class="ln"><span class="p">$</span> ./threads 10000</span><span class="ln">created: os_threads=10001  VmRSS=84680 kB  in 3188.5 ms</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15.</bdi></p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.6 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>۱۰٬۰۰۰ <bdi dir="ltr">goroutine</bdi> در خواب</b><br><span class="caption">فقط چند نخ سیستم‌عامل</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">syscall</bdi> مسدودکننده نخ مصرف می‌کند</b><br><span class="caption"><bdi dir="ltr">P</bdi> به یک <bdi dir="ltr">M</bdi> جدید داده می‌شود</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">pthread</bdi>ها <bdi dir="ltr">task</bdi> هستند</b><br><span class="caption">۱۰٬۰۰۱ <bdi dir="ltr">task</bdi>، هر کدام حدود ۳۲۰ میکروثانیه روی این <bdi dir="ltr">VM</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.6 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">حالت <bdi dir="ltr">syscall:</bdi> نخ کم</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">os.File.Read</bdi> از <bdi dir="ltr">netpoller</bdi> استفاده می‌کند</span></div><div class="pit in d2"><span class="tag r-danger">pthread_create: EAGAIN</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">ulimit -u</bdi> یا <bdi dir="ltr">pids.max</bdi> در <bdi dir="ltr">cgroup</bdi></span></div><div class="pit in d3"><span class="tag r-danger">go: command not found</span><span class="arrow-s">←</span><span class="tag r-ok">sudo apt install golang-go</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.6 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">کاری کنید حالت <bdi dir="ltr">syscall</bdi> نخی نسازد<bdi dir="ltr">: pipe</bdi> را <bdi dir="ltr">non-blocking</bdi> و از طریق <bdi dir="ltr">os.NewFile (netpoller)</bdi> بخوانید و <bdi dir="ltr">fd</bdi> مربوط به <bdi dir="ltr">epoll</bdi> را در <bdi dir="ltr">/proc/&lt;pid&gt;/fd</bdi> پیدا کنید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

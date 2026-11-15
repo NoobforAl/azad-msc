@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1640 620" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- Roles (Advanced OS): user=teal, kernel=amber, hardware=violet, data=green -->
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3B4868"/>
+    </marker>
+  </defs>
+  <!-- bio from fs -->
+  <rect x="20" y="230" width="230" height="140" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+  <text x="44" y="282" font-size="28" font-weight="700" fill="#047857">bio</text>
+  <text x="44" y="326" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">sectors+pages</text>
+
+  <rect x="310" y="230" width="270" height="140" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="334" y="282" font-size="28" font-weight="700" fill="#B45309">submit_bio</text>
+  <text x="334" y="326" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">split · merge</text>
+
+  <rect x="640" y="230" width="270" height="140" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="664" y="282" font-size="28" font-weight="700" fill="#B45309">request</text>
+  <text x="664" y="326" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">+ tag</text>
+
+  <!-- three paths -->
+  <rect x="980" y="40" width="300" height="120" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="1004" y="90" font-size="28" font-weight="700" fill="#B45309">plug list</text>
+  <text x="1004" y="134" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">batch per task</text>
+  <rect x="980" y="240" width="300" height="120" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="1004" y="290" font-size="28" font-weight="700" fill="#B45309">elevator</text>
+  <text x="1004" y="334" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">deadline·bfq</text>
+  <rect x="980" y="440" width="300" height="120" rx="14" fill="#FFF1C2" stroke="#1F4FA8" stroke-width="3"/>
+  <text x="1004" y="490" font-size="28" font-weight="700" fill="#1F4FA8">issue direct</text>
+  <text x="1004" y="534" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">none + idle</text>
+
+  <!-- driver / hw -->
+  <rect x="1340" y="200" width="280" height="200" rx="14" fill="#EEE6FB" stroke="#6D28D9" stroke-width="3"/>
+  <text x="1364" y="252" font-size="28" font-weight="700" fill="#6D28D9">driver</text>
+  <text x="1364" y="298" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">queue_rq()</text>
+  <text x="1364" y="344" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">hw queue</text>
+
+  <path d="M 250 300 L 305 300" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M 580 300 L 635 300" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M 910 280 L 975 110" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M 910 300 L 975 300" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M 910 320 L 975 495" stroke="#F5B301" stroke-width="8" fill="none" marker-end="url(#ah)"/>
+  <path d="M 1280 100 L 1335 240" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M 1280 300 L 1335 300" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M 1280 500 L 1335 360" stroke="#F5B301" stroke-width="8" fill="none" marker-end="url(#ah)"/>
+  <!-- completion -->
+  <path d="M 1480 400 C 1480 600 300 600 135 375" stroke="#3B4868" stroke-width="4" fill="none" stroke-dasharray="12 10" marker-end="url(#ah)"/>
+  <text x="640" y="604" font-size="26" font-family="JetBrains Mono, monospace" fill="#3B4868">IRQ → blk_mq_end_request → bio_endio</text>
+
+  <circle cx="1310" cy="60" r="22" fill="#1F4FA8"/><text x="1310" y="69" font-size="24" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+  <circle cx="1310" cy="260" r="22" fill="#1F4FA8"/><text x="1310" y="269" font-size="24" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+  <circle cx="1310" cy="460" r="22" fill="#1F4FA8"/><text x="1310" y="469" font-size="24" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+</svg>

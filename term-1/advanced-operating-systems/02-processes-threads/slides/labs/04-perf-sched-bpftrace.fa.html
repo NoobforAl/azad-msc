@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 02.4 · perf sched و bpftrace روی sched_switch</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">02.4</div>
+  <span class="eyebrow in-f">آزمایش 02.4 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">perf sched</bdi> و <bdi dir="ltr">bpftrace</bdi> روی <bdi dir="ltr">sched_switch</bdi></h2>
+  <p class="why in d1">تأخیر زمان‌بندی را با <bdi dir="ltr">perf sched</bdi> بخوانید و هر <bdi dir="ltr">context switch</bdi> را با <bdi dir="ltr">bpftrace</bdi> به داوطلبانه و غیرداوطلبانه تقسیم کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (root، فقط ردیابی)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Read scheduling latency with perf sched and split every context switch into voluntary vs involuntary with bpftrace.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.4 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>بار روی <bdi dir="ltr">CPU 2</bdi></h3><p>دو حلقهٔ پرکار <bdi dir="ltr">shell</bdi> و <bdi dir="ltr">pingpong</bdi></p></div><div class="c-6 card edge r-kernel in d2"><h3>tracepoint</h3><p class="ltr-mono"><code>sched:sched_switch (prev_state)</code></p></div><div class="c-6 card edge r-data in d3"><h3>ضبط</h3><p class="ltr-mono"><code>perf sched record -C 2 -- sleep 3</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>دامنه</h3><p>یک <bdi dir="ltr">CPU</bdi>، ۸ ثانیه بار (<bdi dir="ltr">VM</bdi> مشترک)</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.4 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 04-perf-sched-bpftrace</div><pre><code><span class="ln"><span class="p">$</span> for i in 1 2; do timeout 8 taskset -c 2 \</span><span class="ln">    sh -c &#x27;while :; do :; done&#x27; &amp; done</span><span class="ln"><span class="p">$</span> timeout 8 taskset -c 2 ./pingpong free 3000000 &amp;</span><span class="ln"><span class="p">$</span> sudo perf sched record -C 2 -- sleep 3</span><span class="ln"><span class="p">$</span> sudo perf sched latency --sort max | head</span><span class="ln"><span class="p">$</span> sudo perf sched timehist | head -20</span><span class="ln"> </span><span class="ln"><span class="p">$</span> sudo bpftrace switch_kinds.bt</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.4 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> sudo perf sched latency --sort max | head</span><span class="ln">  Task          | Switches | Avg delay ms    | Max delay ms</span><span class="ln hl">  sh:(2)        |      179 | avg:  18.576 ms | max: 101.378 ms</span><span class="ln hl">  pingpong:(2)  |   187804 | avg:   0.014 ms | max:  92.529 ms</span><span class="ln"> </span><span class="ln"><span class="p">$</span> sudo bpftrace switch_kinds.bt</span><span class="ln">@involuntary[sh]: 402</span><span class="ln">@involuntary[pingpong]: 3260</span><span class="ln hl">@voluntary[pingpong]: 703563</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15.</bdi></p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.4 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">pingpong</bdi> فقط ۰٫۰۱۴ <bdi dir="ltr">ms</bdi> منتظر می‌ماند</b><br><span class="caption">با <bdi dir="ltr">lag</bdi> ≥ <bdi dir="ltr">0</bdi> بیدار می‌شود و <bdi dir="ltr">hog</bdi>ها را کنار می‌زند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">hog</bdi>های <bdi dir="ltr">sh:</bdi> فقط غیرداوطلبانه</b><br><span class="caption"><bdi dir="ltr">prev_state == 0</bdi> ← <bdi dir="ltr">preempt</bdi> شده</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">pingpong:</bdi> داوطلبانه</b><br><span class="caption">در هر رفت‌وبرگشت در <bdi dir="ltr">read()</bdi> مسدود می‌شود</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.4 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">perf: No permission</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">perf_event_paranoid</bdi>؛ با <bdi dir="ltr">sudo</bdi> اجرا کنید</span></div><div class="pit in d2"><span class="tag r-danger">stress-ng: caught SIGILL</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">vCPU</bdi> این <bdi dir="ltr">VM</bdi> دستوری را ندارد<bdi dir="ltr">: --cpu-method int64</bdi></span></div><div class="pit in d3"><span class="tag r-danger">خطای <bdi dir="ltr">BTF</bdi> در <bdi dir="ltr">bpftrace</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">به <bdi dir="ltr">/sys/kernel/btf/vmlinux</bdi> نیاز دارد</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.4 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">هیستوگرام تأخیر <bdi dir="ltr">run queue</bdi> (بیدار شدن ← روی <bdi dir="ltr">CPU</bdi>) با <bdi dir="ltr">bpftrace</bdi> برای <bdi dir="ltr">pingpong</bdi> در برابر بقیه؛ <bdi dir="ltr">task</bdi>های <bdi dir="ltr">preempt</bdi>‌شده را در <bdi dir="ltr">sched_switch</bdi> با <bdi dir="ltr">prev_state == 0</bdi> دوباره در صف حساب کنید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

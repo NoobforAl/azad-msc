@@ -1,0 +1,19 @@
+# code-navigation artifacts (00-setup guide §4.2)
+.tags
+tags
+cscope.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+
+# downloads, offline slide assets, lab VM (make view / make vm-create)
+.cache/
+
+# PDF / PPTX exports (make pdf / make pptx)
+exports/
+
+# built static site (make site)
+site/

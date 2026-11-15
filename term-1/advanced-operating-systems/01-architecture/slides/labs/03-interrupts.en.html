@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 01.3 · Count interrupts and tracepoints</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.3</div>
+  <span class="eyebrow in-f">Lab 01.3 · Goal</span>
+  <h2 class="in">Count interrupts and tracepoints</h2>
+  <p class="why in d1">Measure which interrupt sources fire, cross-check with irq:* tracepoints, and see that page faults are counted elsewhere.</p>
+  <div class="pills in d2"><span class="pill">Runs on: aos-lab VM (root for perf -a)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Measure which interrupt sources fire, cross-check with irq:* tracepoints, and see that page faults are counted elsewhere.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.3 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-hardware in d1"><h3>Sources</h3><p><bdi dir="ltr">APIC timer</bdi> · <bdi dir="ltr">IPIs</bdi> · <bdi dir="ltr">virtio</bdi></p></div><div class="c-6 card edge r-data in d2"><h3>Counters</h3><p>/proc/interrupts (since boot)</p></div><div class="c-6 card edge r-kernel in d3"><h3>Tracepoints</h3><p class="ltr-mono"><code>irq:* · irq_vectors:* · exceptions:*</code></p></div><div class="c-6 card edge r-user in d4"><h3>Load</h3><p class="ltr-mono"><code>dd ... oflag=direct</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.3 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 03-interrupts</div><pre><code><span class="ln"><span class="p">$</span> bash irq-delta.sh 5 8</span><span class="ln"><span class="p">$</span> bash irq-delta.sh 5 8 -- \</span><span class="ln">    dd if=/dev/zero of=big.bin bs=1M count=512 oflag=direct</span><span class="ln"><span class="p">$</span> sudo perf stat -a -e &#x27;irq:irq_handler_entry,\</span><span class="ln">    irq_vectors:local_timer_entry,\</span><span class="ln">    irq_vectors:reschedule_entry,exceptions:page_fault_user&#x27; sleep 5</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.3 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> bash irq-delta.sh 5 8</span><span class="ln">   delta  irq    source</span><span class="ln hl">   46186  CAL    Function call interrupts</span><span class="ln">    9223  21     IO-APIC 21-fasteoi ahci[0000:00:0d.0]</span><span class="ln hl">    8746  LOC    Local timer interrupts</span><span class="ln">     193  RES    Rescheduling interrupts</span><span class="ln"> </span><span class="ln"><span class="p">$</span> sudo perf stat -a -e ... sleep 5</span><span class="ln">              3650      irq:irq_handler_entry</span><span class="ln">             22222      irq_vectors:local_timer_entry</span><span class="ln hl">            134260      exceptions:page_fault_user</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.3 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">Named vectors</bdi> ≠ <bdi dir="ltr">device IRQs</bdi></b><br><span class="caption">LOC/CAL/RES bypass irq_handler_entry (3,650)</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">LOC</bdi> ≈ <bdi dir="ltr">220/s per CPU</bdi>, <bdi dir="ltr">HZ=1000</bdi></b><br><span class="caption">NO_HZ: idle CPUs skip ticks</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>134,260 page faults, none here</b><br><span class="caption">exceptions are not interrupts</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.3 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">irq_vectors:* not found</span><span class="arrow-s">→</span><span class="tag r-ok">ls /sys/kernel/tracing/events/irq_vectors/</span></div><div class="pit in d2"><span class="tag r-danger">perf -a: permission denied</span><span class="arrow-s">→</span><span class="tag r-ok">sudo</span></div><div class="pit in d3"><span class="tag r-danger">huge LOC numbers</span><span class="arrow-s">→</span><span class="tag r-ok">diff two snapshots</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.3 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">bpftrace: a histogram of top-half run time per handler name from irq_handler_entry/exit, during the dd load. Why is per-CPU pairing safe?</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 01 Architecture" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

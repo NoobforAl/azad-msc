@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 07.4 · An unprivileged Landlock sandbox</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">07.4</div>
+  <span class="eyebrow in-f">Lab 07.4 · Goal</span>
+  <h2 class="in">An unprivileged Landlock sandbox</h2>
+  <p class="why in d1"><bdi dir="ltr">Read and execute everywhere</bdi>, <bdi dir="ltr">write only in one directory</bdi> — <bdi dir="ltr">no root</bdi>, <bdi dir="ltr">and see where the kernel says no.</bdi></p>
+  <div class="pills in d2"><span class="pill">Runs on: VM or any Linux with landlock LSM</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Read and execute everywhere, write only in one directory — no root, and see where the kernel says no.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.4 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-kernel in d1"><h3>LSM active</h3><p class="ltr-mono"><code>cat /sys/kernel/security/lsm | grep landlock</code></p></div><div class="c-6 card edge r-kernel in d2"><h3>ABI</h3><p class="ltr-mono"><code>landlock_abi_version = 7 (v6.18.63)</code></p></div><div class="c-6 card edge r-data in d3"><h3>Rules</h3><p class="ltr-mono"><code>/ → READ+EXEC · /tmp/ll-rw → +WRITE</code></p></div><div class="c-6 card edge r-user in d4"><h3>No wrappers</h3><p class="ltr-mono"><code>syscall(SYS_landlock_*) · glibc 2.39</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.4 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 04-landlock</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o landlock-sandbox landlock-sandbox.c</span><span class="ln"><span class="p">$</span> mkdir -p /tmp/ll-rw</span><span class="ln"><span class="p">$</span> ./landlock-sandbox /tmp/ll-rw sh -c &#x27;</span><span class="ln">    echo ok &gt; /tmp/ll-rw/a; echo no &gt; /tmp/ll-b;</span><span class="ln">    cat /etc/hostname; mkdir /tmp/ll-dir&#x27;</span><span class="ln"><span class="p">$</span> ./landlock-sandbox /tmp/ll-rw sh -c &#x27;echo hi 2&gt;/dev/null&#x27;</span><span class="ln"><span class="p">$</span> strace -f -e trace=landlock_restrict_self,openat \</span><span class="ln">    ./landlock-sandbox /tmp/ll-rw sh -c &#x27;echo no &gt; /tmp/ll-b&#x27;</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.4 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">landlock ABI version: 7</span><span class="ln">write inside: ok</span><span class="ln hl">sh: 3: cannot create /tmp/ll-b: Permission denied</span><span class="ln">aos-lab</span><span class="ln">read outside: ok</span><span class="ln">mkdir: cannot create directory ‘/tmp/ll-dir’: Permission denied</span><span class="ln hl">sh: 1: cannot create /dev/null: Permission denied</span><span class="ln">landlock_restrict_self(3, 0)            = 0</span><span class="ln hl">openat(AT_FDCWD, &quot;/tmp/ll-b&quot;, O_WRONLY|O_CREAT|O_TRUNC, 0666)</span><span class="ln">    = -1 EACCES (Permission denied)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.4 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Denied after path lookup</b><br><span class="caption mono">openat ... = -1 EACCES  (LSM hook, not seccomp)</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>/dev/null is a file too</b><br><span class="caption"><bdi dir="ltr">WRITE_FILE is handled</bdi> → <bdi dir="ltr">granted nowhere but /tmp/ll-rw</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>No root needed</b><br><span class="caption mono"><bdi dir="ltr">only NO_NEW_PRIVS</bdi> · <bdi dir="ltr">landlock_restrict_self()</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.4 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">restrict_self: Operation not permitted</span><span class="arrow-s">→</span><span class="tag r-ok">prctl(PR_SET_NO_NEW_PRIVS) first</span></div><div class="pit in d2"><span class="tag r-danger">create_ruleset: Invalid argument</span><span class="arrow-s">→</span><span class="tag r-ok">drop rights the running ABI doesn&#x27;t know</span></div><div class="pit in d3"><span class="tag r-danger">writes still work somewhere</span><span class="arrow-s">→</span><span class="tag r-ok">unhandled rights stay allowed</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.4 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Restrict TCP: handle LANDLOCK_ACCESS_NET_CONNECT_TCP, allow only port 443. Show which errno means &#x27;Landlock said no&#x27; and which means &#x27;nobody listens&#x27;.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 07 Real-Time &amp; Research" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

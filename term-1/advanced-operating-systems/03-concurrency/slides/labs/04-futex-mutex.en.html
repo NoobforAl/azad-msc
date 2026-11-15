@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 03.4 · A mutex on raw futex()</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">03.4</div>
+  <span class="eyebrow in-f">Lab 03.4 · Goal</span>
+  <h2 class="in">A mutex on raw futex()</h2>
+  <p class="why in d1">Build Drepper&#x27;s three-state futex mutex and prove with strace and bpftrace that only contention enters the kernel.</p>
+  <div class="pills in d2"><span class="pill">Runs on: aos-lab VM (bpftrace needs root)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Build Drepper's three-state futex mutex and prove with strace and bpftrace that only contention enters the kernel.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.4 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-data in d1"><h3>State word</h3><p class="ltr-mono"><code>0 free · 1 held · 2 held+waiters</code></p></div><div class="c-6 card edge r-user in d2"><h3>Fast path</h3><p class="ltr-mono"><code>cmpxchg 0→1 / fetch_sub 1→0</code></p></div><div class="c-6 card edge r-kernel in d3"><h3>Slow path</h3><p class="ltr-mono"><code>FUTEX_WAIT_PRIVATE / FUTEX_WAKE_PRIVATE</code></p></div><div class="c-6 card edge r-kernel in d4"><h3>Tracing</h3><p class="ltr-mono"><code>strace -c · bpftrace sys_enter_futex</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.4 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 04-futex-mutex</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -pthread futex_mutex.c -o futex_mutex</span><span class="ln"><span class="p">$</span> ./futex_mutex 1 1000000</span><span class="ln"><span class="p">$</span> ./futex_mutex 4 1000000</span><span class="ln"><span class="p">$</span> strace -f -c -e trace=futex ./futex_mutex 1 1000000</span><span class="ln"><span class="p">$</span> strace -f -c -e trace=futex ./futex_mutex 4 200000</span><span class="ln"><span class="p">$</span> sudo bpftrace futex-ops.bt -c &#x27;./futex_mutex 4 200000&#x27;</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.4 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> ./futex_mutex 1 1000000</span><span class="ln hl">threads=1 ... OK futex_wait=0 futex_wake=0</span><span class="ln"><span class="p">$</span> ./futex_mutex 4 1000000</span><span class="ln">threads=4 ... OK futex_wait=37928 futex_wake=48919</span><span class="ln"><span class="p">$</span> sudo bpftrace futex-ops.bt -c &#x27;./futex_mutex 4 200000&#x27;</span><span class="ln">@calls[9]: 3</span><span class="ln hl">@calls[0]: 6680</span><span class="ln">@calls[1]: 8949</span><span class="ln">@usecs[0]:</span><span class="ln hl">[0]                 6559 |@@@@@@@@@@@@@@@@@@@@...</span><span class="ln">[64, 128)             32 |</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15; shared 8-vCPU guest, timings are noisy.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.4 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>1 thread: zero futex calls</b><br><span class="caption">every lock/unlock stayed in user space</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>WAIT errors = EAGAIN</b><br><span class="caption">value changed before the kernel checked it</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>op 0 = WAIT, op 1 = WAKE</b><br><span class="caption mono">op &amp; 127 strips FUTEX_PRIVATE_FLAG</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.4 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">hangs under contention</span><span class="arrow-s">→</span><span class="tag r-ok">unlock must wake when old value was 2</span></div><div class="pit in d2"><span class="tag r-danger">strace changes the result</span><span class="arrow-s">→</span><span class="tag r-ok">tracing slows threads; compare with the program&#x27;s own counters</span></div><div class="pit in d3"><span class="tag r-danger">more WAKE than WAIT</span><span class="arrow-s">→</span><span class="tag r-ok">state 2 is sticky: expected</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.4 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Spin a bounded number of times before FUTEX_WAIT (user-space optimistic spinning). Measure futex calls and time for spin = 0, 100, 1000.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 03 Concurrency" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

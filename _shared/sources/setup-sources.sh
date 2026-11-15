@@ -10,6 +10,7 @@ LINUX_DIRS=(
   Documentation/process Documentation/scheduler Documentation/locking
   Documentation/RCU Documentation/mm Documentation/filesystems
   Documentation/admin-guide/cgroup-v1 Documentation/dev-tools drivers/net/wireguard
+  drivers/block drivers/char   # added by OS modules 05 (block layer, char devices)
 )
 
 OPENBSD_DIRS=(
@@ -18,6 +19,7 @@ OPENBSD_DIRS=(
   sbin/pfctl usr.bin/ssh lib/libc/sys lib/libssl lib/libcrypto/evp
   usr.sbin/httpd usr.sbin/relayd regress/sys/kern
   share/man/man2 share/man/man4 share/man/man9
+  sys/dev/vmm sys/ufs           # added by OS modules 06 (vmm) and 05 (ufs)
 )
 
 init_sparse() {

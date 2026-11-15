@@ -1,0 +1,25 @@
+#!/usr/bin/env bpftrace
+// count-syscalls.bt: the kernel's own count of cat's syscalls, by number, with no ptrace stop.
+// Usage (VM, root):  sudo bpftrace count-syscalls.bt -c '/usr/bin/cat /etc/hostname'
+// Compare with:      strace -c -f cat /etc/hostname
+//
+// raw_syscalls:sys_enter fires inside syscall_trace_enter() (kernel/entry/syscall-common.c),
+// the same hook strace uses, but as a tracepoint: the task is not stopped.
+//
+// Real run on aos-lab (6.18.63): @total = 123 vs strace -c total 121; close (3) = 22 vs 21.
+// +1: strace -c leaves exit_group (231) out of its table; the tracepoint sees it.
+// +1: one extra close, issued by bpftrace's own child after fork() and before execve()
+//     (pid == cpid already, but the program is not yet cat). Which fd it closes is UNVERIFIED.
+// Every other number matches strace -c exactly.
+
+tracepoint:raw_syscalls:sys_enter
+/pid == cpid/
+{
+  @by_nr[args->id] = count();
+  @total = count();
+}
+
+END
+{
+  printf("syscall number -> count (look the numbers up in syscall_64.tbl)\n");
+}

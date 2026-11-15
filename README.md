@@ -2,12 +2,26 @@
 
 Self-study workspace for a 4-term master's degree. Each course folder has an `agent-prompt.md` that builds the full course (lessons, labs, quizzes, videos, slide decks).
 
+## Quick start
+
+```bash
+make doctor   # checks your machine and tells you what to install (no Node.js needed)
+make view     # caches what the decks need, starts the lab VM, opens the slides
+make stop     # stops the slide server and the VM
+make clean    # stops everything, removes generated files, asks before deleting .cache/
+make help     # all commands: decks, lab VM, kernel-source quotes, checks
+```
+
+Works from PowerShell, cmd or Git Bash on Windows, and on Linux and macOS. Full guide: [USAGE.md](USAGE.md) · فارسی: [USAGE.fa.md](USAGE.fa.md)
+
 ```
 Colleage/
 ├── _shared/
 │   ├── slide-design-system.md   # v3: one design system for every deck, all terms
-│   ├── brand/                   # put the official Azad logo here (azad-logo.svg / .png)
-│   ├── theme/                   # azad-theme.css (built once by the first course agent)
+│   ├── brand/                   # Azad emblem (azad-logo.png / .svg) + provenance README
+│   ├── theme/                   # azad-theme.css + azad-deck.js (look, animations, toolbar)
+│   ├── browser-lab/             # a real 32-bit Linux kernel in the browser + 10 mini-labs (make browser-lab)
+│   ├── tools/                   # serve.py (deck index), export_deck.py (PDF / PPTX), qemu_vm.py, labdeck.py, …
 │   └── sources/                 # git submodules, depth 1 + sparse
 │       ├── linux/               #   Linux v6.18.63 (longterm)
 │       └── openbsd/             #   OpenBSD src @ 8cada8c

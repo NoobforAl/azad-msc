@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 05.3 · fsync cost and writeback</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">05.3</div>
+  <span class="eyebrow in-f">Lab 05.3 · Goal</span>
+  <h2 class="in">fsync cost and writeback</h2>
+  <p class="why in d1">Measure what durability costs per write, watch dirty pages drain, and throttle one device without touching global sysctls.</p>
+  <div class="pills in d2"><span class="pill">Runs on: Lab VM (loop device for part 3)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Measure what durability costs per write, watch dirty pages drain, and throttle one device without touching global sysctls.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.3 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>wbench.c</h3><p class="ltr-mono"><code>buffered · fdatasync · fsync · O_DSYNC · O_SYNC</code></p></div><div class="c-6 card edge r-data in d2"><h3>Dirty pages</h3><p>Dirty / Writeback in /proc/meminfo</p></div><div class="c-6 card edge r-kernel in d3"><h3>Per-BDI limit</h3><p class="ltr-mono"><code>/sys/class/bdi/7:N/max_bytes + strict_limit</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>Device</h3><p>virtual disk; flush = host round trip</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.3 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 03-fsync-writeback</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/05-filesystems-io/labs/03-fsync-writeback</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o wbench wbench.c</span><span class="ln"><span class="p">$</span> ./wbench fsync t.dat 2000 4096</span><span class="ln"><span class="p">$</span> bash run.sh   # 1 policies  2 writeback  3 per-BDI</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.3 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">buffered  2000 x 4096 B: total 6.6 ms | p50 1.9 us</span><span class="ln hl">fsync     2000 x 4096 B: total 67909.6 ms | p50 30950.5 us</span><span class="ln">fdatasync 2000 x 4096 B: total 74069.5 ms | p50 22035.2 us</span><span class="ln">== 2b. 384 MiB buffered write</span><span class="ln">  t=  3s Dirty= 339976 kB</span><span class="ln">  t= 27s Dirty= 288368 kB</span><span class="ln hl">  t= 30s Dirty=   1652 kB</span><span class="ln">== 3. per-BDI limit (8 MiB, strict_limit)</span><span class="ln">  default: 465 MB/s  @throttle_events: 0</span><span class="ln hl">  limited: 268 MB/s  @throttle_events: 50</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.3 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>fsync per record costs ~10 000x</b><br><span class="caption">journal commit + cache flush each time</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>Dirty waits 30 s, then drains</b><br><span class="caption">below background ratio: dirty_expire_centisecs</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>Small BDI budget = many short pauses</b><br><span class="caption mono">tracepoint writeback:balance_dirty_pages</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.3 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">changing vm.dirty_* on a shared VM</span><span class="arrow-s">→</span><span class="tag r-ok">use per-BDI knobs on your loop device</span></div><div class="pit in d2"><span class="tag r-danger">fsync looks free</span><span class="arrow-s">→</span><span class="tag r-ok">tmpfs or nobarrier: check findmnt -T .</span></div><div class="pit in d3"><span class="tag r-danger">loop device left behind</span><span class="arrow-s">→</span><span class="tag r-ok">losetup -a; losetup -d /dev/loopN</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 05.3 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Run 4 writers that each fsync after every record. Count fsync calls vs jbd2 commits (tracepoints). What is group commit, and how does it change per-writer latency?</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 05 File Systems &amp; I/O" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

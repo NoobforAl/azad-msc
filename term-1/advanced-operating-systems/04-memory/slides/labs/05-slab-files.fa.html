@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 04.5 · cacheهای slab و ۲۰۰ هزار فایل</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">04.5</div>
+  <span class="eyebrow in-f">آزمایش 04.5 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">cache</bdi>های <bdi dir="ltr">slab</bdi> و ۲۰۰ هزار فایل</h2>
+  <p class="why in d1"><bdi dir="ltr">N</bdi> فایل خالی بسازید و پاک کنید و رشد و کوچک شدن <bdi dir="ltr">cache</bdi>های <bdi dir="ltr">slab</bdi> مربوط به <bdi dir="ltr">dentry</bdi> و <bdi dir="ltr">inode</bdi> را ببینید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه · حدود ۱۰ مگابایت دیسک</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Create and delete N empty files and watch the dentry and inode slab caches grow and shrink.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.5 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>برنامه</h3><p class="ltr-mono"><code>mkfiles.c create|delete DIR N</code></p></div><div class="c-6 card edge r-kernel in d2"><h3><bdi dir="ltr">cache</bdi>ها</h3><p class="ltr-mono"><code>dentry · ext4_inode_cache</code></p></div><div class="c-6 card edge r-data in d3"><h3>نماها</h3><p class="ltr-mono"><code>/proc/slabinfo · slabtop -o -s c</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>حسابداری</h3><p class="ltr-mono"><code>SReclaimable vs SUnreclaim</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.5 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 05-slab-files</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o mkfiles mkfiles.c</span><span class="ln"><span class="p">$</span> bash slab-watch.sh 200000</span><span class="ln"><span class="p">$</span> grep -E &#x27;^(Slab|SReclaimable|SUnreclaim):&#x27; /proc/meminfo</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.5 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">== filesystem of $HOME: ext2/ext3 ; N=200000</span><span class="ln">== before</span><span class="ln">  ext4_inode_cache   active=    8068 total=    8207 objsize=1128  ~    8.8 MiB</span><span class="ln">  dentry             active=   33939 total=   34125 objsize= 192  ~    6.2 MiB</span><span class="ln">== after create</span><span class="ln hl">  ext4_inode_cache   active=  208075 total=  208075 objsize=1128  ~  223.8 MiB</span><span class="ln hl">  dentry             active=  233919 total=  233919 objsize= 192  ~   42.8 MiB</span><span class="ln">== after delete</span><span class="ln">  ext4_inode_cache   active=    8433 total=    8671 objsize=1128  ~    9.3 MiB</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، اوبونتو <bdi dir="ltr">24.04</bdi>، لینوکس <bdi dir="ltr">6.18.63</bdi>)، <bdi dir="ltr">2026-11-15.</bdi></p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.5 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">N</bdi> تا <bdi dir="ltr">dentry</bdi> و <bdi dir="ltr">N</bdi> تا <bdi dir="ltr">inode</bdi> بیشتر</b><br><span class="caption">حدود ۱٫۲ کیلوبایت حافظهٔ کرنل برای هر فایل خالی</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>در هیچ <bdi dir="ltr">RSS</bdi>ی نیست</b><br><span class="caption"><bdi dir="ltr">slab</bdi> حافظهٔ کرنل است <bdi dir="ltr">(SReclaimable)</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>بعد از حذف به حالت اول برمی‌گردد</b><br><span class="caption">آزادسازی دسته‌ای <bdi dir="ltr">slab</bdi>ها را خالی و به <bdi dir="ltr">buddy</bdi> برمی‌گرداند</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.5 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">slabinfo: Permission denied</span><span class="arrow-s">←</span><span class="tag r-ok">مجوز ۰۴۰۰ برای <bdi dir="ltr">root:</bdi> از <bdi dir="ltr">sudo</bdi> استفاده کنید</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">ext4_inode_cache</bdi> نیست</span><span class="arrow-s">←</span><span class="tag r-ok">فایل‌سیستم دیگر<bdi dir="ltr">: stat -f -c</bdi> %<bdi dir="ltr">T</bdi> ~</span></div><div class="pit in d3"><span class="tag r-danger">عددها تقریباً تکان نمی‌خورند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">cache</bdi>های ادغام‌شده یا <bdi dir="ltr">N</bdi> کوچک</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 04.5 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">در طول <bdi dir="ltr">mkfiles create</bdi> با <bdi dir="ltr">bpftrace</bdi> روی <bdi dir="ltr">tracepoint:kmem:kmem_cache_alloc</bdi> ببینید ساختن یک فایل به چه <bdi dir="ltr">cache</bdi>های دیگری دست می‌زند.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۴ حافظه" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

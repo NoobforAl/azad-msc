@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 02.3 · هزینهٔ context switch: ping-pong با pipe</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">02.3</div>
+  <span class="eyebrow in-f">آزمایش 02.3 · هدف</span>
+  <h2 class="in">هزینهٔ <bdi dir="ltr">context switch: ping-pong</bdi> با <bdi dir="ltr">pipe</bdi></h2>
+  <p class="why in d1">رفت‌وبرگشت مسدودکننده را وقتی هر دو <bdi dir="ltr">task</bdi> روی یک <bdi dir="ltr">CPU</bdi> یا روی دو <bdi dir="ltr">CPU</bdi> هستند اندازه بگیرید و توضیح دهید چرا اینجا دو <bdi dir="ltr">CPU</bdi> کندتر است.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (aos-lab)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Measure a blocking round trip with both tasks on one CPU vs two CPUs, and explain why two CPUs are slower here.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.3 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>دو پردازه</h3><p>یک بایت رفت و برگشت، ۲۰۰ هزار بار</p></div><div class="c-6 card edge r-kernel in d2"><h3>مسیر کرنل</h3><p>انتظار <bdi dir="ltr">pipe</bdi> ← <bdi dir="ltr">__schedule</bdi> ← <bdi dir="ltr">wake_up</bdi></p></div><div class="c-6 card edge r-hardware in d3"><h3>جای‌گذاری</h3><p><bdi dir="ltr">same: CPU 0</bdi> · <bdi dir="ltr">split: CPU 0</bdi> و <bdi dir="ltr">1</bdi></p></div><div class="c-6 card edge r-data in d4"><h3>آمار</h3><p>۵ اجرا، میانه (<bdi dir="ltr">VM</bdi> مشترک)</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.3 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 03-ctxsw-pingpong</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/02-processes-threads/labs/03-ctxsw-pingpong</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o pingpong pingpong.c</span><span class="ln"><span class="p">$</span> ./pingpong same 200000</span><span class="ln"><span class="p">$</span> bash run.sh</span><span class="ln"> </span><span class="ln"><span class="p">$</span> perf stat -e context-switches,cpu-migrations \</span><span class="ln">    ./pingpong same 200000</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.3 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> bash run.sh</span><span class="ln">mode=same  round_trip=2717 ns  vcsw=115381 ivcsw=84623</span><span class="ln hl">== same: median round_trip 2717 ns over 5 runs</span><span class="ln">mode=split round_trip=195549 ns  vcsw=19989 ivcsw=1</span><span class="ln hl">== split: median round_trip 195549 ns over 5 runs</span><span class="ln">== free: median round_trip 20619 ns over 5 runs</span><span class="ln"> </span><span class="ln"><span class="p">$</span> perf stat -e context-switches ./pingpong same 200000</span><span class="ln">            400003      context-switches</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15.</bdi></p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.3 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">same:</bdi> ۴۳٪ غیرداوطلبانه</b><br><span class="caption"><bdi dir="ltr">task</bdi> بیدارشده نویسنده را پیش از <bdi dir="ltr">read()</bdi> کنار می‌زند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">split</bdi> حدود ۷۰ برابر کندتر است</b><br><span class="caption">بیدار کردن <bdi dir="ltr">vCPU</bdi> دیگر با <bdi dir="ltr">IPI</bdi> و <bdi dir="ltr">hypervisor</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">free</bdi> ≈ <bdi dir="ltr">same</bdi></b><br><span class="caption"><bdi dir="ltr">wake-affine</bdi> و <bdi dir="ltr">WF_SYNC</bdi> از سمت <bdi dir="ltr">pipe</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.3 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">عددها بین اجراها دو برابر می‌شوند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">VM</bdi> مشترک: از میانهٔ <bdi dir="ltr">run.sh</bdi> استفاده کنید</span></div><div class="pit in d2"><span class="tag r-danger">cycles &lt;not supported&gt;</span><span class="arrow-s">←</span><span class="tag r-ok">این <bdi dir="ltr">VM PMU</bdi> ندارد؛ رویدادهای نرم‌افزاری</span></div><div class="pit in d3"><span class="tag r-danger">affinity: Invalid argument</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">VM</bdi> تک‌هسته‌ای: فقط حالت <bdi dir="ltr">free</bdi></span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.3 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">رفت‌وبرگشت <bdi dir="ltr">pipe</bdi>، <bdi dir="ltr">socketpair</bdi> با <bdi dir="ltr">AF_UNIX</bdi> و صفحهٔ مشترک <bdi dir="ltr">+ futex</bdi> را در حالت <bdi dir="ltr">same</bdi> و <bdi dir="ltr">split</bdi>، هر کدام ۵ اجرا، مقایسه کنید و توضیح دهید چرا در <bdi dir="ltr">split</bdi> فاصله‌ها کم می‌شود.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

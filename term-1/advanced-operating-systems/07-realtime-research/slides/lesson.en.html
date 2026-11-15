@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>07 · Real-Time &amp; Research — Advanced OS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+  <style>
+    /* deck-local: compact data table for RMS vs EDF (theme has no table style) */
+    .reveal table.dt { border-collapse:collapse; font-size:30px; margin:0; }
+    .reveal table.dt th, .reveal table.dt td { border:3px solid var(--border); padding:12px 24px; text-align:start; }
+    .reveal table.dt th { background:var(--brand-soft); color:var(--brand-ink); }
+    /* deck-local: keep inline code on one line (p-&gt;prio broke in RTL) and show C operators literally */
+    .reveal :not(pre) > code { white-space:nowrap; }
+    .reveal code, .reveal pre { font-variant-ligatures:none; font-feature-settings:"liga" 0, "calt" 0; }
+    .reveal .diagram.short img { max-height:600px; }
+  </style>
+</head>
+<body>
+<div class="reveal course-os">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">Guarantees in time and in reach</h1>
+  <p class="subtitle in d1">Advanced Operating Systems · 07 Real-Time &amp; Research Topics</p>
+  <div class="fields">
+    <span><b>Course</b>[Course name]</span><span><b>Presenter</b>[Presenter]</span>
+    <span><b>Professor</b>[Professor]</span><span><b>Faculty</b>[Faculty / Branch]</span>
+    <span><b>Term</b>[Term]</span><span><b>Date</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (EN): This module asks what a kernel can promise a process: that it runs on time, and that it can only reach what it should. Then we learn to judge research claims about both.
+SAY (FA): این ماژول می‌پرسد کرنل چه قولی می‌تواند به یک پردازه بدهد: اینکه به‌موقع اجرا شود، و اینکه فقط به چیزی برسد که باید. بعد یاد می‌گیریم ادعاهای پژوهشی دربارهٔ هر دو را قضاوت کنیم.
+KEY POINT: Real-time = guarantees in time; sandboxing = guarantees in reach.
+EXAMPLE: —
+PITFALL: Title fields are placeholders; never invent them.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">07</div>
+  <span class="eyebrow in-f">Module 07</span>
+  <h2 class="in">Real-Time &amp; Research Topics</h2>
+  <p class="why in d1">Average speed is not a guarantee: deadlines, lock priorities and sandboxes are about the worst case.</p>
+  <div class="pills in d2"><span class="pill">PREEMPT_RT</span><span class="pill">priority inheritance</span><span class="pill">seccomp · Landlock</span></div>
+  <aside class="notes">
+SAY (EN): Everything here is about the worst case: the longest wake-up, the longest wait for a lock, the most an attacker can reach.
+SAY (FA): همه چیز این ماژول دربارهٔ بدترین حالت است: طولانی‌ترین بیدار شدن، طولانی‌ترین انتظار برای قفل، بیشترین چیزی که مهاجم به آن می‌رسد.
+KEY POINT: Depends on Module 02 (scheduling classes) and Module 03 (futex, mutex).
+EXAMPLE: Mars Pathfinder rebooted because of a lock-priority bug.
+PITFALL: Confusing "fast" with "real-time".
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">07 · Real-Time &amp; Research</span>
+  <h2 class="in">Five questions, five labs</h2>
+  <ol class="agenda">
+    <li class="current in d1">When is a system real-time, and what does Linux add to latency?</li>
+    <li class="in d2">Which task sets meet their deadlines? RMS, EDF, SCHED_DEADLINE</li>
+    <li class="in d3">Why did Pathfinder reboot? Priority inversion and inheritance</li>
+    <li class="in d4">How does a process limit itself? seccomp, Landlock, pledge</li>
+    <li class="in d5">How do I read an OS paper like a reviewer?</li>
+  </ol>
+  <aside class="notes">
+SAY (EN): Each row maps to a lab: cyclictest, the deadline extension, priority inversion, seccomp and Landlock, and the paper review.
+SAY (FA): هر ردیف به یک آزمایش وصل است: cyclictest، تمرین تکمیلی deadline، وارونگی اولویت، seccomp و Landlock، و داوری مقاله.
+KEY POINT: Rows 1–3 are about time, row 4 about reach, row 5 about judging claims.
+EXAMPLE: —
+PITFALL: —
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 BENTO -->
+<section>
+  <span class="eyebrow in-f">07 · Real-time classes</span>
+  <h2 class="in">A deadline miss costs a failure, a result, or quality</h2>
+  <div class="grid tight">
+    <div class="c-6 card edge r-danger in d1"><h3>Hard</h3><p>miss = system failure · ABS brakes, flight control</p></div>
+    <div class="c-6 card edge r-kernel in d2"><h3>Firm</h3><p>late result is worthless · radar sample, video frame</p></div>
+    <div class="c-6 card edge r-user in d3"><h3>Soft</h3><p>late result degrades · audio mixing, game frame</p></div>
+    <div class="c-6 card edge r-data in d4"><h3>Task model</h3><p><code>(C, D, T)</code> · on time iff <code>R ≤ D</code> · <code>U = C/T</code></p></div>
+  </div>
+  <p class="takeaway in d5">Real-time is about the maximum, never the average.</p>
+  <aside class="notes">
+SAY (EN): Hard, firm and soft differ by the value of a late result. The task model gives us the numbers every later slide uses: worst-case execution time C, deadline D, period T.
+SAY (FA): سخت، نیمه‌سخت و نرم در ارزش نتیجهٔ دیر فرق دارند. مدل task عددهایی را می‌دهد که همهٔ اسلایدهای بعدی به کار می‌برند: بدترین زمان اجرا C، ‏deadline ‏D و دورهٔ T.
+KEY POINT: WCET is measured on Linux, not proven.
+EXAMPLE: SCHED_DEADLINE takes exactly runtime ≈ C, deadline = D, period = T.
+PITFALL: "avg 5 µs" says nothing about a 1 ms deadline.
+TIME: 75
+  </aside>
+</section>
+
+<!-- 05 FLOW_TIMELINE -->
+<section>
+  <span class="eyebrow in-f">07 · Latency</span>
+  <h2 class="in">Wake-up latency has one unbounded step on a normal kernel</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>Timer fires</div><code>hrtimer IRQ</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>Task woken</div><code>try_to_wake_up()</code></div>
+    <div class="step fragment current"><span class="callout-num">3</span><div>Wait to preempt</div><code>spin_lock · softirq</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>Switch</div><code>__schedule()</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>Task runs</div><code>clock_gettime()</code></div>
+  </div>
+  <p class="takeaway">PREEMPT_RT shrinks step 3: spinlocks sleep, IRQs become threads.</p>
+  <aside class="notes">
+SAY (EN): cyclictest measures from the planned wake-up time to step 5. Steps 1, 2 and 4 cost microseconds. Step 3 is where a non-preemptible section, a softirq, or a higher-priority task makes us wait, and on a normal kernel nothing bounds it.
+SAY (FA): ‏cyclictest از زمان برنامه‌ریزی‌شدهٔ بیدار شدن تا گام ۵ را اندازه می‌گیرد. گام‌های ۱، ۲ و ۴ چند میکروثانیه‌اند. گام ۳ جایی است که یک بخش غیرقابل‌preempt، یک softirq یا یک task پراولویت‌تر ما را منتظر می‌گذارد، و در کرنل معمولی هیچ چیز آن را محدود نمی‌کند.
+KEY POINT: Only step 3 is unbounded.
+EXAMPLE: latency.c in lab 01 is this loop in ~70 lines.
+PITFALL: Relative nanosleep() drifts; use TIMER_ABSTIME.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 06 TERMINAL_DEMO: cyclictest -->
+<section>
+  <span class="eyebrow in-f">07 · Real output</span>
+  <h2 class="in">Load moves the tail, not the minimum</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab · run-cyclictest.sh 60 2,3</div>
+<pre><code><span class="ln"><span class="p">$</span> sudo bash run-cyclictest.sh 60 2,3</span><span class="ln">[idle] # Min Latencies: 00030 00026</span><span class="ln">[idle] # Avg Latencies: 01236 01165</span><span class="ln hl">[idle] # Max Latencies: 395586 395126</span><span class="ln">[load] # Min Latencies: 00032 00031</span><span class="ln">[load] # Avg Latencies: 09389 09364</span><span class="ln hl">[load] # Max Latencies: 26624226 26624344</span><span class="ln"># µs; FIFO 80, 1 ms period, CPUs 2-3</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">Real output: aos-lab, 6.18.63 PREEMPT_DYNAMIC, 2026-11-15. Shared VM: the 26.6 s max is the host stopping the vCPUs, not Linux.</p>
+  <aside class="notes">
+SAY (EN): Two cyclictest runs on two CPUs, idle and with stress-ng on the same CPUs. Read the Max row first. This is a shared VM on Hyper-V, so the spikes are mostly the hypervisor; the shape is what matters.
+SAY (FA): دو اجرای cyclictest روی دو CPU، بیکار و با stress-ng روی همان CPUها. اول ردیف Max را بخوانید. این یک VMِ مشترک روی Hyper-V است، پس جهش‌ها بیشتر کار hypervisor است؛ شکل مهم است.
+KEY POINT: Report max under load, with the run length.
+EXAMPLE: sudo bash run-cyclictest.sh 60 2,3
+PITFALL: Treating VM numbers as bounds.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 07 CODE_WALKTHROUGH: deadline admission -->
+<section>
+  <span class="eyebrow in-f">07 · SCHED_DEADLINE · real source</span>
+  <h2 class="in">EDF accepts a task only if the bandwidth still fits</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/sched/deadline.c</span><span>v6.18.63 · L212-217</span></div>
+<pre class="code"><code><span class="ln"><span class="tok-k">static inline</span> <span class="tok-t">bool</span></span><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-f">__dl_overflow</span>(<span class="tok-k">struct</span> <span class="tok-t">dl_bw</span> *dl_b, <span class="tok-t">unsigned long</span> cap,</span><span class="ln">	      <span class="tok-t">u64</span> old_bw, <span class="tok-t">u64</span> new_bw)</span><span class="ln">{</span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-k">return</span> dl_b-&gt;bw != -<span class="tok-s">1</span> &amp;&amp;</span><span class="ln fragment hl-on" data-fragment-index="3">	  <span class="tok-f">cap_scale</span>(dl_b-&gt;bw, cap) &lt;</span><span class="ln fragment hl-on" data-fragment-index="3">	  dl_b-&gt;total_bw - old_bw + new_bw;</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span><code>new_bw</code> = runtime / period</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span><code>-1</code>: admission off</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>sum &gt; 95 % × CPUs → <code>EBUSY</code></span></div>
+    </div>
+  </div>
+  <table class="dt in d5" style="margin-top:32px"><tr><th>τ = (2,5) (2,7) (2,9)</th><th>U = 0.908</th><th>RMS: τ3 misses (R = 10 &gt; 9)</th><th>EDF: fits (U ≤ 1)</th></tr></table>
+  <aside class="notes">
+SAY (EN): sched_setattr with SCHED_DEADLINE first checks runtime ≤ deadline ≤ period, then this function. If total bandwidth plus the new task exceeds the limit, the call fails with EBUSY. The table is the worked example: EDF schedules a set that fixed priorities cannot.
+SAY (FA): ‏sched_setattr با SCHED_DEADLINE اول runtime ≤ deadline ≤ period را بررسی می‌کند و بعد همین تابع را. اگر پهنای باند کل به‌اضافهٔ task جدید از حد بگذرد، فراخوانی با EBUSY شکست می‌خورد. جدول مثال کاربردی است: EDF مجموعه‌ای را زمان‌بندی می‌کند که اولویت ثابت نمی‌تواند.
+KEY POINT: EINVAL = bad parameters (__checkparam_dl), EBUSY = admission (__dl_overflow).
+EXAMPLE: chrt --deadline --sched-runtime ... in note 02.
+PITFALL: On SMP, admission guarantees bounded tardiness, not zero misses (Dhall's effect).
+TIME: 120
+  </aside>
+</section>
+
+<!-- 08 CONCEPT_DIAGRAM: inversion -->
+<section>
+  <span class="eyebrow in-f">07 · Priority inversion</span>
+  <h2 class="in">Inheritance keeps M from overtaking L</h2>
+  <div class="diagram short in-p d1" style="margin-top:-16px"><img src="assets/inversion-timeline.svg" alt="Two timelines on one CPU. Without a protocol, H waits while M runs 800 ms and L finishes. With PTHREAD_PRIO_INHERIT, L is boosted to 30, H gets the lock after L's remaining work, and M runs afterwards."></div>
+  <aside class="notes">
+SAY (EN): ① Without a protocol, M preempts the lock holder L, so H waits for M too. ② With inheritance, L runs at H's priority until it unlocks; H waits only for the rest of L's critical section, and M runs after.
+SAY (FA): ① بدون پروتکل، M صاحب قفل یعنی L را کنار می‌زند، پس H منتظر M هم می‌ماند. ② با inheritance، ‏L تا unlock با اولویت H اجرا می‌شود؛ ‏H فقط منتظر باقی بخش بحرانی L است و M بعد از آن اجرا می‌شود.
+KEY POINT: PI bounds the inversion; it does not remove waiting for L.
+EXAMPLE: Mars Pathfinder 1997: VxWorks select() semaphore without PI → repeated resets.
+PITFALL: Default pthread mutexes have no PI.
+ASK: Why do we need three priorities to see the problem?
+TIME: 120
+  </aside>
+</section>
+
+<!-- 09 CODE_WALKTHROUGH: rtmutex boost -->
+<section>
+  <span class="eyebrow in-f">07 · rt_mutex · real source</span>
+  <h2 class="in">The new top waiter lends its priority to the owner</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/locking/rtmutex.c</span><span>v6.18.63 · L1265-1272</span></div>
+<pre class="code"><code><span class="ln"><span class="tok-f">raw_spin_lock</span>(&amp;owner-&gt;pi_lock);</span><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">if</span> (waiter == <span class="tok-f">rt_mutex_top_waiter</span>(lock)) {</span><span class="ln">	<span class="tok-f">rt_mutex_dequeue_pi</span>(owner, top_waiter);</span><span class="ln">	<span class="tok-f">rt_mutex_enqueue_pi</span>(owner, waiter);</span><span class="ln"> </span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-f">rt_mutex_adjust_prio</span>(lock, owner);</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-k">if</span> (owner-&gt;pi_blocked_on)</span><span class="ln fragment hl-on" data-fragment-index="3">		chain_walk = <span class="tok-s">1</span>;</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>only a new <b>top</b> waiter changes anything</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>→ <code>rt_mutex_setprio()</code> changes <code>p-&gt;prio</code>, not <code>normal_prio</code></span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>owner blocked too → walk the chain</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): From task_blocks_on_rt_mutex. A PI pthread mutex reaches it through futex_lock_pi. The owner's effective priority becomes the top of its pi_waiters tree; on unlock the same function with no waiters de-boosts it.
+SAY (FA): از task_blocks_on_rt_mutex. یک mutexِ PI در pthread از راه futex_lock_pi به اینجا می‌رسد. اولویت مؤثر صاحب قفل رأس درخت pi_waiters آن می‌شود؛ هنگام unlock همین تابع بدون منتظر اولویت را برمی‌گرداند.
+KEY POINT: Transitive inheritance = rt_mutex_adjust_prio_chain() (L678), also deadlock detection.
+EXAMPLE: tracepoint sched:sched_pi_setprio fires in rt_mutex_setprio() (core.c L7407).
+PITFALL: Semaphores and condvars have no owner, so no PI.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 10 TERMINAL_DEMO: inversion -->
+<section>
+  <span class="eyebrow in-f">07 · Real output</span>
+  <h2 class="in">One mutex attribute turns ~1 s into ~0.2 s</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab · 02-priority-inversion</div>
+<pre><code><span class="ln"><span class="p">$</span> sudo taskset -c 7 ./inversion none</span><span class="ln">    23.1 ms  H  wants the lock</span><span class="ln">    25.1 ms  M  start, burning 800 ms (no lock)</span><span class="ln">   825.2 ms  M  done</span><span class="ln hl">  1000.7 ms  H  got the lock after 977.6 ms</span><span class="ln"><span class="p">$</span> sudo taskset -c 7 ./inversion inherit</span><span class="ln">    20.7 ms  H  wants the lock</span><span class="ln">   202.2 ms  L  unlock</span><span class="ln hl">   202.2 ms  H  got the lock after 181.6 ms</span><span class="ln">  1002.3 ms  M  done</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">Real output: aos-lab, Linux 6.18.63, 2026-11-15 · some L lines trimmed (full run in the lab README).</p>
+  <aside class="notes">
+SAY (EN): Same program, same CPU, only the mutex protocol differs. Without it, H waits for M's 800 ms; with PTHREAD_PRIO_INHERIT it waits only for the rest of L, and M finishes last.
+SAY (FA): همان برنامه و همان CPU؛ فقط پروتکل mutex فرق دارد. بدون آن، H منتظر ۸۰۰ میلی‌ثانیهٔ M می‌ماند؛ با PTHREAD_PRIO_INHERIT فقط منتظر باقی کار L است و M آخر از همه تمام می‌شود.
+KEY POINT: Pinning to one CPU (taskset) makes the inversion reproducible.
+EXAMPLE: sudo taskset -c 7 ./inversion inherit
+PITFALL: On an idle multi-core box L just runs elsewhere and you see nothing.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 11 TWO_COLUMN_COMPARE: RT vs non-RT -->
+<section>
+  <span class="eyebrow in-f">07 · PREEMPT_RT</span>
+  <h2 class="in">PREEMPT_RT changes the locks, not just the preemption points</h2>
+  <div class="compare">
+    <div class="in d1"><h3>PREEMPT_DYNAMIC (full)</h3><ul>
+      <li><code>spin_lock()</code>: spins, preemption off</li>
+      <li>IRQ handlers in hard-IRQ context</li>
+      <li>softirqs with bottom halves off</li>
+      <li>switch at runtime: none / voluntary / full / lazy</li>
+    </ul></div>
+    <div class="in d2"><h3>PREEMPT_RT</h3><ul>
+      <li><code>spin_lock()</code> = <code>rt_mutex</code>: sleeps, PI</li>
+      <li>IRQ threads <code>irq/N</code>, FIFO 50</li>
+      <li>softirqs in threads, local locks</li>
+      <li>compile time only · <code>uname -v</code> shows it</li>
+    </ul></div>
+  </div>
+  <p class="takeaway in d3">Only <code>raw_spinlock_t</code> still spins: scheduler, IRQ and timer core.</p>
+  <aside class="notes">
+SAY (EN): kernel/locking/spinlock_rt.c implements spin_lock as an rt_mutex with migrate_disable(); include/linux/interrupt.h hard-wires force_irqthreads() to true under PREEMPT_RT. Our VM is PREEMPT_DYNAMIC, so RT numbers in this module are UNVERIFIED; build the --rt flavor from 00-setup lab 03.
+SAY (FA): ‏kernel/locking/spinlock_rt.c تابع spin_lock را به شکل یک rt_mutex همراه با migrate_disable() پیاده می‌کند؛ ‏include/linux/interrupt.h زیر PREEMPT_RT مقدار force_irqthreads() را ثابتِ true می‌کند. VM ما PREEMPT_DYNAMIC است، پس عددهای RT در این ماژول UNVERIFIED‌اند؛ گونهٔ ‎--rt‎ را با آزمایش ۰۳ از 00-setup بسازید.
+KEY POINT: Kconfig: depends on EXPERT && ARCH_SUPPORTS_RT && !COMPILE_TEST.
+EXAMPLE: init/Makefile L30: preempt-flag-$(CONFIG_PREEMPT_RT) := PREEMPT_RT
+PITFALL: There is no /sys/kernel/realtime in v6.18.63.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 12 CONCEPT_DIAGRAM: sandbox path -->
+<section>
+  <span class="eyebrow in-f">07 · Sandboxing</span>
+  <h2 class="in">seccomp judges numbers, Landlock judges objects</h2>
+  <div class="diagram short in-p d1" style="margin-top:-16px"><img src="assets/sandbox-path.svg" alt="openat() from a sandboxed process: first seccomp filters on syscall entry can deny before the syscall runs; if allowed, path lookup resolves the file; then the LSM hook security_file_open calls Landlock's hook_file_open, which can return EACCES."></div>
+  <aside class="notes">
+SAY (EN): ① seccomp runs in syscall_trace_enter on the raw number and arguments, before anything happens. ② If allowed, the kernel resolves the path. ③ Landlock's LSM hook sees the resolved file and checks every layer of rules.
+SAY (FA): ① ‏seccomp در syscall_trace_enter روی شماره و آرگومان‌های خام و پیش از هر کاری اجرا می‌شود. ② اگر مجاز باشد، کرنل مسیر را resolve می‌کند. ③ ‏hookِ LSMِ Landlock فایل resolveشده را می‌بیند و همهٔ لایه‌های قانون را بررسی می‌کند.
+KEY POINT: Both need no_new_privs, both stack and only tighten, both survive execve().
+EXAMPLE: labs 03 and 04.
+PITFALL: seccomp can't check a path string: it's a user pointer (TOCTOU).
+TIME: 90
+  </aside>
+</section>
+
+<!-- 13 CODE_WALKTHROUGH: seccomp_run_filters -->
+<section>
+  <span class="eyebrow in-f">07 · seccomp · real source</span>
+  <h2 class="in">Every filter runs; the strictest answer wins</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/seccomp.c · seccomp_run_filters()</span><span>v6.18.63 · L413-430</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">if</span> (<span class="tok-f">WARN_ON</span>(f == NULL))</span><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-k">return</span> SECCOMP_RET_KILL_PROCESS;</span><span class="ln"> </span><span class="ln"><span class="tok-k">if</span> (<span class="tok-f">seccomp_cache_check_allow</span>(f, sd))</span><span class="ln">	<span class="tok-k">return</span> SECCOMP_RET_ALLOW;</span><span class="ln"> </span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">for</span> (; f; f = f-&gt;prev) {</span><span class="ln">	<span class="tok-t">u32</span> cur_ret = <span class="tok-f">bpf_prog_run_pin_on_cpu</span>(f-&gt;prog, sd);</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-k">if</span> (<span class="tok-f">ACTION_ONLY</span>(cur_ret) &lt; <span class="tok-f">ACTION_ONLY</span>(ret)) {</span><span class="ln">		ret = cur_ret;</span><span class="ln">		*match = f;</span><span class="ln">	}</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>fail closed: no filter → kill</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>filters stack via <code>f-&gt;prev</code>, never removed</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>lowest action wins: a new filter can only tighten</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): Called from __seccomp_filter on every syscall of a filtered thread. ACTION_ONLY casts to s32, so KILL_PROCESS (0x80000000) is the lowest value. The bitmap cache skips BPF for syscalls a filter always allows.
+SAY (FA): از __seccomp_filter روی هر syscallِ یک thread فیلترشده صدا زده می‌شود. ‏ACTION_ONLY مقدار را به s32 تبدیل می‌کند، پس KILL_PROCESS (‏0x80000000) کمترین مقدار است. cache بیتی برای syscallهایی که فیلتر همیشه اجازه می‌دهد BPF را رد می‌کند.
+KEY POINT: Lines 419–422 (comment) elided on the slide; full excerpt in kernel-walkthrough §5.2.
+EXAMPLE: ERRNO(EACCES) → syscall skipped, user sees -1/EACCES.
+PITFALL: A raw BPF filter without the arch check is bypassable via the i386 ABI.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 14 TWO_COLUMN_COMPARE: Linux vs OpenBSD -->
+<section>
+  <span class="eyebrow in-f">07 · Linux vs OpenBSD</span>
+  <h2 class="in">Flexible filters vs one-line promises</h2>
+  <div class="compare">
+    <div class="in d1"><h3>seccomp + Landlock</h3><ul>
+      <li>BPF over syscall nr + raw args</li>
+      <li>filter author maps syscalls</li>
+      <li>errno / trap / notify / kill</li>
+      <li>always inherited across exec</li>
+    </ul></div>
+    <div class="in d2"><h3>pledge + unveil</h3><ul>
+      <li><code>pledge("stdio rpath")</code> promise bits</li>
+      <li>kernel table <code>pledge_syscalls[]</code></li>
+      <li>uncatchable <code>SIGABRT</code> + core</li>
+      <li>separate <code>execpromises</code></li>
+    </ul></div>
+  </div>
+  <p class="takeaway in d3"><code>pledge_syscall()</code> is one bitwise AND: <code>p_pledge &amp; pledge_syscalls[code]</code>.</p>
+  <aside class="notes">
+SAY (EN): openbsd/sys/kern/kern_pledge.c pledge_syscall() at 8cada8c, L537-554, called from mi_syscall in sys/sys/syscall_mi.h L167-172. OpenBSD keeps the syscall-to-category map in the kernel; Linux leaves it to the filter author. unveil_check_final() in kern_unveil.c is the Landlock counterpart.
+SAY (FA): ‏openbsd/sys/kern/kern_pledge.c تابع pledge_syscall() در 8cada8c خط ۵۳۷ تا ۵۵۴ که از mi_syscall در sys/sys/syscall_mi.h خط ۱۶۷ تا ۱۷۲ صدا زده می‌شود. ‏OpenBSD نگاشت syscall به دسته را در کرنل نگه می‌دارد؛ لینوکس آن را به نویسندهٔ فیلتر می‌سپارد. ‏unveil_check_final() در kern_unveil.c همتای Landlock است.
+KEY POINT: Same monotonic principle: restrictions only tighten.
+EXAMPLE: A new Linux syscall is silently allowed by a deny-list filter.
+PITFALL: OpenBSD has no SCHED_FIFO at all (git grep in sys/ finds none).
+TIME: 90
+  </aside>
+</section>
+
+<!-- 15 FLOW_TIMELINE: reading papers -->
+<section>
+  <span class="eyebrow in-f">07 · Research</span>
+  <h2 class="in">Read a paper in three passes, then check today's code</h2>
+  <div class="flow">
+    <div class="step fragment current"><span class="callout-num">1</span><div>10 min: five Cs</div><code>abstract · headings</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>1 h: figures, axes</div><code>baseline · variance</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>Map to v6.18.63</div><code>git grep</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>Hours: re-create</div><code>one experiment</code></div>
+  </div>
+  <p class="takeaway">Wasted Cores (EuroSys '16) → today's <code>sched_balance_rq()</code>, fair.c L12052.</p>
+  <aside class="notes">
+SAY (EN): Keshav's three passes, plus a systems-specific step: find the paper's functions in the current tree. The 2016 load balancer still balances per scheduling domain, now under new names.
+SAY (FA): سه گذر Keshav به‌اضافهٔ یک گام مخصوص سیستم‌ها: توابع مقاله را در درخت فعلی پیدا کنید. ‏load balancerِ ۲۰۱۶ هنوز برای هر دامنهٔ زمان‌بندی توازن برقرار می‌کند، با نام‌های تازه.
+KEY POINT: Review = problem, insight, mechanism, evaluation, limits, today, verdict.
+EXAMPLE: OSDI '10: 48 cores, sloppy counters, 3002 lines changed.
+PITFALL: Quoting "138×" without saying it's a corner case.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 16 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">Quick check</span>
+  <h2>A SCHED_FIFO 30 thread waits on a default pthread mutex held by a FIFO 10 thread. What bounds its wait?</h2>
+  <div class="quiz-options">
+    <div><b>A</b> The FIFO 10 thread's critical section</div>
+    <div><b>B</b> Nothing: medium tasks can run first</div>
+    <div><b>C</b> The futex timeout</div>
+    <div><b>D</b> SCHED_DEADLINE admission</div>
+  </div>
+  <aside class="notes">
+SAY (EN): Twenty seconds. Look at the word "default".
+SAY (FA): بیست ثانیه. به کلمهٔ «پیش‌فرض» دقت کنید.
+KEY POINT: Answer on the next slide.
+EXAMPLE: —
+PITFALL: —
+ASK: Who picked A? What would make A true?
+TIME: 45
+  </aside>
+</section>
+
+<!-- 17 QUIZ answer -->
+<section>
+  <span class="eyebrow">Answer: B</span>
+  <h2>Without a protocol, inversion is unbounded</h2>
+  <p class="quote">A default mutex is PTHREAD_PRIO_NONE: any FIFO 11–29 task can preempt the owner while the FIFO 30 waiter blocks.</p>
+  <p class="source">A becomes true with PTHREAD_PRIO_INHERIT → futex_lock_pi() → rt_mutex (lab 02)</p>
+  <aside class="notes">
+SAY (EN): With PTHREAD_PRIO_INHERIT the owner runs at 30 and the wait is bounded by its critical section: that is answer A. C is wrong: pthread_mutex_lock has no timeout. D is unrelated.
+SAY (FA): با PTHREAD_PRIO_INHERIT صاحب قفل با اولویت ۳۰ اجرا می‌شود و انتظار به بخش بحرانی آن محدود است: این گزینهٔ A است. ‏C غلط است: pthread_mutex_lock مهلت زمانی ندارد. ‏D بی‌ربط است.
+KEY POINT: Bounded inversion is normal; unbounded is a bug.
+EXAMPLE: inversion.c none vs inherit.
+PITFALL: —
+TIME: 60
+  </aside>
+</section>
+
+<!-- 18 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">07 · Real-Time &amp; Research</span>
+  <h2 class="in">Summary</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>Real-time is the worst case: measure max latency under load; RT kernels bound it</li>
+    <li class="in d2"><span class="callout-num">2</span>Locks need a protocol: PI bounds inversion; SCHED_DEADLINE isolates budgets</li>
+    <li class="in d3"><span class="callout-num">3</span>Sandboxes only tighten: seccomp on numbers, Landlock on objects, pledge on promises</li>
+  </ul>
+  <p class="next in d4">STUDY-SCHEDULE &amp; CHEATSHEET (end of course)</p>
+  <aside class="notes">
+SAY (EN): Three ideas to keep: worst case over average, a lock protocol for every priority-sensitive lock, and least privilege that can only tighten. And read every paper against today's code.
+SAY (FA): سه ایده را نگه دارید: بدترین حالت به‌جای میانگین، یک پروتکل برای هر قفلِ حساس به اولویت، و حداقل امتیازی که فقط سخت‌تر می‌شود. و هر مقاله را با کد امروز بسنجید.
+KEY POINT: Labs 01–05 practice each of these.
+EXAMPLE: —
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+<!-- REFERENCES:start (generated by _shared/tools/add_references.py from _shared/resources/awesome-os.json; do not edit by hand) -->
+<!-- 19 REFERENCES -->
+<section class="layout-refs">
+  <span class="eyebrow in-f">Go deeper</span>
+  <h2 class="in">Read more, picked from the GitHub “awesome-os” lists</h2>
+  <ul class="refs">
+    <li class="in d1"><span class="pill">Talks</span> <a href="https://sosp.org/"><b>SOSP: Symposium on Operating Systems Principles</b></a><span class="why">The flagship OS-research conference.</span><span class="url ltr">sosp.org</span></li>
+    <li class="in d2"><span class="pill">Talks</span> <a href="https://www.usenix.org/conferences"><b>USENIX conferences (OSDI, ATC)</b></a><span class="why">Home of OSDI and ATC, two other main OS-research venues.</span><span class="url ltr">usenix.org/conferences</span></li>
+    <li class="in d3"><span class="pill">Talks</span> <a href="https://www.asplos-conference.org/"><b>ASPLOS</b></a><span class="why">Where OS research meets architecture and programming languages.</span><span class="url ltr">asplos-conference.org</span></li>
+    <li class="in d4"><span class="pill">Talks</span> <a href="https://sigops.org/s/conferences/hotos/"><b>HotOS: Workshop on Hot Topics in Operating Systems</b></a><span class="why">Short, forward-looking position papers on where OS research is heading.</span><span class="url ltr">sigops.org/s/conferences/hotos</span></li>
+    <li class="in d5"><span class="pill">Paper</span> <a href="https://www.usenix.org/conference/osdi18/presentation/cutler"><b>The benefits and costs of writing a POSIX kernel in a high-level language</b></a><span class="why">OSDI &#x27;18: what a kernel gains and loses when it is not written in C.</span><span class="url ltr">usenix.org/conference/osdi18/presentation/cutler</span></li>
+    <li class="in d5"><span class="pill">Paper</span> <a href="https://www.tockos.org/assets/papers/tock-sosp2017.pdf"><b>Multiprogramming a 64 kB Computer Safely and Efficiently</b></a><span class="why">SOSP &#x27;17 (Tock): several apps running safely on a tiny microcontroller.</span><span class="url ltr">tockos.org/assets/papers/tock-sosp2017.pdf</span></li>
+    <li class="in d5"><span class="pill">Talks</span> <a href="https://lpc.events/"><b>Linux Plumbers Conference</b></a><span class="why">Where kernel developers present and discuss their work.</span><span class="url ltr">lpc.events</span></li>
+  </ul>
+  <p class="caption src">Lists: <span class="ltr">jubalh/awesome-os · penberg/awesome-os</span> · links checked <bdi dir="ltr">2026-11-15</bdi></p>
+  <aside class="notes">
+SAY (EN): These are the best next reads after this module. They come from two GitHub “awesome-os” lists and every link was opened and checked on 2026-11-15. You do not need all of them.
+SAY (FA): این‌ها بهترین منابع برای ادامه پس از این ماژول هستند. از دو فهرست «awesome-os» در GitHub انتخاب شده‌اند و همهٔ لینک‌ها در تاریخ 2026-11-15 باز و بررسی شده‌اند. لازم نیست همه را بخوانید.
+KEY POINT: Start with the first item. The papers and conference pages are for the curious.
+EXAMPLE: —
+PITFALL: Some links are PDFs; open them before class if the room has no internet.
+TIME: 30
+  </aside>
+</section>
+<!-- REFERENCES:end -->
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 07 Real-Time &amp; Research" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

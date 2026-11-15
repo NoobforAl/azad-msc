@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 07.5 · خواندن دو مقالهٔ سیستم‌عامل و نوشتن دو داوری</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">07.5</div>
+  <span class="eyebrow in-f">آزمایش 07.5 · هدف</span>
+  <h2 class="in">خواندن دو مقالهٔ سیستم‌عامل و نوشتن دو داوری</h2>
+  <p class="why in d1">خواندن سه‌گذره و یک داوری یک‌صفحه‌ای که هر مقاله را روی <bdi dir="ltr">Linux v6.18.63</bdi> نگاشت کند.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: لپ‌تاپ + checkoutِ سورس مخزن</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Three-pass reading and a one-page review that maps each paper onto Linux v6.18.63.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.5 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-data in d1"><h3>مقالهٔ <bdi dir="ltr">A</bdi></h3><p class="ltr-mono"><code>Linux Scalability to Many Cores · OSDI &#x27;10</code></p></div><div class="c-6 card edge r-data in d2"><h3>مقالهٔ <bdi dir="ltr">B</bdi></h3><p class="ltr-mono"><code>A Decade of Wasted Cores · EuroSys &#x27;16</code></p></div><div class="c-6 card edge r-user in d3"><h3>قالب</h3><p><bdi dir="ltr">review-template.md:</bdi> پنج <bdi dir="ltr">C</bdi> و ۷ بخش</p></div><div class="c-6 card edge r-kernel in d4"><h3>سورس</h3><p class="ltr-mono"><code>_shared/sources/linux @ v6.18.63</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.5 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 05-paper-review</div><pre><code><span class="ln"><span class="dim"># pass 1: 10 min each -&gt; five Cs</span></span><span class="ln"><span class="p">$</span> cp review-template.md review-A.md</span><span class="ln"><span class="dim"># pass 2: 1 h each -&gt; figures, axes, baselines</span></span><span class="ln"><span class="dim"># map onto today&#x27;s kernel:</span></span><span class="ln"><span class="p">$</span> git grep -n &quot;^static int sched_balance_rq&quot; kernel/sched/fair.c</span><span class="ln"><span class="p">$</span> git grep -n &quot;^static bool update_sd_pick_busiest&quot; kernel/sched/fair.c</span><span class="ln"><span class="p">$</span> git grep -n &quot;struct lockref d_lockref&quot; include/linux/dcache.h</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.5 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> git grep -n &quot;^static int sched_balance_rq&quot; kernel/sched/fair.c</span><span class="ln hl">kernel/sched/fair.c:12052:static int sched_balance_rq(int this_cpu, ...</span><span class="ln"><span class="p">$</span> git grep -n &quot;^static bool update_sd_pick_busiest&quot; kernel/sched/fair.c</span><span class="ln hl">kernel/sched/fair.c:10740:static bool update_sd_pick_busiest(...</span><span class="ln"><span class="p">$</span> git grep -n &quot;struct lockref d_lockref&quot; include/linux/dcache.h</span><span class="ln hl">include/linux/dcache.h:113:	struct lockref d_lockref;</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">checkout</bdi>ِ مخزن <bdi dir="ltr">(Linux v6.18.63)</bdi>، ۲۰۲۶-۱۱-۱۵.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.5 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">load balancer</bdi>ِ مقالهٔ <bdi dir="ltr">B</bdi> هنوز هست</b><br><span class="caption">نامش عوض شده؛ <bdi dir="ltr">EEVDF</bdi> انتخاب <bdi dir="ltr">CFS</bdi> را عوض کرد، نه توازن را</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>شمارندهٔ <bdi dir="ltr">dentry</bdi> مقالهٔ <bdi dir="ltr">A</bdi> عوض شده</b><br><span class="caption"><bdi dir="ltr">lockref</bdi> به‌جای <bdi dir="ltr">sloppy counter</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>هر دو ماشین بزرگ <bdi dir="ltr">NUMA</bdi> داشتند</b><br><span class="caption">۴۸ / ۶۴ هسته — نه یک <bdi dir="ltr">VM</bdi> با ۸ <bdi dir="ltr">vCPU</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.5 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">خلاصهٔ بخش‌به‌بخش</span><span class="arrow-s">←</span><span class="tag r-ok">هر کدام یک جمله: مسئله، بینش، سازوکار</span></div><div class="pit in d2"><span class="tag r-danger">«لینوکس ۱۳۸ برابر کندتر است»</span><span class="arrow-s">←</span><span class="tag r-ok">حالت گوشه‌ای؛ معمولاً ۱۳ تا ۲۴٪</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">load_balance()</bdi> پیدا نمی‌شود</span><span class="arrow-s">←</span><span class="tag r-ok">search sched_balance_*</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.5 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">یکی از باگ‌های <bdi dir="ltr">Wasted Cores</bdi> را انتخاب کنید. فقط با سورس <bdi dir="ltr">v6.18.63</bdi> و ابزارهای <bdi dir="ltr">numactl</bdi> و <bdi dir="ltr">perf sched</bdi> و <bdi dir="ltr">mpstat</bdi> در نیم صفحه استدلال کنید که آیا هنوز ممکن است رخ دهد، و آزمایشی طراحی کنید که آن را نشان دهد.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۷ Real-Time و پژوهش" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

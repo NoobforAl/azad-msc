@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 06.1 · ساعت‌های Lamport و برداری</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">06.1</div>
+  <span class="eyebrow in-f">آزمایش 06.1 · هدف</span>
+  <h2 class="in">ساعت‌های <bdi dir="ltr">Lamport</bdi> و برداری</h2>
+  <p class="why in d1">هر رویداد سه پردازهٔ واقعی را با ساعت <bdi dir="ltr">Lamport</bdi> و برداری مهر بزنید و نشان دهید فقط بردارها همروندی را تشخیص می‌دهند.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: aos-lab · Go · UDP 9600-9602</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Stamp every event of three real processes with Lamport and vector clocks, and prove that only vectors detect concurrency.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.1 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>سه پردازه</h3><p><bdi dir="ltr">P0</bdi> و <bdi dir="ltr">P1</bdi> و <bdi dir="ltr">P2</bdi> روی <bdi dir="ltr">UDP</bdi> محلی</p></div><div class="c-6 card edge r-data in d2"><h3>قواعد ساعت</h3><p class="ltr-mono"><code>tick: L++ · merge: max(L,Lm)+1</code></p></div><div class="c-6 card edge r-kernel in d3"><h3>لاگ</h3><p>یک خط <bdi dir="ltr">JSON</bdi> برای هر رویداد، زیر <bdi dir="ltr">mutex</bdi></p></div><div class="c-6 card edge r-hardware in d4"><h3>تحلیل‌گر</h3><p>شرط ساعت، ترتیب کامل، جفت‌های همروند</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.1 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 01-lamport-vector-clocks</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/06-distributed-virtualization/01-lamport-vector-clocks</span><span class="ln"><span class="p">$</span> go version</span><span class="ln"><span class="p">$</span> bash run.sh</span><span class="ln"><span class="dim"># = go build; 3 x ./clocks -id i &amp; ; wait;</span></span><span class="ln"><span class="dim">#   ./clocks -analyze p0.log p1.log p2.log</span></span><span class="ln"><span class="p">$</span> head -3 p1.log</span><span class="ln"><span class="p">$</span> SEED=7 EVENTS=10 bash run.sh</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.1 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> bash run.sh</span><span class="ln">events=28 messages=10  clock condition:</span><span class="ln hl">  lamport 10/10, vector 10/10</span><span class="ln">total order (L, proc):</span><span class="ln">  L=1   P1 LOCAL      V=[0 1 0]</span><span class="ln">  L=1   P2 SEND  2-0  V=[0 0 1]</span><span class="ln">  L=2   P0 RECV  2-0  V=[1 0 1]</span><span class="ln">  ...</span><span class="ln">concurrent but L(a)&lt;L(b):</span><span class="ln">  P1 LOCAL L=1 V=[0 1 0] || P0 RECV L=2 V=[1 0 1]</span><span class="ln hl">pairs with L(a)&lt;L(b) that are concurrent: 85</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15.</bdi></p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.1 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">lamport n/n</bdi> و <bdi dir="ltr">vector n/n</bdi></b><br><span class="caption"><bdi dir="ltr">merge()</bdi> هر دریافت را از ارسالش بزرگ‌تر می‌کند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>مقدار <bdi dir="ltr">L</bdi> برابر در پردازه‌های مختلف</b><br><span class="caption">ترتیب کامل تساوی را با شمارهٔ پردازه می‌شکند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">L(a) &lt; L(b)</bdi> ولی <bdi dir="ltr">a</bdi> ∥ <bdi dir="ltr">b</bdi></b><br><span class="caption">مرتب‌کردن لاگ با زمان <bdi dir="ltr">Lamport</bdi> ترتیب علّی نیست</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.1 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">bind: address already in use</span><span class="arrow-s">←</span><span class="tag r-ok">pkill -f &#x27;./clocks -id&#x27;</span></div><div class="pit in d2"><span class="tag r-danger">messages=0</span><span class="arrow-s">←</span><span class="tag r-ok">تأخیر ۳۰۰ میلی‌ثانیه‌ای شروع را نگه دارید</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">vector k/n</bdi> با <bdi dir="ltr">k &lt; n</bdi></span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">slice</bdi> را کپی کنید؛ به‌روزرسانی و لاگ را با هم قفل کنید</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.1 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">هر ارسال را به <bdi dir="ltr">broadcast</bdi> علّی با تأخیر تصادفی ۰ تا ۳۰۰ میلی‌ثانیه برای هر نسخه تبدیل کنید و پیام را از صف انتظار فقط وقتی تحویل دهید که <bdi dir="ltr">Vm</bdi>[<bdi dir="ltr">j</bdi>] <bdi dir="ltr">= V</bdi>[<bdi dir="ltr">j</bdi>]<bdi dir="ltr">+1</bdi> و <bdi dir="ltr">Vm</bdi>[<bdi dir="ltr">k</bdi>] ≤ <bdi dir="ltr">V</bdi>[<bdi dir="ltr">k</bdi>].</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۶ توزیع‌شده و مجازی‌سازی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 640" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- Roles: user=teal #0E7490, kernel=amber #B45309, hardware=violet #6D28D9, data=green #047857; boundary = brand #1F4FA8 dashed -->
+  <text x="40" y="44" font-size="34" font-weight="750" fill="#0A1633">Virtual machine</text>
+  <text x="840" y="44" font-size="34" font-weight="750" fill="#0A1633">Container</text>
+
+  <!-- VM stack -->
+  <rect x="40" y="70" width="720" height="80" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="64" y="120" font-size="28" font-weight="700" fill="#0E7490">guest apps</text>
+  <rect x="40" y="165" width="720" height="80" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="64" y="215" font-size="28" font-weight="700" fill="#B45309">guest kernel (own ring 0)</text>
+  <line x1="30" y1="262" x2="770" y2="262" stroke="#1F4FA8" stroke-width="4" stroke-dasharray="16 12"/>
+  <rect x="420" y="246" width="330" height="32" fill="#FFFFFF"/>
+  <text x="432" y="271" font-size="24" font-weight="700" fill="#1F4FA8">boundary: VM exit</text>
+  <rect x="40" y="280" width="720" height="80" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="64" y="330" font-size="28" font-weight="700" fill="#0E7490">VMM: QEMU · virtio devices</text>
+  <rect x="40" y="375" width="720" height="80" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="64" y="425" font-size="28" font-weight="700" fill="#B45309">host kernel + kvm.ko</text>
+  <rect x="40" y="470" width="720" height="80" rx="14" fill="#EEE6FB" stroke="#6D28D9" stroke-width="3"/>
+  <text x="64" y="520" font-size="28" font-weight="700" fill="#6D28D9">CPU: VT-x · EPT</text>
+
+  <!-- Container stack -->
+  <rect x="840" y="70" width="720" height="80" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="864" y="120" font-size="28" font-weight="700" fill="#0E7490">container processes</text>
+  <rect x="840" y="165" width="720" height="80" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+  <text x="864" y="203" font-size="26" font-family="JetBrains Mono, monospace" fill="#047857">ns: mnt uts ipc pid net user</text>
+  <text x="864" y="233" font-size="26" font-family="JetBrains Mono, monospace" fill="#047857">cgroup: memory.max pids.max</text>
+  <line x1="830" y1="262" x2="1570" y2="262" stroke="#1F4FA8" stroke-width="4" stroke-dasharray="16 12"/>
+  <rect x="1180" y="246" width="370" height="32" fill="#FFFFFF"/>
+  <text x="1192" y="271" font-size="24" font-weight="700" fill="#1F4FA8">boundary: syscalls</text>
+  <rect x="840" y="280" width="720" height="175" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="864" y="330" font-size="28" font-weight="700" fill="#B45309">ONE shared host kernel</text>
+  <text x="864" y="372" font-size="26" fill="#0A1633">every container uses it directly</text>
+  <rect x="840" y="470" width="720" height="80" rx="14" fill="#EEE6FB" stroke="#6D28D9" stroke-width="3"/>
+  <text x="864" y="520" font-size="28" font-weight="700" fill="#6D28D9">CPU (no virtualization needed)</text>
+
+  <text x="40" y="606" font-size="26" fill="#3B4868">narrow interface: exits + virtual devices</text>
+  <text x="840" y="606" font-size="26" fill="#3B4868">wide interface: ~380 syscalls, /proc, /sys</text>
+</svg>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browser lab · Azad OS</title>
+<link rel="icon" href="/_shared/brand/azad-logo.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="bar">
+    <span class="tile"><img src="/_shared/brand/azad-logo.png" alt="Islamic Azad University"></span>
+    <h1 data-k="title"></h1>
+    <span class="sp"></span>
+    <a class="back" href="/" data-k="back"></a>
+    <div class="seg" role="group" aria-label="Language"><button data-l="en" aria-pressed="true">English</button><button data-l="fa" aria-pressed="false">فارسی</button></div>
+  </div>
+  <div class="notice" role="note">
+    <b data-k="noticeTitle"></b> <span data-k="noticeBody"></span>
+    <details><summary data-k="limitsTitle"></summary><ul id="limits"></ul></details>
+  </div>
+</div></header>
+
+<div class="wrap">
+<main class="grid">
+  <section aria-label="Labs">
+    <div class="card" id="chooserCard">
+      <h2 data-k="labsTitle"></h2>
+      <ol class="dots" id="dots"></ol>
+      <div id="labbox" class="lab"></div>
+    </div>
+  </section>
+
+  <section class="termcol" aria-label="Virtual machine">
+    <div class="card">
+      <div class="tbar">
+        <button class="tbtn primary" id="btnStart" data-k="start"></button>
+        <span class="status" id="status" role="status" aria-live="polite"></span>
+        <button class="tbtn" id="btnInt" data-k="interrupt" disabled></button>
+        <button class="tbtn" id="btnClear" data-k="clear" disabled></button>
+        <button class="tbtn" id="btnRestart" data-k="restart" disabled></button>
+      </div>
+      <div class="progress" id="prog" hidden><i id="progBar"></i></div>
+      <div id="term" aria-label="Terminal"></div>
+      <div class="setup hidden" id="setup"></div>
+    </div>
+  </section>
+</main>
+</div>
+<script type="module" src="lab.js"></script>
+</body>
+</html>

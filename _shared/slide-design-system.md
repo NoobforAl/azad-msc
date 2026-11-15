@@ -36,16 +36,16 @@ Give this file to any agent together with a course's `slides-outline.md` and it 
 ### 3.1 Identity
 
 - The university's flag and logo are a **blue emblem on a white field**. Every slide follows that: white surface, Azad blue ink, one warm accent.
-- **Official hex values:** no public brand guide with exact codes was found. The values below are a **close approximation** of the logo's royal blue. Before the final presentation, sample the real blue from the official logo file (3.3) and replace `--brand`. The other brand tokens derive from it.
+- **Brand colors are sampled from the emblem** in `_shared/brand/azad-logo.png`: periwinkle `#647CD0` and navy `#283874` (no public brand guide with official codes was found). `--brand` is that periwinkle's hue darkened to `#2F4BB0` so body-size text reaches 7.6:1 on white; `--brand-deep` (title backgrounds) is the navy family. If the university supplies an official file, re-run 3.3 and adjust.
 
 ### 3.2 Logo rules
 
 - Use the **official logo file** only (SVG or PNG with transparency, ≥ 1000 px). Never redraw, recolor, stretch, outline, shadow, or animate it.
-- Place it on **white**. On blue slides, put it on a white rounded tile (radius 24 px, padding 24 px).
+- Place it on **white**. On blue slides, put it on a white rounded tile (radius 32 px, padding 24 × 32 px).
 - Clear space must be at least **half the logo's height** on every side.
-- Size: **160 px** tall on TITLE, **64 px** on SECTION, **48 px** in the content-slide corner (top-left in RTL decks, top-right in LTR).
-- No logo file yet? Put a labeled dashed placeholder `[University logo]` and say so in the build notes.
-- File location convention: `_shared/brand/azad-logo.svg` (or `.png`).
+- The emblem is **tall (1 : 1.5)**, so sizes are by height: **168 px** on TITLE, **64 px** on SECTION, **64 px** in the content-slide corner (top-left in RTL decks, top-right in LTR).
+- No logo file? The deck shows a labeled dashed placeholder `[University logo]`; say so in the build notes.
+- File location: `_shared/brand/azad-logo.png` (the file) and `azad-logo.svg` (a wrapper that embeds the same PNG, so every deck's `…/azad-logo.svg` path works; `azad-deck.js` also falls back from `.svg` to `.png`). Where the file came from and its licence: `_shared/brand/README.md`.
 
 ### 3.3 Get the exact brand blue from the logo
 
@@ -79,17 +79,19 @@ Then check that the result reaches **≥ 7:1** contrast on white (e.g. webaim.or
 
 ```css
 :root, .reveal {
-  /* Brand: replace --brand with the sampled logo blue (section 3.3) */
-  --brand:         #1F4FA8;  /* Azad royal blue, ~7.6:1 on white */
-  --brand-deep:    #0C2763;  /* TITLE / SECTION backgrounds, h1 ink */
-  --brand-ink:     #123A86;  /* links, emphasis inside body text */
-  --brand-soft:    #E6EEFC;  /* tints, chips, soft panels */
-  --brand-line:    #9FB6E3;  /* dividers on brand-soft */
+  /* Brand: sampled from the emblem (section 3.3) */
+  --brand:         #2F4BB0;  /* emblem periwinkle, darkened: 7.6:1 on white */
+  --brand-deep:    #222F6A;  /* TITLE / SECTION headline ink, gradient end (emblem navy family) */
+  --brand-ink:     #26398A;  /* links, emphasis inside body text */
+  --brand-soft:    #ECF0FD;  /* tints, chips, soft panels */
+  --brand-line:    #A9B8EA;  /* dividers on brand-soft */
+  --logo-light:    #647CD0;  /* the emblem's own periwinkle: large shapes and gradients only, never text */
+  --logo-navy:     #283874;
 
   /* Neutrals: cool, slightly blue to match the brand */
   --bg:            #FFFFFF;
-  --bg-alt:        #F4F7FC;  /* alternating panels, code cards */
-  --border:        #8C9DBF;  /* >= 3:1 on white */
+  --bg-alt:        #F4F6FC;  /* alternating panels, code cards */
+  --border:        #8392C3;  /* 3.06:1 on white */
   --text:          #0A1633;  /* ~17:1 */
   --text-muted:    #3B4868;  /* >= 7:1, never lighter */
 
@@ -103,30 +105,22 @@ Then check that the result reaches **≥ 7:1** contrast on white (e.g. webaim.or
   --warning: #9A4A00;  --warning-bg: #FDEBD3;
 
   /* Shape */
-  --r-card: 28px;  --r-code: 20px;  --r-box: 14px;  --r-pill: 999px;
+  --r-card: 32px;  --r-code: 24px;  --r-box: 16px;  --r-pill: 999px;
   --stroke: 3px;   --stroke-strong: 4px;
+  --shadow-sm: 0 2px 4px rgba(34,47,106,.06), 0 10px 24px -12px rgba(34,47,106,.22);
+  --shadow-md: 0 4px 8px rgba(34,47,106,.06), 0 24px 48px -20px rgba(34,47,106,.32);
+  --grad-brand: linear-gradient(135deg, var(--logo-light), var(--brand) 55%, var(--brand-deep));
 
-  /* Motion */
+  /* Motion (--speed is set by the deck toolbar: 0.5 / 1 / 1.5 / 2) */
   --ease:    cubic-bezier(.22, 1, .36, 1);   /* expo-out */
-  --dur:     520ms;
-  --stagger: 90ms;
+  --dur:     calc(520ms / var(--speed));
+  --stagger: calc(90ms / var(--speed));
 }
 ```
 
-### 4.2 Azad Night (dark rooms or recorded videos only)
+### 4.2 Light only
 
-```css
-.reveal.night {
-  --brand:#8DB0FF; --brand-deep:#071739; --brand-ink:#B9CDFF;
-  --brand-soft:#132A5E; --brand-line:#36508C;
-  --bg:#0A132B; --bg-alt:#101D3D; --border:#4C5F8E;
-  --text:#F2F6FF; --text-muted:#B6C3E1;
-  --accent:#FFC93D; --accent-soft:#4B3A06;
-  --danger:#FF7A93; --danger-bg:#3F1522;
-  --success:#4FDB86; --success-bg:#0F3320;
-  --warning:#FFB25C; --warning-bg:#3D2508;
-}
-```
+There is **no dark theme**. These decks are shown on a classroom projector, so every layout (TITLE, SECTION, code, terminal, diagrams, the deck index page) uses the light palette in 4.1. Dark surfaces wash out on projectors and break the contrast rules below. The old `.reveal.night` theme was removed.
 
 ### 4.3 Projector color rules
 
@@ -135,8 +129,8 @@ Then check that the result reaches **≥ 7:1** contrast on white (e.g. webaim.or
 - Use a tinted fill (`--*-bg`) only together with a solid border in the matching color.
 - **At most 3 colors per slide** besides neutrals and brand.
 - Never use red vs. green alone. Always add a label (`BUG` / `FIX`, `BEFORE` / `AFTER`) or an icon.
-- Gradients are allowed in one place only: the large soft brand shape on TITLE and SECTION slides.
-- **No drop shadows.** They disappear on projectors. Use borders for depth.
+- **Gradients** are decoration, never information: the soft TITLE/SECTION washes, the slim rail on the start edge, number discs, the footer dot and the progress bar. Text never sits on a gradient that crosses below 4.5:1.
+- **Shadows (`--shadow-sm` / `--shadow-md`) are soft and extra.** v3.1 allows them for depth, but only **on top of** the ≥ 3 px border: if a projector washes the shadow out, the border still draws the shape. Never use a shadow instead of a border.
 
 ## 5. Semantic Palettes (per course)
 
@@ -149,7 +143,6 @@ Each course gets **four semantic roles**. A role keeps the same color across the
 | `--role-3` | `#6D28D9` violet | `#EEE6FB` |
 | `--role-4` | `#047857` green | `#DCF3EA` |
 
-Night theme inks: `#38BDF8` · `#FBBF24` · `#A78BFA` · `#34D399`. Night tints: `#0E2A3A` · `#3A2A0A` · `#2A1F4D` · `#0C3326`.
 
 ### 5.1 Role mapping by course
 
@@ -197,16 +190,17 @@ Exception: in security decks, **amber (threat) is never used for the "good" side
 
 | Component | Spec |
 |---|---|
-| **Eyebrow** | Small kicker above h2 (`Module 4 · Memory`), `--brand`, 24 px bold, followed by a 48 × 6 px `--accent` bar |
-| **Card** | `--bg` fill, `--stroke` border `--border`, radius `--r-card`, padding 40 px. Optional **8 px top edge** in its semantic color |
+| **Eyebrow** | Small kicker above h2 (`Module 4 · Memory`), `--brand`, 24 px bold, **led by** a 40 × 8 px `--accent` bar on the same line |
+| **Card** | `--bg` fill, `--stroke` border `--border`, radius `--r-card`, padding 40 px, `--shadow-sm`. Optional **8 px top edge** in its semantic color |
+| **Slide chrome** | Content slides get a 10 px gradient **rail** on the start edge and a faint brand wash in two corners. Footer: course tag with a gradient dot (start) and the slide number in a `--brand-soft` pill (end) |
 | **Bento grid** | 2–5 cards of different sizes on the 12-col grid (e.g. 7+5, 4+4+4, 8 / 4+4). The most important card is the largest |
 | **Pill / tag** | `--brand-soft` fill, `--brand-ink` text, 24 px bold, radius `--r-pill`, padding 8 × 20 |
-| **Callout number** | 56 px circle, `--brand` fill, white numeral 28 px bold: ① ② ③ |
-| **Big numeral** | Section number 320 px, weight 800, `--brand` outline (4 px) with 12% fill, behind the title |
+| **Callout number** | 56 px circle, `--grad-brand` fill, white numeral 28 px bold: ① ② ③ |
+| **Big numeral** | Section number 360 px, weight 800, outline (3 px, 55% brand-line) with 10% fill, behind the title |
 | **Highlight** | `--accent-soft` background + 8 px `--accent` start-edge bar |
 | **Divider** | 3 px `--brand-line`, never a thin gray hairline |
-| **Brand motif** | One per TITLE/SECTION slide: 3 large overlapping circles bleeding off one corner in `--brand`, `--brand-ink`, `--brand-soft` at 18–30% opacity. Never behind text |
-| **Corner logo** | 48 px, top-left (RTL) / top-right (LTR), content slides only |
+| **Brand motif** | One per TITLE/SECTION slide: soft glowing orbs with hairline rings bleeding off one corner, over a navy → periwinkle gradient and a fading dot grid. Never behind text |
+| **Corner logo** | 64 px tall (the emblem is tall), top-left (RTL) / top-right (LTR), content slides only |
 | **Icons** | Lucide or Tabler line icons, 2.5 px stroke, 48–64 px, colored with the role ink |
 
 - **Whitespace:** fill about 60% of the content area. Never fill every corner.
@@ -218,8 +212,8 @@ Name the layout in outlines (`Layout: CODE_WALKTHROUGH`).
 
 | Layout | Use | Key rules |
 |---|---|---|
-| **TITLE** | Cover | `--brand-deep` full bleed, white display title, logo on a white tile, brand motif, fields from 3.4 |
-| **SECTION** | Module start | `--brand-deep`, giant numeral, module title, one sentence on why it matters, 3 topic pills |
+| **TITLE** | Cover | White page with soft brand washes, navy display title, logo on a bordered white tile, brand motif, fields from 3.4 |
+| **SECTION** | Module start | White page with soft brand washes, giant numeral, module title, one sentence on why it matters, 3 topic pills |
 | **AGENDA** | Overview | 4–6 numbered rows. The current one is filled `--brand` with white text, the rest outlined |
 | **CONCEPT_DIAGRAM** | Most used | Eyebrow + title + diagram on ~65% of the area + ≤ 3 numbered callouts + one-line takeaway |
 | **BENTO** | 3–5 related facts or features | Bento grid (section 7), one icon + title + ≤ 15 words per card |
@@ -230,7 +224,7 @@ Name the layout in outlines (`Layout: CODE_WALKTHROUGH`).
 | **STATE_MACHINE** | Lifecycles | Circles + labeled arrows; the current state is filled |
 | **ARCHITECTURE** | System / network topology | ≤ 10 boxes, zones as tinted rounded rectangles (e.g. DMZ, VPC), arrows labeled with the protocol |
 | **CODE_WALKTHROUGH** | Real code | Code on 7/12 columns, 3–4 numbered notes on 5/12; ≤ 15 lines; highlighted line groups |
-| **TERMINAL_DEMO** | `strace`, `nmap`, `kubectl`… | Dark terminal card (`#0A1633`, text `#E6EEFC`) even in Light theme; ≤ 12 lines; 1–2 highlighted |
+| **TERMINAL_DEMO** | `strace`, `nmap`, `kubectl`… | Light terminal card (`--bg-alt` fill, 3 px `--border`, navy text, green prompt); ≤ 12 lines; 1–2 highlighted |
 | **BIG_STAT** | One striking number | Number at 180 px in `--brand`, one-line meaning, source caption |
 | **DATA_CHART** | One finding | One chart, the title states the finding, units on axes, source caption, role colors only |
 | **MEMORY_LAYOUT** | Address space / packet / header layout | Vertical (memory) or horizontal (packet) stacked fields, with sizes labeled |
@@ -306,6 +300,28 @@ mermaid.initialize({
 
 The plain CSS rule is always the **finished look**, which is what PDF export shows. Animation only defines the starting state.
 
+#### Animation toolkit (all in `azad-theme.css`, no build step)
+
+| You want | Write | Notes |
+|---|---|---|
+| Element animates in when the slide appears | `class="in"` / `in-f` / `in-p` + `d1`…`d5` | existing presets |
+| Click-by-click reveal | `class="fragment anim-up"` (also `anim-pop`, `anim-zoom`, `anim-start`, `anim-end`, `anim-blur`, `anim-grow`) | `anim-start/end` flip automatically in RTL |
+| One shape morphs into the next slide's | `data-auto-animate` on two adjacent `<section>`s + the same `data-id` | reveal.js built-in |
+| Draw an SVG line | `class="draw" style="--len:600"` | existing preset |
+| Draw the eye to one thing | `class="loop-pulse"` / `loop-float` / `loop-glow` | loops only on shapes/diagrams, never near text (12.4) |
+| Transition between slides | toolbar menu, or `?transition=slide` in the URL | `fade` (default) · `slide` · `convex` · `concave` · `zoom` · `none`; remembered per browser |
+| Speed / off | toolbar, or key **A** | `--speed` 0.5–2×; `html.no-anim` also honours `prefers-reduced-motion` |
+
+#### Exporting
+
+| Output | How | What you get |
+|---|---|---|
+| PDF (browser) | toolbar **Export PDF** | the deck reloads in print mode and opens the print dialog. Choose *Save as PDF*, margins *None*, *Background graphics* on |
+| PDF (command) | `make pdf M=01 [L=fa] [LAB=02] [ALL=1]` | vector pages in `exports/`, one per slide, every animation in its **final state** |
+| PowerPoint | `make pptx M=01 …` | one 1920 × 1080 picture per slide, speaker notes copied, alt text from the slide title, a slide **transition** (`--transition fade\|push\|wipe\|none`) |
+
+The PPTX slides are **pictures**: they match the deck exactly but their text is not editable, and click-by-click builds are flattened to the final state. For editable content, edit the HTML deck and re-export. Needs Edge, Chrome or Chromium; PPTX also needs `pip install python-pptx`.
+
 ### 12.2 Where to use what
 
 | Situation | Motion |
@@ -329,7 +345,7 @@ The plain CSS rule is always the **finished look**, which is what PDF export sho
 
 - The whole slide is visible within **1 s** of arriving, except click steps.
 - ≤ 2 animations per element. Animate only `opacity`, `transform`, `background-color`, `border-color`, `color`, `stroke-dashoffset`.
-- **No loops** near text. No bouncing, spinning, parallax, or flashing faster than 3 per second.
+- **No loops** near text; the `loop-*` classes are for shapes and diagram parts only. No bouncing, spinning, parallax, or flashing faster than 3 per second.
 - Nothing depends on hover. Every build step has a static final state.
 
 ## 13. Speaker Notes Template
@@ -363,7 +379,7 @@ Notes:
   TIME: 90
 ```
 
-Per module: **12–18 slides**, starting with SECTION and ending with SUMMARY. At least 60% of slides should be visual (diagram, code, terminal, chart).
+Per module: **12–18 slides**, starting with SECTION and ending with SUMMARY. One generated **REFERENCES** slide ("Go deeper") follows SUMMARY as an appendix and does not count toward the 18: it is built by `_shared/tools/add_references.py` from `_shared/resources/awesome-os.json` (verified links only; never edit it by hand). At least 60% of slides should be visual (diagram, code, terminal, chart).
 
 ## 15. Build Recipe
 

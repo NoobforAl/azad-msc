@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 02.4 · perf sched and bpftrace on sched_switch</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">02.4</div>
+  <span class="eyebrow in-f">Lab 02.4 · Goal</span>
+  <h2 class="in">perf sched and bpftrace on sched_switch</h2>
+  <p class="why in d1">Read scheduling latency with perf sched and split every context switch into voluntary vs involuntary with bpftrace.</p>
+  <div class="pills in d2"><span class="pill">Runs on: Lab VM (root, tracing only)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Read scheduling latency with perf sched and split every context switch into voluntary vs involuntary with bpftrace.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.4 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>Load on CPU 2</h3><p>2 shell busy loops + pingpong</p></div><div class="c-6 card edge r-kernel in d2"><h3>Tracepoint</h3><p class="ltr-mono"><code>sched:sched_switch (prev_state)</code></p></div><div class="c-6 card edge r-data in d3"><h3>Recording</h3><p class="ltr-mono"><code>perf sched record -C 2 -- sleep 3</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>Scope</h3><p>one CPU, 8 s of load (shared VM)</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.4 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 04-perf-sched-bpftrace</div><pre><code><span class="ln"><span class="p">$</span> for i in 1 2; do timeout 8 taskset -c 2 \</span><span class="ln">    sh -c &#x27;while :; do :; done&#x27; &amp; done</span><span class="ln"><span class="p">$</span> timeout 8 taskset -c 2 ./pingpong free 3000000 &amp;</span><span class="ln"><span class="p">$</span> sudo perf sched record -C 2 -- sleep 3</span><span class="ln"><span class="p">$</span> sudo perf sched latency --sort max | head</span><span class="ln"><span class="p">$</span> sudo perf sched timehist | head -20</span><span class="ln"> </span><span class="ln"><span class="p">$</span> sudo bpftrace switch_kinds.bt</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.4 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> sudo perf sched latency --sort max | head</span><span class="ln">  Task          | Switches | Avg delay ms    | Max delay ms</span><span class="ln hl">  sh:(2)        |      179 | avg:  18.576 ms | max: 101.378 ms</span><span class="ln hl">  pingpong:(2)  |   187804 | avg:   0.014 ms | max:  92.529 ms</span><span class="ln"> </span><span class="ln"><span class="p">$</span> sudo bpftrace switch_kinds.bt</span><span class="ln">@involuntary[sh]: 402</span><span class="ln">@involuntary[pingpong]: 3260</span><span class="ln hl">@voluntary[pingpong]: 703563</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.4 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>pingpong waits 0.014 ms</b><br><span class="caption"><bdi dir="ltr">wakes with lag</bdi> ≥ <bdi dir="ltr">0</bdi>, <bdi dir="ltr">preempts the hogs</bdi></span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>sh hogs: involuntary only</b><br><span class="caption"><bdi dir="ltr">prev_state == 0</bdi> → <bdi dir="ltr">preempted</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>pingpong: voluntary</b><br><span class="caption">blocks in read() every round trip</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.4 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">perf: No permission</span><span class="arrow-s">→</span><span class="tag r-ok">perf_event_paranoid: use sudo</span></div><div class="pit in d2"><span class="tag r-danger">stress-ng: caught SIGILL</span><span class="arrow-s">→</span><span class="tag r-ok">VM vCPU lacks an instruction: --cpu-method int64</span></div><div class="pit in d3"><span class="tag r-danger">bpftrace BTF error</span><span class="arrow-s">→</span><span class="tag r-ok">needs /sys/kernel/btf/vmlinux</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 02.4 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px"><bdi dir="ltr">bpftrace run-queue latency histogram (wakeup</bdi> → <bdi dir="ltr">on CPU) for pingpong vs the rest</bdi>; <bdi dir="ltr">re-queue preempted tasks at sched_switch with prev_state == 0.</bdi></p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 02 Processes &amp; Threads" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

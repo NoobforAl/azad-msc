@@ -1,0 +1,14 @@
+#!/usr/bin/env bpftrace
+// kvm-exits.bt: count VM exits by reason on a KVM host (needs a running guest and kvm loaded).
+// The bpftrace version of `perf kvm stat`. Tracepoint: arch/x86/kvm/trace.h L391-434 (TRACE_EVENT_KVM_EXIT(kvm_exit), field exit_reason).
+//   sudo bpftrace kvm-exits.bt
+tracepoint:kvm:kvm_exit
+{
+	@exits[args->exit_reason] = count();
+}
+
+interval:s:5
+{
+	print(@exits);
+	clear(@exits);
+}

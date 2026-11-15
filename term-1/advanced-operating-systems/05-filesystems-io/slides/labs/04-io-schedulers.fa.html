@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 05.4 · مقایسهٔ I/O schedulerها با fio</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">05.4</div>
+  <span class="eyebrow in-f">آزمایش 05.4 · هدف</span>
+  <h2 class="in">مقایسهٔ <bdi dir="ltr">I/O scheduler</bdi>ها با <bdi dir="ltr">fio</bdi></h2>
+  <p class="why in d1">توان عملیاتی و تأخیر دنبالهٔ خواننده را با <bdi dir="ltr">none</bdi>، <bdi dir="ltr">mq-deadline</bdi>، <bdi dir="ltr">bfq</bdi> و <bdi dir="ltr">kyber</bdi> روی یک دستگاه اندازه بگیرید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: فقط VM آزمایشگاه (loop device، sudo)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Measure throughput and reader tail latency under none, mq-deadline, bfq and kyber on the same device.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.4 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-data in d1"><h3>دستگاه</h3><p>فایل ۵۱۲ مگابایتی، <bdi dir="ltr">losetup --direct-io=on</bdi></p></div><div class="c-6 card edge r-kernel in d2"><h3>زمان‌بندها</h3><p class="ltr-mono"><code>/sys/block/loopN/queue/scheduler</code></p></div><div class="c-6 card edge r-user in d3"><h3>کار <bdi dir="ltr">A</bdi></h3><p><bdi dir="ltr">randread</bdi> چهار کیلوبایتی، <bdi dir="ltr">QD32</bdi>، <bdi dir="ltr">io_uring</bdi></p></div><div class="c-6 card edge r-user in d4"><h3>کار <bdi dir="ltr">B</bdi></h3><p>خوانندهٔ <bdi dir="ltr">QD1 +</bdi> نویسندهٔ ترتیبی ۱ مگابایتی</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.4 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 04-io-schedulers</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/05-filesystems-io/labs/04-io-schedulers</span><span class="ln"><span class="p">$</span> bash sched-bench.sh          # ~1 min per scheduler</span><span class="ln"><span class="p">$</span> RUNTIME=5 bash sched-bench.sh  # quicker</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.4 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">device /dev/loop0: [none] mq-deadline bfq kyber</span><span class="ln">scheduler    A:IOPS A:p99(us) | B:rd p50  B:rd p99  B:wr MiB/s</span><span class="ln">none           3988    14877 |   17170    101188      609.7</span><span class="ln hl">mq-deadline    4643    12386 |   43778    219152      208.4</span><span class="ln hl">bfq            4310    15008 |     522      1057       10.6</span><span class="ln">kyber          4108    14746 |   23724    223347      373.3</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، ۲۰۲۶-۱۱-۱۵.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.4 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>پیش‌فرض <bdi dir="ltr">loop device</bdi> برابر <bdi dir="ltr">none</bdi> است</b><br><span class="caption mono">BLK_MQ_F_NO_SCHED_BY_DEFAULT (loop.c L2042)</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">mq-deadline:</bdi> بدترین تأخیر خواننده در <bdi dir="ltr">B</bdi></b><br><span class="caption">دسته‌های ۱۶تایی <bdi dir="ltr">write</bdi> یک مگابایتی پیش از هر <bdi dir="ltr">read</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">bfq</bdi> می‌تواند خواننده را سریع کند</b><br><span class="caption"><bdi dir="ltr">idling: p50</bdi> برابر <bdi dir="ltr">0.5 ms</bdi>، نویسنده <bdi dir="ltr">10.6 MiB/s</bdi> (اجرای ۲)</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.4 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">bfq</bdi> یا <bdi dir="ltr">kyber</bdi> در فهرست نیست</span><span class="arrow-s">←</span><span class="tag r-ok">sudo modprobe bfq kyber-iosched</span></div><div class="pit in d2"><span class="tag r-danger">عددها بین اجراها جابه‌جا می‌شوند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">VM</bdi> مشترک <bdi dir="ltr">+ cache</bdi> میزبان: تکرار کنید و شکل را مقایسه کنید</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">Invalid argument</bdi> هنگام نوشتن <bdi dir="ltr">scheduler</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">نام در فهرست داخل کروشه نیست</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.4 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">زیر <bdi dir="ltr">bfq</bdi> نویسنده را در <bdi dir="ltr">cgroup</bdi>ی با <bdi dir="ltr">io.bfq.weight</bdi> برابر ۱۰ و خواننده را در <bdi dir="ltr">cgroup</bdi>ی با ۱۰۰۰ بگذارید. آیا <bdi dir="ltr">p99</bdi> خواننده نسبت به <bdi dir="ltr">bfq</bdi> ساده بهتر می‌شود؟ <bdi dir="ltr">mq-deadline</bdi> با همین <bdi dir="ltr">cgroup</bdi>ها چه می‌کند؟</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۵ فایل‌سیستم و I/O" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

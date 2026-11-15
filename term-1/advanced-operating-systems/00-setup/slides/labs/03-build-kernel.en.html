@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 00.3 · Build and boot v6.18.63 in the VM</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">00.3</div>
+  <span class="eyebrow in-f">Lab 00.3 · Goal</span>
+  <h2 class="in">Build and boot v6.18.63 in the VM</h2>
+  <p class="why in d1">The VM boots exactly the kernel whose source you read, with BTF, ftrace, kallsyms and debugfs on.</p>
+  <div class="pills in d2"><span class="pill">Runs on: VM only — snapshot first</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: The VM boots exactly the kernel whose source you read, with BTF, ftrace, kallsyms and debugfs on.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.3 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-data in d1"><h3>Source</h3><p>full shallow clone of tag v6.18.63</p></div><div class="c-6 card edge r-kernel in d2"><h3>Config</h3><p>Ubuntu config + localmodconfig + BTF/ftrace</p></div><div class="c-6 card edge r-user in d3"><h3>Flavors</h3><p><bdi dir="ltr">lab</bdi> · <bdi dir="ltr">--rt (M7)</bdi> · <bdi dir="ltr">--lockdep (M3)</bdi></p></div><div class="c-6 card edge r-hardware in d4"><h3>Guard</h3><p>refuses to run on bare metal</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.3 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 03-build-kernel</div><pre><code><span class="ln"><span class="dim"># host: snapshot first</span></span><span class="ln"><span class="p">$</span> sudo virsh snapshot-create-as aos-lab pre-kernel</span><span class="ln"><span class="dim"># inside the VM</span></span><span class="ln"><span class="p">$</span> bash build-kernel.sh</span><span class="ln"><span class="p">$</span> sudo reboot</span><span class="ln"><span class="p">$</span> uname -r</span><span class="ln"><span class="p">$</span> zgrep -E &#x27;BTF|GRAPH_TRACER&#x27; /proc/config.gz</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.3 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">real    27m41s</span><span class="ln">installed 6.18.63-aos-lab. Reboot, then check ...</span><span class="ln"> </span><span class="ln"><span class="p">$</span> uname -r</span><span class="ln hl">6.18.63-aos-lab</span><span class="ln">CONFIG_DEBUG_INFO_BTF=y</span><span class="ln">CONFIG_FUNCTION_GRAPH_TRACER=y</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">EXPECTED: not yet captured on your machine; replace with your real run.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Output is marked EXPECTED until captured from a real run (quality rule 2).
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.3 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Four .deb packages</b><br><span class="caption mono"><bdi dir="ltr">image</bdi> · <bdi dir="ltr">headers</bdi> · <bdi dir="ltr">libc-dev</bdi> · <bdi dir="ltr">dbg (vmlinux)</bdi></span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>Build tree size</b><br><span class="caption"><bdi dir="ltr">du -sh .</bdi> → <bdi dir="ltr">20+ GB</bdi>, <bdi dir="ltr">mostly debug info</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>RT marker</b><br><span class="caption">uname -v contains PREEMPT_RT (init/Makefile L30)</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.3 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">canonical-certs.pem missing</span><span class="arrow-s">→</span><span class="tag r-ok">SYSTEM_TRUSTED_KEYS=&quot;&quot; (script does it)</span></div><div class="pit in d2"><span class="tag r-danger">pahole is not available</span><span class="arrow-s">→</span><span class="tag r-ok">sudo apt install dwarves</span></div><div class="pit in d3"><span class="tag r-danger">cc1 Killed</span><span class="arrow-s">→</span><span class="tag r-ok">out of RAM: lower -j or RAM_MB=16384</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.3 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Using only the running VM, prove the kernel is the source you read: do_syscall_64 in kallsyms, its (absent) ftrace entry, and gdb&#x27;s line number from the -dbg vmlinux.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 00 Setup" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

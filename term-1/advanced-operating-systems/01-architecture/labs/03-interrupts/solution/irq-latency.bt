@@ -1,0 +1,27 @@
+#!/usr/bin/env bpftrace
+// irq-latency.bt: how long each device interrupt's top half runs, per handler name.
+// Usage (VM, root): sudo bpftrace irq-latency.bt      (Ctrl-C after ~10 s, or add a load)
+//
+// Both tracepoints are in __handle_irq_event_percpu() (kernel/irq/handle.c L195, L206):
+//   trace_irq_handler_entry(irq, action);  res = action->handler(...);  trace_irq_handler_exit(...)
+// Interrupts are off while the handler runs, so entry/exit on one CPU always pair up.
+
+tracepoint:irq:irq_handler_entry
+{
+  @start[cpu] = nsecs;
+  @name[cpu] = str(args->name);
+}
+
+tracepoint:irq:irq_handler_exit
+/@start[cpu]/
+{
+  @usecs[@name[cpu]] = hist((nsecs - @start[cpu]) / 1000);
+  @count[@name[cpu]] = count();
+  delete(@start[cpu]);
+}
+
+END
+{
+  clear(@start);
+  clear(@name);
+}

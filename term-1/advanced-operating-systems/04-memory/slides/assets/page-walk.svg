@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 545" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- Roles (Advanced OS): user=teal #0E7490, kernel=amber #B45309, hardware=violet #6D28D9, data=green #047857 -->
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3B4868"/>
+    </marker>
+  </defs>
+
+  <!-- VA bit fields -->
+  <text x="20" y="40" font-size="28" font-weight="700" fill="#0A1633">VA 0x00007f3a12345678</text>
+  <g font-family="JetBrains Mono, monospace" font-size="26">
+    <rect x="20"   y="60" width="200" height="90" rx="14" fill="#F4F7FC" stroke="#8C9DBF" stroke-width="3"/>
+    <text x="120"  y="100" text-anchor="middle" fill="#3B4868">63:48</text>
+    <text x="120"  y="134" text-anchor="middle" fill="#3B4868">sign</text>
+
+    <rect x="230"  y="60" width="250" height="90" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+    <text x="355"  y="100" text-anchor="middle" fill="#047857">47:39 PGD</text>
+    <text x="355"  y="134" text-anchor="middle" fill="#0A1633">254</text>
+
+    <rect x="490"  y="60" width="250" height="90" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+    <text x="615"  y="100" text-anchor="middle" fill="#047857">38:30 PUD</text>
+    <text x="615"  y="134" text-anchor="middle" fill="#0A1633">232</text>
+
+    <rect x="750"  y="60" width="250" height="90" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+    <text x="875"  y="100" text-anchor="middle" fill="#047857">29:21 PMD</text>
+    <text x="875"  y="134" text-anchor="middle" fill="#0A1633">145</text>
+
+    <rect x="1010" y="60" width="250" height="90" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+    <text x="1135" y="100" text-anchor="middle" fill="#047857">20:12 PTE</text>
+    <text x="1135" y="134" text-anchor="middle" fill="#0A1633">325</text>
+
+    <rect x="1270" y="60" width="310" height="90" rx="14" fill="#E6EEFC" stroke="#1F4FA8" stroke-width="3"/>
+    <text x="1425" y="100" text-anchor="middle" fill="#123A86">11:0 offset</text>
+    <text x="1425" y="134" text-anchor="middle" fill="#0A1633">0x678</text>
+  </g>
+
+  <!-- CR3 -->
+  <rect x="20" y="250" width="170" height="110" rx="14" fill="#EEE6FB" stroke="#6D28D9" stroke-width="3"/>
+  <text x="105" y="298" text-anchor="middle" font-size="30" font-weight="700" fill="#6D28D9">CR3</text>
+  <text x="105" y="336" text-anchor="middle" font-size="24" font-family="JetBrains Mono, monospace" fill="#0A1633">+ PCID</text>
+
+  <!-- Tables -->
+  <g font-size="28" font-weight="700">
+    <rect x="250"  y="220" width="210" height="170" rx="14" fill="#FFFFFF" stroke="#047857" stroke-width="3"/>
+    <text x="355" y="262" text-anchor="middle" fill="#047857">PGD</text>
+    <rect x="510"  y="220" width="210" height="170" rx="14" fill="#FFFFFF" stroke="#047857" stroke-width="3"/>
+    <text x="615" y="262" text-anchor="middle" fill="#047857">PUD</text>
+    <rect x="770"  y="220" width="210" height="170" rx="14" fill="#FFFFFF" stroke="#047857" stroke-width="3"/>
+    <text x="875" y="262" text-anchor="middle" fill="#047857">PMD</text>
+    <rect x="1030" y="220" width="210" height="170" rx="14" fill="#FFFFFF" stroke="#047857" stroke-width="3"/>
+    <text x="1135" y="262" text-anchor="middle" fill="#047857">PTE</text>
+    <rect x="1290" y="220" width="290" height="170" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+    <text x="1435" y="262" text-anchor="middle" fill="#047857">4 KiB frame</text>
+  </g>
+  <g font-size="24" font-family="JetBrains Mono, monospace" fill="#0A1633">
+    <text x="355"  y="310" text-anchor="middle">512 × 8 B</text>
+    <text x="615"  y="310" text-anchor="middle">PS=1: 1 GiB</text>
+    <text x="875"  y="310" text-anchor="middle">PS=1: 2 MiB</text>
+    <text x="1135" y="310" text-anchor="middle">PFN|P RW U</text>
+    <text x="1135" y="346" text-anchor="middle">A D NX</text>
+    <text x="1435" y="320" text-anchor="middle">PFN&lt;&lt;12 | 0x678</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)">
+    <path d="M190 305 L242 305"/>
+    <path d="M460 360 L502 360"/>
+    <path d="M720 360 L762 360"/>
+    <path d="M980 360 L1022 360"/>
+    <path d="M1240 360 L1282 360"/>
+  </g>
+  <g stroke="#3B4868" stroke-width="3" fill="none" stroke-dasharray="10 8">
+    <path d="M355 150 L355 220"/>
+    <path d="M615 150 L615 220"/>
+    <path d="M875 150 L875 220"/>
+    <path d="M1135 150 L1135 220"/>
+    <path d="M1425 150 L1425 220"/>
+  </g>
+
+  <!-- MMU / TLB band -->
+  <rect x="20" y="450" width="1560" height="80" rx="14" fill="#EEE6FB" stroke="#6D28D9" stroke-width="3"/>
+  <text x="50" y="500" font-size="28" font-weight="700" fill="#6D28D9">MMU walk on TLB miss</text>
+  <text x="470" y="500" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">4 dependent reads · VM (EPT): up to 24</text>
+
+</svg>

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 640" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- Roles (Advanced OS): user=teal #0E7490, kernel=amber #B45309, hardware=violet #6D28D9, data=green #047857 -->
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3B4868"/>
+    </marker>
+  </defs>
+
+  <!-- ===== Left: monolithic ===== -->
+  <text x="40" y="52" font-size="34" font-weight="750" fill="#0A1633">① Monolithic: Linux, OpenBSD</text>
+  <rect x="40" y="90" width="700" height="100" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="70" y="152" font-size="30" font-weight="700" fill="#0E7490">app</text>
+  <text x="200" y="152" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">read(fd, buf, n)</text>
+
+  <!-- ring boundary -->
+  <line x1="40" y1="230" x2="740" y2="230" stroke="#1F4FA8" stroke-width="4" stroke-dasharray="16 12"/>
+  <rect x="520" y="214" width="210" height="32" fill="#FFFFFF"/>
+  <text x="532" y="240" font-size="24" font-weight="700" fill="#1F4FA8">Ring 3 / Ring 0</text>
+
+  <rect x="40" y="270" width="700" height="250" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="300" y="315" font-size="28" font-weight="700" fill="#B45309">one address space</text>
+  <g font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">
+    <rect x="70" y="340" width="180" height="60" rx="10" fill="#FFFFFF" stroke="#B45309" stroke-width="3"/>
+    <text x="110" y="380">VFS</text>
+    <rect x="300" y="340" width="180" height="60" rx="10" fill="#FFFFFF" stroke="#B45309" stroke-width="3"/>
+    <text x="345" y="380">ext4</text>
+    <rect x="530" y="340" width="180" height="60" rx="10" fill="#FFFFFF" stroke="#B45309" stroke-width="3"/>
+    <text x="555" y="380">driver</text>
+    <text x="70" y="470">sched · mm · net · .ko</text>
+  </g>
+  <path d="M250 370 L292 370" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M480 370 L522 370" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M160 190 L160 332" stroke="#F5B301" stroke-width="8" fill="none" marker-end="url(#ah)"/>
+  <text x="180" y="218" font-size="24" font-family="JetBrains Mono, monospace" fill="#3B4868">syscall</text>
+  <text x="40" y="575" font-size="28" font-weight="700" fill="#0A1633">2 mode switches · function calls</text>
+
+  <!-- ===== Right: microkernel ===== -->
+  <text x="860" y="52" font-size="34" font-weight="750" fill="#0A1633">② Microkernel: seL4, QNX</text>
+  <g font-size="28" font-weight="700" fill="#0E7490">
+    <rect x="860" y="90" width="200" height="100" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+    <text x="925" y="152">app</text>
+    <rect x="1110" y="90" width="210" height="100" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+    <text x="1135" y="152">FS server</text>
+    <rect x="1370" y="90" width="200" height="100" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+    <text x="1408" y="152">driver</text>
+  </g>
+
+  <line x1="860" y1="230" x2="1570" y2="230" stroke="#1F4FA8" stroke-width="4" stroke-dasharray="16 12"/>
+  <rect x="1000" y="214" width="210" height="32" fill="#FFFFFF"/>
+  <text x="1012" y="240" font-size="24" font-weight="700" fill="#1F4FA8">Ring 3 / Ring 0</text>
+
+  <rect x="860" y="270" width="710" height="130" rx="14" fill="#FDEFD9" stroke="#B45309" stroke-width="3"/>
+  <text x="890" y="320" font-size="28" font-weight="700" fill="#B45309">small kernel</text>
+  <text x="890" y="370" font-size="26" font-family="JetBrains Mono, monospace" fill="#0A1633">IPC · threads · address spaces</text>
+
+  <!-- IPC arrows through the kernel -->
+  <path d="M960 190 L960 262" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M1215 262 L1215 198" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M1250 190 L1250 262" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <path d="M1470 262 L1470 198" stroke="#3B4868" stroke-width="4" fill="none" marker-end="url(#ah)"/>
+  <text x="890" y="258" font-size="24" font-family="JetBrains Mono, monospace" fill="#3B4868">IPC</text>
+  <text x="1268" y="258" font-size="24" font-family="JetBrains Mono, monospace" fill="#3B4868">IPC</text>
+
+  <rect x="860" y="440" width="710" height="80" rx="14" fill="#E6EEFC" stroke="#1F4FA8" stroke-width="3"/>
+  <text x="890" y="492" font-size="26" font-weight="700" fill="#123A86">driver crash → restart one process</text>
+  <text x="860" y="575" font-size="28" font-weight="700" fill="#0A1633">≥ 4 IPC crossings · isolation</text>
+</svg>

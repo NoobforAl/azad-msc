@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 03.5 · آزمون litmus از نوع store-buffering در C11 و Rust</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">03.5</div>
+  <span class="eyebrow in-f">آزمایش 03.5 · هدف</span>
+  <h2 class="in">آزمون <bdi dir="ltr">litmus</bdi> از نوع <bdi dir="ltr">store-buffering</bdi> در <bdi dir="ltr">C11</bdi> و <bdi dir="ltr">Rust</bdi></h2>
+  <p class="why in d1">بشمارید <bdi dir="ltr">x86</bdi> در یک میلیون اجرا چند بار <bdi dir="ltr">r0 = r1 = 0</bdi> نشان می‌دهد، بعد با یک <bdi dir="ltr">fence</bdi> کامل حذفش کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM با نام aos-lab، ۲ CPU ثابت · ARCH-SPECIFIC x86-64</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Count how often x86 shows r0 = r1 = 0 in a million runs, then make it vanish with a full fence.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.5 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>آزمون</h3><p class="ltr-mono"><code>x=1; r0=y  ||  y=1; r1=x</code></p></div><div class="c-6 card edge r-hardware in d2"><h3>علت</h3><p><bdi dir="ltr">store buffer</bdi> هر هسته <bdi dir="ltr">(x86-TSO)</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3>حالت‌ها</h3><p class="ltr-mono"><code>relaxed · fence · seqcst</code></p></div><div class="c-6 card edge r-data in d4"><h3>دو زبان</h3><p class="ltr-mono"><code>sb.c (C11) · sb.rs (Rust std)</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.5 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 05-litmus-sb</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -pthread sb.c -o sb</span><span class="ln"><span class="p">$</span> rustc -O sb.rs -o sb_rs</span><span class="ln"><span class="p">$</span> ./sb relaxed 1000000 0 1</span><span class="ln"><span class="p">$</span> ./sb fence 1000000 0 1</span><span class="ln"><span class="p">$</span> ./sb_rs relaxed 1000000</span><span class="ln"><span class="p">$</span> objdump -d sb | grep -E &#x27;mfence|lock|xchg&#x27;</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.5 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> ./sb relaxed 1000000 0 1</span><span class="ln hl">  r0=0 r1=0 :     35320  (3.5320%)  &lt;- forbidden under SC</span><span class="ln"><span class="p">$</span> ./sb fence 1000000 0 1</span><span class="ln hl">  r0=0 r1=0 :         0  (0.0000%)  &lt;- forbidden under SC</span><span class="ln"><span class="p">$</span> ./sb_rs relaxed 1000000</span><span class="ln">  r0=0 r1=0 :     17318  (1.7318%)  &lt;- forbidden under SC</span><span class="ln"><span class="p">$</span> ./sb_rs fence 1000000</span><span class="ln">  r0=0 r1=0 :         0  (0.0000%)  &lt;- forbidden under SC</span><span class="ln"><span class="p">$</span> objdump -d sb | grep -E &#x27;mfence|lock|xchg&#x27;</span><span class="ln">    1733:  xchg   %eax,(%rsi)</span><span class="ln hl">    1746:  lock orq $0x0,(%rsp)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15</bdi>؛ مهمان مشترک ۸ <bdi dir="ltr">vCPU</bdi>، زمان‌ها نویز دارند.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.5 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">0/0</bdi> فقط در <bdi dir="ltr">relaxed</bdi> دیده می‌شود</b><br><span class="caption"><bdi dir="ltr">store</bdi> در بافر ماند در حالی که <bdi dir="ltr">load</bdi> اجرا شد</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">fence</bdi> یک دستور بی‌اثرِ <bdi dir="ltr">lock</bdi>دار است</b><br><span class="caption mono">lock orq $0x0,(%rsp)</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">Rust</bdi> هم همین را نشان می‌دهد</b><br><span class="caption">همان سخت‌افزار، همان مدل حافظه <bdi dir="ltr">(C++20)</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.5 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">relaxed</bdi> صفر نشان می‌دهد</span><span class="arrow-s">←</span><span class="tag r-ok">هر دو نخ روی یک <bdi dir="ltr">CPU: nproc</bdi> و <bdi dir="ltr">pinning</bdi> را بررسی کنید</span></div><div class="pit in d2"><span class="tag r-danger">دنبال <bdi dir="ltr">mfence</bdi> گشتن</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">gcc</bdi> دستور <bdi dir="ltr">lock or</bdi> می‌دهد: آن هم <bdi dir="ltr">barrier</bdi> کامل است</span></div><div class="pit in d3"><span class="tag r-danger">تعدادها تغییر می‌کنند</span><span class="arrow-s">←</span><span class="tag r-ok">وابسته به زمان‌بندی: مرتبهٔ بزرگی را مقایسه کنید</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.5 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">آزمون <bdi dir="ltr">message-passing</bdi> را بنویسید (<bdi dir="ltr">data=1</bdi>; <bdi dir="ltr">flag=1</bdi> || <bdi dir="ltr">r0=flag</bdi>; <bdi dir="ltr">r1=data</bdi>) با <bdi dir="ltr">atomic</bdi>های <bdi dir="ltr">relaxed.</bdi> آیا <bdi dir="ltr">x86</bdi> هرگز <bdi dir="ltr">flag=1</bdi> و <bdi dir="ltr">data=0</bdi> نشان می‌دهد؟ چرا، و روی <bdi dir="ltr">Arm64</bdi> چه؟</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ هم‌روندی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

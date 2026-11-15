@@ -1,0 +1,23 @@
+#!/usr/bin/env bpftrace
+// top-switchers.bt: top 5 tasks by context switches OUT, every 2 s.
+// Run: sudo bpftrace top-switchers.bt     (stop with Ctrl+C)
+//
+// One-liner form:
+//   sudo bpftrace -e 'tracepoint:sched:sched_switch { @[args->prev_comm] = count(); }
+//                     interval:s:2 { print(@, 5); clear(@); }'
+//
+// Expected with `stress-ng --cpu 4` running: the stress-ng workers appear near the top.
+// They never block, so every switch-out is an INVOLUNTARY preemption by the scheduler
+// (prev_state == TASK_RUNNING). Interactive tasks switch out VOLUNTARILY (they sleep).
+// Compare: grep ctxt /proc/<pid>/status  ->  voluntary_ctxt_switches / nonvoluntary_ctxt_switches.
+
+tracepoint:sched:sched_switch
+{
+  @[args->prev_comm] = count();
+}
+
+interval:s:2
+{
+  print(@, 5);
+  clear(@);
+}

@@ -1,0 +1,38 @@
+#!/usr/bin/env bpftrace
+// runqlat.bt: run-queue latency = time from "made runnable" to "got the CPU".
+// Solution to the lab 02.4 extension. Same idea as runqlat-bpfcc.
+// pingpong is reported separately from everything else (the spinners, kernel threads).
+//
+// sched_wakeup / sched_wakeup_new: the task becomes runnable (ttwu / wake_up_new_task)
+// sched_switch with next_pid == that task: it is finally running
+// A task preempted while runnable (prev_state == 0) re-enters the queue at that moment.
+//
+// Run: sudo bpftrace solution/runqlat.bt   (prints after 5 s)
+tracepoint:sched:sched_wakeup,
+tracepoint:sched:sched_wakeup_new
+{
+  @qtime[args->pid] = nsecs;
+}
+
+tracepoint:sched:sched_switch
+{
+  if (args->prev_state == 0) {
+    @qtime[args->prev_pid] = nsecs;
+  }
+  $t = @qtime[args->next_pid];
+  if ($t) {
+    $us = (nsecs - $t) / 1000;
+    if (args->next_comm == "pingpong") {
+      @pingpong_us = hist($us);
+    } else {
+      @other_us = hist($us);
+    }
+    delete(@qtime[args->next_pid]);
+  }
+}
+
+interval:s:5
+{
+  clear(@qtime);
+  exit();
+}

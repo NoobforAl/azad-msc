@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 05.3 · هزینهٔ fsync و writeback</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">05.3</div>
+  <span class="eyebrow in-f">آزمایش 05.3 · هدف</span>
+  <h2 class="in">هزینهٔ <bdi dir="ltr">fsync</bdi> و <bdi dir="ltr">writeback</bdi></h2>
+  <p class="why in d1">هزینهٔ ماندگاری هر <bdi dir="ltr">write</bdi> را اندازه بگیرید، تخلیهٔ صفحه‌های <bdi dir="ltr">dirty</bdi> را ببینید و فقط یک دستگاه را بدون تغییر <bdi dir="ltr">sysctl</bdi> سراسری محدود کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (loop device برای بخش ۳)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Measure what durability costs per write, watch dirty pages drain, and throttle one device without touching global sysctls.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.3 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>wbench.c</h3><p class="ltr-mono"><code>buffered · fdatasync · fsync · O_DSYNC · O_SYNC</code></p></div><div class="c-6 card edge r-data in d2"><h3>صفحه‌های <bdi dir="ltr">dirty</bdi></h3><p><bdi dir="ltr">Dirty</bdi> و <bdi dir="ltr">Writeback</bdi> در <bdi dir="ltr">/proc/meminfo</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3>محدودیت هر <bdi dir="ltr">BDI</bdi></h3><p class="ltr-mono"><code>/sys/class/bdi/7:N/max_bytes + strict_limit</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>دستگاه</h3><p>دیسک مجازی؛ <bdi dir="ltr">flush</bdi> یعنی رفت‌وبرگشت تا میزبان</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.3 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 03-fsync-writeback</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/05-filesystems-io/labs/03-fsync-writeback</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o wbench wbench.c</span><span class="ln"><span class="p">$</span> ./wbench fsync t.dat 2000 4096</span><span class="ln"><span class="p">$</span> bash run.sh   # 1 policies  2 writeback  3 per-BDI</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.3 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">buffered  2000 x 4096 B: total 6.6 ms | p50 1.9 us</span><span class="ln hl">fsync     2000 x 4096 B: total 67909.6 ms | p50 30950.5 us</span><span class="ln">fdatasync 2000 x 4096 B: total 74069.5 ms | p50 22035.2 us</span><span class="ln">== 2b. 384 MiB buffered write</span><span class="ln">  t=  3s Dirty= 339976 kB</span><span class="ln">  t= 27s Dirty= 288368 kB</span><span class="ln hl">  t= 30s Dirty=   1652 kB</span><span class="ln">== 3. per-BDI limit (8 MiB, strict_limit)</span><span class="ln">  default: 465 MB/s  @throttle_events: 0</span><span class="ln hl">  limited: 268 MB/s  @throttle_events: 50</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، ۲۰۲۶-۱۱-۱۵.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.3 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">fsync</bdi> برای هر رکورد حدود ۱۰٬۰۰۰ برابر هزینه دارد</b><br><span class="caption"><bdi dir="ltr">commit</bdi> ژورنال <bdi dir="ltr">+ flush cache</bdi> در هر بار</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">Dirty</bdi> سی ثانیه می‌ماند و بعد تخلیه می‌شود</b><br><span class="caption">زیر آستانهٔ <bdi dir="ltr">background: dirty_expire_centisecs</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>بودجهٔ کوچک <bdi dir="ltr">BDI =</bdi> توقف‌های کوتاه زیاد</b><br><span class="caption mono">tracepoint writeback:balance_dirty_pages</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.3 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">تغییر <bdi dir="ltr">vm.dirty_ratio</bdi> روی <bdi dir="ltr">VM</bdi> مشترک</span><span class="arrow-s">←</span><span class="tag r-ok">از تنظیم‌های هر <bdi dir="ltr">BDI</bdi> روی <bdi dir="ltr">loop</bdi> خودتان استفاده کنید</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">fsync</bdi> رایگان به نظر می‌رسد</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">tmpfs</bdi> یا <bdi dir="ltr">nobarrier:</bdi> با <bdi dir="ltr">findmnt -T .</bdi> بررسی کنید</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">loop device</bdi> باقی می‌ماند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">losetup -a</bdi>؛ <bdi dir="ltr">losetup -d /dev/loopN</bdi></span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.3 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">۴ نویسنده اجرا کنید که هر کدام بعد از هر رکورد <bdi dir="ltr">fsync</bdi> می‌کنند. تعداد <bdi dir="ltr">fsync</bdi> را با تعداد <bdi dir="ltr">commit</bdi>های <bdi dir="ltr">jbd2 (tracepoint)</bdi> مقایسه کنید<bdi dir="ltr">. group commit</bdi> چیست و تأخیر هر نویسنده را چطور تغییر می‌دهد؟</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۵ فایل‌سیستم و I/O" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

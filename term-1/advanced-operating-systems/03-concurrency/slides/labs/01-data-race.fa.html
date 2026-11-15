@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 03.1 · Data race ← TSan ← mutex ← atomic</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">03.1</div>
+  <span class="eyebrow in-f">آزمایش 03.1 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">Data race</bdi> ← <bdi dir="ltr">TSan</bdi> ← <bdi dir="ltr">mutex</bdi> ← <bdi dir="ltr">atomic</bdi></h2>
+  <p class="why in d1">ببینید <bdi dir="ltr">count++</bdi> روی چهار نخ به‌روزرسانی گم می‌کند، بگذارید <bdi dir="ltr">ThreadSanitizer race</bdi> را نام ببرد، دو بار درستش کنید و هزینهٔ هر راه را بسنجید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM با نام aos-lab (فضای کاربر)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Watch count++ lose updates on four threads, let ThreadSanitizer name the race, fix it twice and measure each fix.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.1 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>برنامه</h3><p class="ltr-mono"><code>race.c: race | mutex | atomic</code></p></div><div class="c-6 card edge r-hardware in d2"><h3><bdi dir="ltr">RMW</bdi> اتمی</h3><p class="ltr-mono"><code>atomic_fetch_add → lock xadd</code></p></div><div class="c-6 card edge r-kernel in d3"><h3>آشکارساز</h3><p class="ltr-mono"><code>gcc -fsanitize=thread</code></p></div><div class="c-6 card edge r-data in d4"><h3>هزینه</h3><p class="ltr-mono"><code>perf stat -e task-clock,context-switches</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.1 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 01-data-race</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -pthread race.c -o race</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O1 -g -fsanitize=thread \</span><span class="ln">    -pthread race.c -o race-tsan</span><span class="ln"><span class="p">$</span> for m in race mutex atomic; do ./race $m 4 1000000; done</span><span class="ln"><span class="p">$</span> ./race-tsan race 2 1000</span><span class="ln"><span class="p">$</span> sudo perf stat -e task-clock,context-switches \</span><span class="ln">    ./race mutex 4 1000000</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.1 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> for m in race mutex atomic; do ./race $m 4 1000000; done</span><span class="ln hl">mode=race   threads=4 expected=4000000 got=2498418 lost=1501582</span><span class="ln">mode=mutex  threads=4 ... lost=0 time=0.358s ns/inc=89.6</span><span class="ln">mode=atomic threads=4 ... lost=0 time=0.098s ns/inc=24.4</span><span class="ln"><span class="p">$</span> ./race-tsan race 2 1000</span><span class="ln hl">WARNING: ThreadSanitizer: data race (pid=4446)</span><span class="ln">  Read of size 8 at 0x55912d33b070 by thread T2:</span><span class="ln">  Previous write of size 8 at 0x55912d33b070 by thread T1:</span><span class="ln">  Location is global &#x27;g_plain&#x27; of size 8</span><span class="ln"><span class="p">$</span> sudo perf stat ... ./race mutex 4 1000000</span><span class="ln">           1002.69 msec task-clock  # 1.327 CPUs utilized</span><span class="ln hl">              349      context-switches</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15</bdi>؛ مهمان مشترک ۸ <bdi dir="ltr">vCPU</bdi>، زمان‌ها نویز دارند.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.1 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>به‌روزرسانی‌های گم‌شده</b><br><span class="caption"><bdi dir="ltr">load</bdi> و <bdi dir="ltr">add</bdi> و <bdi dir="ltr">store</bdi> درهم می‌شوند؛ <bdi dir="ltr">volatile</bdi> کمکی نمی‌کند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">TSan</bdi> هر دو دسترسی را نام می‌برد</b><br><span class="caption mono">race.c:33 write vs race.c:33 read</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">mutex</bdi> هزینهٔ <bdi dir="ltr">context switch</bdi> دارد</b><br><span class="caption"><bdi dir="ltr">pthread_mutex</bdi> با رقابت در <bdi dir="ltr">futex</bdi> می‌خوابد</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.1 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">حالت <bdi dir="ltr">race</bdi> درست به نظر می‌آید</span><span class="arrow-s">←</span><span class="tag r-ok">دست‌کم ۱ میلیون تکرار و ۴ نخ</span></div><div class="pit in d2"><span class="tag r-danger">TSan: unexpected memory mapping</span><span class="arrow-s">←</span><span class="tag r-ok">setarch x86_64 -R ./race-tsan ...</span></div><div class="pit in d3"><span class="tag r-danger">cycles &lt;not supported&gt;</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">PMU</bdi> در مهمان نیست: رویدادهای نرم‌افزاری</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 03.1 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">اشتراک را حذف کنید: شمارندهٔ جدا برای هر نخ، یک بار فشرده در یک آرایه و یک بار هر کدام در ۶۴ بایت جدا. هر دو را بسنجید و فاصله را با <bdi dir="ltr">cache coherence</bdi> توضیح دهید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ هم‌روندی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 01.1 · نگاشت هر syscall برنامهٔ cat به ورودی کرنل</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.1</div>
+  <span class="eyebrow in-f">آزمایش 01.1 · هدف</span>
+  <h2 class="in">نگاشت هر <bdi dir="ltr">syscall</bdi> برنامهٔ <bdi dir="ltr">cat</bdi> به ورودی کرنل</h2>
+  <p class="why in d1">یک لاگ <bdi dir="ltr">strace</bdi> را به نام ← شماره ← ورودی جدول ← نماد <bdi dir="ltr">__x64_sys_*</bdi> در کرنل در حال اجرا تبدیل کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM با نام aos-lab</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Turn an strace log into name → number → table entry → the __x64_sys_* symbol in the running kernel.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.1 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>ردیاب</h3><p class="ltr-mono"><code>strace -f (ptrace)</code></p></div><div class="c-6 card edge r-data in d2"><h3>جدول</h3><p><bdi dir="ltr">syscall_64.tbl</bdi> از <bdi dir="ltr">v6.18.63</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3>نمادها</h3><p class="ltr-mono"><code>/proc/kallsyms</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>ABI</h3><p>در <bdi dir="ltr">x86-64</bdi> شماره در <bdi dir="ltr">rax</bdi> است</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.1 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 01-strace-map</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/01-architecture/lab01</span><span class="ln"><span class="p">$</span> strace -f -o cat.trace cat /etc/hostname</span><span class="ln"><span class="p">$</span> strace -c -f cat /etc/hostname &gt; /dev/null</span><span class="ln"><span class="p">$</span> bash map-syscalls.sh cat.trace</span><span class="ln"><span class="p">$</span> grep -w -e do_syscall_64 -e x64_sys_call \</span><span class="ln">    -e __x64_sys_read /proc/kallsyms</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.1 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">count  syscall              nr  tbl entry            kernel symbol              in kallsyms</span><span class="ln">   31  openat              257  sys_openat           __x64_sys_openat           yes</span><span class="ln">   23  mmap                  9  sys_mmap             __x64_sys_mmap             yes</span><span class="ln hl">   20  fstat                 5  sys_newfstat         __x64_sys_newfstat         yes</span><span class="ln hl">    5  read                  0  sys_read             __x64_sys_read             yes</span><span class="ln">    ...</span><span class="ln">    1  exit_group          231  sys_exit_group       __x64_sys_exit_group       yes</span><span class="ln"><span class="p">$</span> grep -w -e do_syscall_64 -e x64_sys_call /proc/kallsyms</span><span class="ln">ffffffffb5929b60 T x64_sys_call</span><span class="ln">ffffffffb6c8a1d0 T do_syscall_64</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، ۱۴۰۵/۰۸/۲۴.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.1 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>خود <bdi dir="ltr">cat</bdi> حدود ۵ فراخوانی دارد</b><br><span class="caption">بیشتر ۱۲۱ فراخوانی از <bdi dir="ltr">ld.so</bdi> و تنظیم <bdi dir="ltr">locale</bdi> است</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>نام ≠ نقطهٔ ورود</b><br><span class="caption mono"><bdi dir="ltr">fstat</bdi> → <bdi dir="ltr">sys_newfstat</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>همهٔ <bdi dir="ltr">stub</bdi>ها واقعی‌اند</b><br><span class="caption">مثلاً <bdi dir="ltr">__x64_sys_read</bdi> در <bdi dir="ltr">kallsyms</bdi> (ساختهٔ <bdi dir="ltr">SYSCALL_DEFINEn</bdi>)</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.1 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">همهٔ ردیف‌ها <bdi dir="ltr">no</bdi> هستند</span><span class="arrow-s">←</span><span class="tag r-ok">جدول <bdi dir="ltr">CRLF</bdi> از ویندوز؛ اسکریپت \<bdi dir="ltr">r</bdi> را حذف می‌کند</span></div><div class="pit in d2"><span class="tag r-danger">همهٔ آدرس‌ها صفرند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">kptr_restrict</bdi>؛ از <bdi dir="ltr">sudo</bdi> استفاده کنید</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">&lt;... resumed&gt;</bdi> دو بار شمرده شده</span><span class="arrow-s">←</span><span class="tag r-ok">نیمه‌های <bdi dir="ltr">resumed</bdi> را رد کنید</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.1 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">با <bdi dir="ltr">bpftrace</bdi> رویداد <bdi dir="ltr">raw_syscalls:sys_enter</bdi> را بر اساس شماره برای <bdi dir="ltr">PID</bdi> برنامهٔ <bdi dir="ltr">cat</bdi> بشمارید (بدون توقف <bdi dir="ltr">ptrace</bdi>) و با <bdi dir="ltr">strace -c</bdi> مقایسه کنید. هر تفاوتی را توضیح دهید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۱ معماری" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>01 · Architecture &amp; Kernel Structure — Advanced OS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<div class="reveal course-os">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">One read(), from user space into the kernel and back</h1>
+  <p class="subtitle in d1">Advanced Operating Systems · 01 Architecture &amp; Kernel Structure</p>
+  <div class="fields">
+    <span><b>Course</b>[Course name]</span><span><b>Presenter</b>[Presenter]</span>
+    <span><b>Professor</b>[Professor]</span><span><b>Faculty</b>[Faculty / Branch]</span>
+    <span><b>Term</b>[Term]</span><span><b>Date</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (EN): This module follows one system call through the real v6.18.63 source: the CPU mechanism, the entry code, the dispatcher, and the way back. Along the way we meet interrupts, exceptions and the context switch.
+SAY (FA): این ماژول یک system call را در سورس واقعی v6.18.63 دنبال می‌کند: سازوکار CPU، کد ورود، توزیع‌کننده و مسیر برگشت. در راه با interrupt، exception و context switch هم آشنا می‌شویم.
+KEY POINT: Everything later in the course sits on this boundary.
+EXAMPLE: —
+PITFALL: Title fields are placeholders; never invent them.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01</div>
+  <span class="eyebrow in-f">Module 01</span>
+  <h2 class="in">Architecture &amp; Kernel Structure</h2>
+  <p class="why in d1">Every page fault, scheduler decision and file read starts with the CPU crossing from ring 3 to ring 0.</p>
+  <div class="pills in d2"><span class="pill">rings &amp; CPL</span><span class="pill">syscall · IDT</span><span class="pill">context switch</span></div>
+  <aside class="notes">
+SAY (EN): Modules 2 to 7 all assume you know how and when the kernel runs. That is this module.
+SAY (FA): ماژول‌های ۲ تا ۷ همه فرض می‌کنند می‌دانید کرنل چگونه و کِی اجرا می‌شود؛ این همان ماژول است.
+KEY POINT: Depends on Module 00 (VM, tools, cite.sh).
+EXAMPLE: Module 04's page-fault path starts in the IDT we read today.
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">01 · Architecture</span>
+  <h2 class="in">Five questions, in the order the CPU meets them</h2>
+  <ol class="agenda">
+    <li class="current in d1">What runs in ring 0, and why there?</li>
+    <li class="in d2">How does user code get in? (syscall, exception, interrupt)</li>
+    <li class="in d3">What does the entry code do, line by line?</li>
+    <li class="in d4">How does the kernel switch tasks?</li>
+    <li class="in d5">What does it cost, and how do we measure it?</li>
+  </ol>
+  <aside class="notes">
+SAY (EN): Design first, then the doors into the kernel, then real code, then the context switch, then measurements from the VM.
+SAY (FA): اول طراحی، بعد درهای ورود به کرنل، بعد کد واقعی، بعد context switch و در پایان اندازه‌گیری روی VM.
+KEY POINT: Each item maps to one or two notes and one lab.
+EXAMPLE: Item 5 = labs 02 and 04.
+PITFALL: —
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 CONCEPT_DIAGRAM: kernel types -->
+<section>
+  <span class="eyebrow in-f">01 · Kernel design</span>
+  <h2 class="in">Monolithic kernels call, microkernels message</h2>
+  <div class="diagram in-p d1"><img src="assets/kernel-types.svg" alt="Left: monolithic kernel, app makes one syscall into one kernel address space where VFS calls ext4 calls the driver. Right: microkernel, app, FS server and driver are user processes that talk by IPC through a small kernel."></div>
+    <aside class="notes">
+SAY (EN): The design question is what runs in ring 0 and how the parts talk. Linux and OpenBSD put everything in one address space and use function calls; seL4 and QNX keep a tiny kernel and run the file system and drivers as processes.
+SAY (FA): پرسش طراحی این است که چه چیزی در ring 0 اجرا می‌شود و اجزا چطور با هم حرف می‌زنند. لینوکس و OpenBSD همه‌چیز را در یک فضای آدرس با فراخوانی تابع دارند؛ seL4 و QNX یک کرنل کوچک دارند و فایل‌سیستم و درایور را به‌صورت پردازه اجرا می‌کنند.
+KEY POINT: Cost = number of crossings; benefit = isolation.
+EXAMPLE: fs/read_write.c L569: file->f_op->read(...) is a plain function call into ext4.
+PITFALL: "Modules make Linux a microkernel."
+ASK: Where would FUSE sit on this picture?
+TIME: 90
+  </aside>
+</section>
+
+<!-- 05 LAYER_STACK -->
+<section>
+  <span class="eyebrow in-f">01 · Privilege</span>
+  <h2 class="in">A 2-bit number separates you from the kernel</h2>
+  <div class="layers">
+    <div class="band r-user in d1"><b>Ring 3 · user</b><div class="items"><span>CS = 0x33</span><span>cat</span><span>glibc</span><span>[vdso]</span></div></div>
+    <div class="boundary in-f d2"><span>syscall · IDT gate → CPL 0</span></div>
+    <div class="band r-kernel in d2"><b>Ring 0 · kernel</b><div class="items"><span>CS = 0x10</span><span>entry_SYSCALL_64</span><span>vfs_read</span><span>schedule</span></div></div>
+    <div class="band r-hardware in d3"><b>Hardware</b><div class="items"><span>MSR_LSTAR</span><span>IDT</span><span>CR3</span><span>APIC</span></div></div>
+  </div>
+  <p class="takeaway in d4">cli or mov %cr3 at CPL 3 → #GP → SIGSEGV.</p>
+  <aside class="notes">
+SAY (EN): CPL is the low two bits of CS. In user mode CS is 0x33, which is GDT index 6 with RPL 3. The CPU checks CPL for privileged instructions, page U/S bits and IDT gate DPLs. The only way up is through doors the kernel installed.
+SAY (FA): CPL همان دو بیت پایین CS است. در حالت کاربر CS برابر 0x33 است، یعنی اندیس ۶ در GDT با RPL برابر ۳. CPU مقدار CPL را برای دستورهای ممتاز، بیت U/S صفحه‌ها و DPL گیت‌های IDT بررسی می‌کند. تنها راه بالا رفتن، درهایی است که کرنل نصب کرده است.
+KEY POINT: Linux uses rings 0 and 3 only.
+EXAMPLE: labs/02-raw-syscall/cpl.c prints CS = 0x33 and dies with SIGSEGV on cli.
+PITFALL: A mode switch is not a context switch.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 06 BENTO: three ways in -->
+<section>
+  <span class="eyebrow in-f">01 · Entering the kernel</span>
+  <h2 class="in">There are exactly three ways into ring 0</h2>
+  <div class="grid tight">
+    <div class="c-4 card edge r-user in d1"><h3>System call</h3><p>Requested. <code>syscall</code> jumps to <code>MSR_LSTAR</code>; no IDT.</p></div>
+    <div class="c-4 card edge r-kernel in d2"><h3>Exception</h3><p>Synchronous. Fault (#PF, retried), trap (int3), abort (#DF).</p></div>
+    <div class="c-4 card edge r-hardware in d3"><h3>Interrupt</h3><p>Asynchronous. Device, timer (LOC), IPI (RES, CAL) via the APIC.</p></div>
+  </div>
+  <p class="takeaway in d4">All three end in the same struct pt_regs on the task's kernel stack.</p>
+  <aside class="notes">
+SAY (EN): A syscall is a request. An exception is caused by the current instruction. An interrupt comes from outside and can arrive between any two instructions. Exceptions and interrupts use the IDT; 64-bit syscalls don't.
+SAY (FA): syscall یک درخواست است. exception را دستور فعلی ایجاد می‌کند. interrupt از بیرون می‌آید و بین هر دو دستوری ممکن است برسد. exception و interrupt از IDT استفاده می‌کنند؛ syscall در حالت ۶۴ بیتی نه.
+KEY POINT: Same pt_regs format = one tracing/signal model for all entries.
+EXAMPLE: page-faults appear in perf stat, not in /proc/interrupts (lab 03).
+PITFALL: int 0x80 is the 32-bit legacy path, not how 64-bit Linux makes syscalls.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 07 FLOW_TIMELINE: syscall path -->
+<section>
+  <span class="eyebrow in-f">01 · The syscall path</span>
+  <h2 class="in">read() crosses six steps and comes back the same way</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>glibc wrapper</div><code>eax=0; syscall</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>CPU</div><code>RIP=LSTAR</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>asm entry</div><code>pt_regs</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>C entry</div><code>do_syscall_64</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>dispatch</div><code>x64_sys_call</code></div>
+    <div class="step fragment"><span class="callout-num">6</span><div>VFS</div><code>vfs_read</code></div>
+  </div>
+  <p class="takeaway">On the way out: signals, maybe schedule(), then sysretq.</p>
+  <aside class="notes">
+SAY (EN): The wrapper loads the number and arguments into registers. The CPU jumps to the address the kernel stored in MSR_LSTAR. The assembly builds pt_regs. do_syscall_64 runs the entry work and dispatches through a switch. Then the VFS does the actual read.
+SAY (FA): wrapper شماره و آرگومان‌ها را در رجیسترها می‌گذارد. CPU به آدرسی که کرنل در MSR_LSTAR گذاشته می‌پرد. کد اسمبلی pt_regs را می‌سازد. do_syscall_64 کارهای ورود را انجام می‌دهد و با یک switch توزیع می‌کند. بعد VFS خواندن واقعی را انجام می‌دهد.
+KEY POINT: Arguments: rdi rsi rdx r10 r8 r9; result in rax; -errno on error.
+EXAMPLE: strace line: read(3, "aos-lab\n", 131072) = 8.
+PITFALL: The return path is a scheduling point.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 08 CODE_WALKTHROUGH: entry_SYSCALL_64 -->
+<section>
+  <span class="eyebrow in-f">01 · real source</span>
+  <h2 class="in">Entry code leaves the user's stack first</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/arch/x86/entry/entry_64.S</span><span>v6.18.63 · L91-106</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">swapgs</span></span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">movq</span>	%rsp, PER_CPU_VAR(... TSS_sp2)</span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-f">SWITCH_TO_KERNEL_CR3</span> scratch_reg=%rsp</span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">movq</span>	PER_CPU_VAR(cpu_current_top_of_stack), %rsp</span><span class="ln"> </span><span class="ln"><span class="tok-c">/* Construct struct pt_regs on stack */</span></span><span class="ln fragment hl-on" data-fragment-index="3"><span class="tok-k">pushq</span>	$__USER_DS	<span class="tok-c">/* ss */</span></span><span class="ln fragment hl-on" data-fragment-index="3"><span class="tok-k">pushq</span>	PER_CPU_VAR(... TSS_sp2)	<span class="tok-c">/* sp */</span></span><span class="ln fragment hl-on" data-fragment-index="3"><span class="tok-k">pushq</span>	%r11	<span class="tok-c">/* flags */</span></span><span class="ln fragment hl-on" data-fragment-index="3"><span class="tok-k">pushq</span>	$__USER_CS	<span class="tok-c">/* cs */</span></span><span class="ln fragment hl-on" data-fragment-index="3"><span class="tok-k">pushq</span>	%rcx	<span class="tok-c">/* ip */</span></span><span class="ln fragment hl-on" data-fragment-index="4"><span class="tok-k">pushq</span>	%rax	<span class="tok-c">/* orig_ax */</span></span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>Kernel GS: reach per-CPU data</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>Park user rsp, kernel CR3 (PTI), kernel stack</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>Fake the hardware frame: rcx = RIP, r11 = RFLAGS</span></div>
+      <div class="in d5"><span class="callout-num">4</span><span>Syscall number kept for strace</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): syscall does not touch rsp, so the kernel starts on the user's stack. It swaps GS, parks the user stack pointer, switches page tables if PTI is on, loads its own stack and builds the same frame an interrupt would push.
+SAY (FA): دستور syscall به rsp دست نمی‌زند، پس کرنل روی پشتهٔ کاربر شروع می‌کند. GS را عوض می‌کند، اشاره‌گر پشتهٔ کاربر را کنار می‌گذارد، اگر PTI روشن باشد جدول صفحه را عوض می‌کند، پشتهٔ خودش را بار می‌کند و همان قابی را می‌سازد که interrupt روی پشته می‌گذارد.
+KEY POINT: Long PER_CPU_VAR operands are shortened with "..."; full text in kernel-walkthrough.en.md §2.
+EXAMPLE: bash _shared/sources/cite.sh linux arch/x86/entry/entry_64.S L87 35
+PITFALL: Pushing to the user stack would let other user threads read kernel data.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 09 CODE_WALKTHROUGH: do_syscall_64 + dispatch -->
+<section>
+  <span class="eyebrow in-f">01 · real source</span>
+  <h2 class="in">Dispatch is a switch, not a table of pointers</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/arch/x86/entry/syscall_64.c</span><span>v6.18.63 · L34-100</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">#define</span> __SYSCALL(nr, sym) case nr: ...</span><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-t">long</span> <span class="tok-f">x64_sys_call</span>(...regs, <span class="tok-t">unsigned int</span> nr)</span><span class="ln">{  <span class="tok-k">switch</span> (nr) { <span class="tok-c">/* syscalls_64.h */</span> } }</span><span class="ln"> </span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">noinstr</span> <span class="tok-t">bool</span> <span class="tok-f">do_syscall_64</span>(...regs, <span class="tok-t">int</span> nr)</span><span class="ln">{</span><span class="ln fragment hl-on" data-fragment-index="3">  nr = <span class="tok-f">syscall_enter_from_user_mode</span>(regs, nr);</span><span class="ln">  <span class="tok-c">/* ... */</span></span><span class="ln fragment hl-on" data-fragment-index="4">  <span class="tok-k">if</span> (!<span class="tok-f">do_syscall_x64</span>(regs, nr) &amp;&amp; ...)</span><span class="ln fragment hl-on" data-fragment-index="4">    regs-&gt;ax = <span class="tok-f">__x64_sys_ni_syscall</span>(regs);</span><span class="ln">  <span class="tok-c">/* ... */</span></span><span class="ln fragment hl-on" data-fragment-index="5">  <span class="tok-f">syscall_exit_to_user_mode</span>(regs);</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>syscall_64.tbl becomes case labels</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span><code>noinstr</code>: ftrace can't hook it</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>ptrace · seccomp · tracepoint</span></div>
+      <div class="in d5"><span class="callout-num">4</span><span>Unknown nr → -ENOSYS (-38)</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): The table file is turned into case labels at build time, so there is no indirect call on the hot path. Entry work is where strace and seccomp hook in; exit work delivers signals and may call schedule().
+SAY (FA): فایل جدول هنگام build به برچسب‌های case تبدیل می‌شود، پس در مسیر داغ هیچ فراخوانی غیرمستقیمی نیست. strace و seccomp در کارهای ورود وصل می‌شوند؛ کارهای خروج signal را تحویل می‌دهند و ممکن است schedule() را صدا بزنند.
+KEY POINT: VERSION-DEPENDENT: older kernels used sys_call_table[nr](regs).
+EXAMPLE: grep -c -w do_syscall_64 /sys/kernel/tracing/available_filter_functions → 0
+PITFALL: Searching for "sys_read(": it is generated by SYSCALL_DEFINE3(read, ...).
+TIME: 120
+  </aside>
+</section>
+
+<!-- 10 TERMINAL_DEMO: strace map -->
+<section>
+  <span class="eyebrow in-f">01 · real output · lab 01</span>
+  <h2 class="in">Every strace line has a kernel symbol behind it</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab:~/work/01-architecture/lab01</div>
+<pre><code><span class="ln"><span class="p">$</span> bash map-syscalls.sh cat.trace</span><span class="ln">count  syscall              nr  tbl entry            kernel symbol              in kallsyms</span><span class="ln">   31  openat              257  sys_openat           __x64_sys_openat           yes</span><span class="ln">   23  mmap                  9  sys_mmap             __x64_sys_mmap             yes</span><span class="ln">   21  close                 3  sys_close            __x64_sys_close            yes</span><span class="ln hl">   20  fstat                 5  sys_newfstat         __x64_sys_newfstat         yes</span><span class="ln hl">    5  read                  0  sys_read             __x64_sys_read             yes</span><span class="ln">    ...</span><span class="ln"><span class="p">$</span> grep -w -e do_syscall_64 -e x64_sys_call /proc/kallsyms</span><span class="ln">ffffffffb5929b60 T x64_sys_call</span><span class="ln">ffffffffb6c8a1d0 T do_syscall_64</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): map-syscalls.sh reads the strace log, looks each name up in syscall_64.tbl from our checkout, and checks the __x64_sys_ stub in /proc/kallsyms. Note fstat maps to sys_newfstat: name and entry point can differ.
+SAY (FA): اسکریپت map-syscalls.sh لاگ strace را می‌خواند، هر نام را در syscall_64.tbl از checkout ما پیدا می‌کند و stub مربوط به __x64_sys_ را در /proc/kallsyms بررسی می‌کند. دقت کنید fstat به sys_newfstat می‌رسد؛ نام و نقطهٔ ورود می‌توانند فرق کنند.
+KEY POINT: Most syscalls of cat come from the dynamic loader, not from cat.
+EXAMPLE: labs/01-strace-map
+PITFALL: Counting "<... resumed>" lines twice.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 11 CONCEPT_DIAGRAM: IDT -->
+<section>
+  <span class="eyebrow in-f">01 · Interrupts &amp; exceptions</span>
+  <h2 class="in">Exceptions and IRQs share the IDT; syscall doesn't</h2>
+  <div class="diagram in-p d1"><img src="assets/idt-paths.svg" alt="Syscall goes through MSR_LSTAR to entry_SYSCALL_64. Exceptions go through IDT vectors 0-31 to asm_exc stubs and exc_ handlers. Interrupts go through the APIC and IDT vectors 32-255 to common_interrupt and handle_irq_event."></div>
+  <aside class="notes">
+SAY (EN): Vectors 0 to 31 are CPU exceptions, 32 and up are devices and IPIs. Each gate has a DPL that decides whether user code may raise it with int N, and an optional IST stack for NMI, double fault and machine check.
+SAY (FA): بردارهای ۰ تا ۳۱ exceptionهای CPU هستند و از ۳۲ به بالا دستگاه‌ها و IPIها. هر gate یک DPL دارد که تعیین می‌کند کد کاربر می‌تواند با int N آن را فعال کند یا نه، و یک پشتهٔ IST اختیاری برای NMI، double fault و machine check.
+KEY POINT: Fault = retry the instruction; trap = continue after it.
+EXAMPLE: arch/x86/kernel/idt.c L84: def_idts[]; irq.c L318 common_interrupt.
+PITFALL: Calling every kernel entry a "trap".
+TIME: 90
+  </aside>
+</section>
+
+<!-- 12 TERMINAL_DEMO: interrupts -->
+<section>
+  <span class="eyebrow in-f">01 · real output · lab 03</span>
+  <h2 class="in">With nothing of ours running, CPUs are still interrupted</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab:~/work/01-architecture/lab03</div>
+<pre><code><span class="ln"><span class="p">$</span> bash irq-delta.sh 5 8</span><span class="ln">interrupts during 5s on 8 CPUs (sum over CPUs):</span><span class="ln">   delta  irq    source</span><span class="ln hl">   46186  CAL    Function call interrupts</span><span class="ln">    9223  21     IO-APIC 21-fasteoi ahci[0000:00:0d.0]</span><span class="ln hl">    8746  LOC    Local timer interrupts</span><span class="ln">     193  RES    Rescheduling interrupts</span><span class="ln">     100  19     IO-APIC 19-fasteoi enp0s3</span><span class="ln">      38  TLB    TLB shootdowns</span><span class="ln">      10  IWI    IRQ work interrupts</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (shared 8-vCPU VirtualBox guest), 2026-11-15. Your numbers will differ.</p>
+  <aside class="notes">
+SAY (EN): Two snapshots of /proc/interrupts five seconds apart. LOC is the local APIC timer, RES and CAL are inter-processor interrupts. Page faults never show up here: they are exceptions.
+SAY (FA): دو تصویر از /proc/interrupts با فاصلهٔ پنج ثانیه. LOC تایمر local APIC است و RES و CAL وقفه‌های بین‌پردازنده‌ای‌اند. page fault هرگز اینجا دیده نمی‌شود؛ exception است.
+KEY POINT: Always diff two snapshots.
+EXAMPLE: bash irq-delta.sh 5 8
+PITFALL: Reading one snapshot as a rate.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 13 CONCEPT_DIAGRAM: context switch -->
+<section>
+  <span class="eyebrow in-f">01 · Context switch</span>
+  <h2 class="in">A context switch swaps one stack pointer</h2>
+  <div class="diagram in-p d1"><img src="assets/context-switch.svg" alt="Task A and task B kernel stacks, each with pt_regs on top, a context_switch frame and six callee-saved registers. The CPU saves rsp into A's thread.sp, loads B's thread.sp, pops six registers, then __switch_to updates FPU, FS/GS, current_task and top_of_stack."></div>
+  <aside class="notes">
+SAY (EN): User registers are already in pt_regs. __switch_to_asm pushes only the six callee-saved registers, stores rsp in prev->thread.sp and loads next->thread.sp. CR3 changes only if next has a different mm.
+SAY (FA): رجیسترهای کاربر از قبل در pt_regs هستند. __switch_to_asm فقط شش رجیستر callee-saved را push می‌کند، rsp را در prev->thread.sp ذخیره و next->thread.sp را بار می‌کند. CR3 فقط وقتی عوض می‌شود که next یک mm دیگر داشته باشد.
+KEY POINT: entry_64.S L192: movq TASK_threadsp(%rsi), %rsp is the switch.
+EXAMPLE: kernel/sched/core.c L5333 switch_mm_irqs_off, L5349 switch_to.
+PITFALL: "The kernel saves all registers on every switch."
+TIME: 120
+  </aside>
+</section>
+
+<!-- 14 BIG_STAT: syscall cost -->
+<section class="layout-bigstat">
+  <span class="eyebrow in-f">01 · real output · lab 04</span>
+  <div class="big-stat in-p">8×</div>
+  <p class="meaning in-f d2">A vDSO clock_gettime() took 14.8 ns; the same call through syscall took 123.9 ns.</p>
+  <p class="caption in-f d3" style="margin-top:32px">Median of 7 rounds × 2,000,000 calls · labs/04-syscall-cost/syscost.c · aos-lab, Linux 6.18.63, 2026-11-15 · shared VM, numbers vary</p>
+  <aside class="notes">
+SAY (EN): Same answer, two routes. Through the vDSO the time is read in ring 3 from the TSC and a kernel-updated data page; through syscall we pay the boundary crossing and entry/exit work, about 110 ns here. Under heavy load all numbers grew about 4x but the ratio stayed near 8.
+SAY (FA): یک پاسخ، دو مسیر. از طریق vDSO زمان در ring 3 از TSC و یک صفحهٔ داده که کرنل به‌روز می‌کند خوانده می‌شود؛ از طریق syscall هزینهٔ عبور از مرز و کارهای ورود و خروج را می‌پردازیم، اینجا حدود ۱۱۰ نانوثانیه. زیر بار سنگین همهٔ عددها حدود ۴ برابر شدند ولی نسبت نزدیک ۸ ماند.
+KEY POINT: The vDSO avoids the boundary; strace multiplies its cost.
+EXAMPLE: labs/04-syscall-cost/syscost.c
+PITFALL: Comparing numbers across machines: shared VM, noisy.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 15 TWO_COLUMN_COMPARE: Linux vs OpenBSD -->
+<section>
+  <span class="eyebrow in-f">01 · Linux vs OpenBSD</span>
+  <h2 class="in">Same hardware door, different policies behind it</h2>
+  <div class="compare">
+    <div class="in d1"><h3>Linux v6.18.63</h3><ul>
+      <li><code>read</code> = 0 (per-arch table)</li>
+      <li><code>switch</code> dispatch</li>
+      <li>error: <code>-errno</code> in rax</li>
+      <li>any address may <code>syscall</code></li>
+      <li>no global kernel lock</li>
+    </ul></div>
+    <div class="in d2"><h3>OpenBSD 8cada8c</h3><ul>
+      <li><code>read</code> = 3 (one MI table)</li>
+      <li><code>sysent[code].sy_call</code></li>
+      <li>error: errno + carry flag</li>
+      <li>pinsyscalls: libc call site only</li>
+      <li><code>KERNEL_LOCK()</code> unless NOLOCK</li>
+    </ul></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Both kernels start with swapgs, a scratch slot and the kernel stack, because the hardware forces it. Behind that, Linux optimizes for speed and compatibility, OpenBSD for a smaller attack surface.
+SAY (FA): هر دو کرنل با swapgs، یک خانهٔ موقت و پشتهٔ کرنل شروع می‌کنند، چون سخت‌افزار این را تحمیل می‌کند. پشت آن، لینوکس برای سرعت و سازگاری بهینه شده و OpenBSD برای سطح حملهٔ کوچک‌تر.
+KEY POINT: Full trade-off table in kernel-walkthrough.en.md §8.5.
+EXAMPLE: openbsd/sys/sys/syscall_mi.h L164: pin_check(p, code)
+PITFALL: Concluding one is "better" without naming the workload.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 16 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">Quick check</span>
+  <h2>Which register carries the 4th syscall argument on x86-64 Linux?</h2>
+  <div class="quiz-options">
+    <div><b>A</b> <code>rcx</code>, as in the C ABI</div>
+    <div><b>B</b> <code>r10</code></div>
+    <div><b>C</b> on the user stack</div>
+    <div><b>D</b> <code>r11</code></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Twenty seconds. Think about what the syscall instruction itself does to registers.
+SAY (FA): بیست ثانیه. به این فکر کنید که خود دستور syscall با رجیسترها چه می‌کند.
+KEY POINT: Answer on the next slide.
+EXAMPLE: —
+PITFALL: —
+ASK: Who picked A, and why does it look right?
+TIME: 45
+  </aside>
+</section>
+
+<!-- 17 QUIZ answer -->
+<section>
+  <span class="eyebrow">Answer: B</span>
+  <h2>syscall already used rcx for the return address</h2>
+  <p class="quote">rcx = user RIP and r11 = RFLAGS after syscall, so the kernel reads argument 4 from regs-&gt;r10.</p>
+  <p class="source">linux/arch/x86/include/asm/syscall_wrapper.h · SC_X86_64_REGS_TO_ARGS · L56-59 · v6.18.63</p>
+  <aside class="notes">
+SAY (EN): The wrapper macro decodes regs->di, si, dx, r10, r8, r9. libc moves the C ABI's rcx into r10 before the syscall instruction.
+SAY (FA): ماکروی wrapper مقادیر regs->di، si، dx، r10، r8 و r9 را می‌خواند. libc پیش از دستور syscall مقدار rcx در ABI زبان C را به r10 منتقل می‌کند.
+KEY POINT: r11 (D) is clobbered too: it holds RFLAGS.
+EXAMPLE: Lab 02 extension: raw mmap with the wrong register.
+PITFALL: Forgetting "rcx", "r11" in the inline-asm clobber list.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 18 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">01 · Architecture</span>
+  <h2 class="in">Summary</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>The CPU enforces CPL; the kernel only chooses the doors</li>
+    <li class="in d2"><span class="callout-num">2</span>Every entry builds pt_regs; every exit may schedule</li>
+    <li class="in d3"><span class="callout-num">3</span>A context switch = new rsp, maybe new CR3</li>
+  </ul>
+  <p class="next in d4">Module 02 · Processes &amp; Threads</p>
+  <aside class="notes">
+SAY (EN): You can now follow any entry into the kernel in the real source and measure its cost. Next we look at the tasks themselves: task_struct, fork, exec and the scheduler that context_switch serves.
+SAY (FA): حالا می‌توانید هر ورود به کرنل را در سورس واقعی دنبال و هزینه‌اش را اندازه بگیرید. در ادامه سراغ خود taskها می‌رویم: task_struct، fork، exec و زمان‌بندی که context_switch در خدمت آن است.
+KEY POINT: Self-check questions are in lesson.en.md §5.
+EXAMPLE: —
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+<!-- REFERENCES:start (generated by _shared/tools/add_references.py from _shared/resources/awesome-os.json; do not edit by hand) -->
+<!-- 19 REFERENCES -->
+<section class="layout-refs">
+  <span class="eyebrow in-f">Go deeper</span>
+  <h2 class="in">Read more, picked from the GitHub “awesome-os” lists</h2>
+  <ul class="refs">
+    <li class="in d1"><span class="pill">Book</span> <a href="https://0xax.gitbooks.io/linux-insides/content/"><b>linux-insides</b></a><span class="why">A book-style walk through Linux internals: booting, interrupts, system calls, memory.</span><span class="url ltr">0xax.gitbooks.io/linux-insides/content</span></li>
+    <li class="in d2"><span class="pill">Docs</span> <a href="https://makelinux.github.io/kernel/map/"><b>Interactive map of Linux kernel</b></a><span class="why">One clickable diagram of the kernel&#x27;s subsystems and how they connect.</span><span class="url ltr">makelinux.github.io/kernel/map</span></li>
+    <li class="in d3"><span class="pill">Docs</span> <a href="https://gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html"><b>Linux system calls table</b></a><span class="why">System-call numbers side by side for every architecture.</span><span class="url ltr">gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html</span></li>
+    <li class="in d4"><span class="pill">Book</span> <a href="https://pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf"><b>xv6: a simple, Unix-like teaching operating system</b></a><span class="why">Chapters “Operating system organization” and “Traps and device drivers”.</span><span class="url ltr">pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf</span></li>
+    <li class="in d5"><span class="pill">Paper</span> <a href="https://pdos.csail.mit.edu/6.828/2008/readings/engler95exokernel.pdf"><b>Exokernel: An Operating System Architecture for Application-Level Resource Management</b></a><span class="why">1995: export the hardware and let libraries be the OS, the opposite of a big kernel.</span><span class="url ltr">pdos.csail.mit.edu/6.828/2008/readings/engler95exokernel.pdf</span></li>
+    <li class="in d5"><span class="pill">Paper</span> <a href="https://www.sigops.org/s/conferences/sosp/2009/papers/klein-sosp09.pdf"><b>seL4: Formal Verification of an OS Kernel</b></a><span class="why">SOSP &#x27;09: a small kernel whose correctness is proven, microkernel taken to its limit.</span><span class="url ltr">sigops.org/s/conferences/sosp/2009/papers/klein-sosp09.pdf</span></li>
+  </ul>
+  <p class="caption src">Lists: <span class="ltr">jubalh/awesome-os · penberg/awesome-os</span> · links checked <bdi dir="ltr">2026-11-15</bdi></p>
+  <aside class="notes">
+SAY (EN): These are the best next reads after this module. They come from two GitHub “awesome-os” lists and every link was opened and checked on 2026-11-15. You do not need all of them.
+SAY (FA): این‌ها بهترین منابع برای ادامه پس از این ماژول هستند. از دو فهرست «awesome-os» در GitHub انتخاب شده‌اند و همهٔ لینک‌ها در تاریخ 2026-11-15 باز و بررسی شده‌اند. لازم نیست همه را بخوانید.
+KEY POINT: Start with the first item. The papers and conference pages are for the curious.
+EXAMPLE: —
+PITFALL: Some links are PDFs; open them before class if the room has no internet.
+TIME: 30
+  </aside>
+</section>
+<!-- REFERENCES:end -->
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 01 Architecture" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

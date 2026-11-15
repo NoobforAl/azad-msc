@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 05.6 · سازگاری ext4 پس از crash با dm-flakey</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">05.6</div>
+  <span class="eyebrow in-f">آزمایش 05.6 · هدف</span>
+  <h2 class="in">سازگاری <bdi dir="ltr">ext4</bdi> پس از <bdi dir="ltr">crash</bdi> با <bdi dir="ltr">dm-flakey</bdi></h2>
+  <p class="why in d1">زیر <bdi dir="ltr">ext4</bdi> برق را قطع کنید و ببینید کدام نوشتن‌ها می‌مانند<bdi dir="ltr">: fsync</bdi>‌شده، بدون <bdi dir="ltr">sync</bdi> و جایگزینی با <bdi dir="ltr">rename.</bdi></p>
+  <div class="pills in d2"><span class="pill">محل اجرا: فقط VM (device-mapper، sudo)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Cut the power under ext4 and see which writes survive: fsync'd, unsynced, and replace-by-rename.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.6 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-data in d1"><h3>دیسک</h3><p>فایل <bdi dir="ltr">loop</bdi> با حجم ۲۵۶ مگابایت، <bdi dir="ltr">mkfs.ext4</bdi></p></div><div class="c-6 card edge r-kernel in d2"><h3>dm-flakey</h3><p>جدول <bdi dir="ltr">UP -&gt;</bdi> جدول <bdi dir="ltr">DROP (drop_writes)</bdi></p></div><div class="c-6 card edge r-user in d3"><h3>نوشتن‌ها</h3><p><bdi dir="ltr">A: fsync</bdi> · <bdi dir="ltr">B:</bdi> هیچ · <bdi dir="ltr">config: tmp + mv</bdi></p></div><div class="c-6 card edge r-kernel in d4"><h3>بازیابی</h3><p><bdi dir="ltr">e2fsck -n</bdi> و سپس <bdi dir="ltr">mount = replay</bdi> ژورنال</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.6 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 06-ext4-crash</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/05-filesystems-io/labs/06-ext4-crash</span><span class="ln"><span class="p">$</span> sudo dmsetup targets | grep flakey</span><span class="ln"><span class="p">$</span> bash crash-demo.sh                  # data=ordered</span><span class="ln"><span class="p">$</span> MODE=writeback bash crash-demo.sh</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.6 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">== mounted: rw,relatime,data=ordered</span><span class="ln">== before the crash:</span><span class="ln">  A 19 bytes   B 21 bytes   config: new contents</span><span class="ln">== kernel log at remount (journal replay):</span><span class="ln hl">  EXT4-fs (dm-0): recovery complete</span><span class="ln">== after the crash:</span><span class="ln hl">  A        19 bytes: A: written + fsync</span><span class="ln hl">  B       MISSING</span><span class="ln">  config   13 bytes: old contents</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، ۲۰۲۶-۱۱-۱۵.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.6 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>فایل <bdi dir="ltr">fsync</bdi>‌شده می‌ماند</b><br><span class="caption">تراکنش آن <bdi dir="ltr">commit</bdi> شده بود</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>فایل بدون <bdi dir="ltr">sync</bdi> از بین رفته</b><br><span class="caption"><bdi dir="ltr">B:</bdi> حتی یک فایل خالی هم نمانده</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>فایل‌سیستم سازگار است</b><br><span class="caption"><bdi dir="ltr">replay</bdi> هنگام <bdi dir="ltr">mount</bdi>، بدون نیاز به <bdi dir="ltr">fsck</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.6 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">Invalid argument</bdi> از <bdi dir="ltr">dmsetup</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">sudo modprobe dm-flakey</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">device busy</bdi> هنگام <bdi dir="ltr">remove</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">اول <bdi dir="ltr">umount</bdi>، بعد <bdi dir="ltr">dmsetup remove</bdi> و <bdi dir="ltr">losetup -d</bdi></span></div><div class="pit in d3"><span class="tag r-danger">همه چیز ماند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">dmsetup suspend</bdi> بدون <bdi dir="ltr">--nolockfs</bdi> یعنی <bdi dir="ltr">freeze</bdi> و <bdi dir="ltr">sync</bdi></span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 05.6 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">برنامه را درست کنید تا <bdi dir="ltr">config</bdi> با محتوای جدید بماند (<bdi dir="ltr">tmp + fsync + rename + fsync</bdi> پوشه). سپس با <bdi dir="ltr">data=journal</bdi> تکرار کنید و تفاوت را توضیح دهید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۵ فایل‌سیستم و I/O" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

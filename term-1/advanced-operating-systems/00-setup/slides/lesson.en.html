@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>00 · Setup — Advanced OS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<div class="reveal course-os">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">Lab machines, tools, and real kernel source</h1>
+  <p class="subtitle in d1">Advanced Operating Systems · 00 Setup</p>
+  <div class="fields">
+    <span><b>Course</b>[Course name]</span><span><b>Presenter</b>[Presenter]</span>
+    <span><b>Professor</b>[Professor]</span><span><b>Faculty</b>[Faculty / Branch]</span>
+    <span><b>Term</b>[Term]</span><span><b>Date</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (EN): Before any theory, we build the bench: a server for observing the kernel, a disposable VM for changing it, and a way to read the exact source that runs.
+SAY (FA): قبل از هر نظریه‌ای میز کار را می‌سازیم: سروری برای مشاهدهٔ کرنل، یک VM یک‌بارمصرف برای تغییر دادنش، و راهی برای خواندن دقیق همان سورسی که اجرا می‌شود.
+KEY POINT: Every later module depends on this setup.
+EXAMPLE: —
+PITFALL: Title fields are placeholders; never invent them.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">00</div>
+  <span class="eyebrow in-f">Module 00</span>
+  <h2 class="in">Setup</h2>
+  <p class="why in d1">Wrong machine, wrong kernel, or code quoted from memory make every later experiment untrustworthy.</p>
+  <div class="pills in d2"><span class="pill">libvirt VM</span><span class="pill">tracing tools</span><span class="pill">v6.18.63 build</span></div>
+  <aside class="notes">
+SAY (EN): Three things make results trustworthy: the right machine, the right kernel, and real source.
+SAY (FA): سه چیز نتیجه را قابل‌اعتماد می‌کند: ماشین درست، کرنل درست و سورس واقعی.
+KEY POINT: Trust in results comes from the setup.
+EXAMPLE: A perf result on a mismatched kernel is meaningless.
+PITFALL: Skipping the VM "just this once".
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">00 · Setup</span>
+  <h2 class="in">Four steps from bare server to cited kernel code</h2>
+  <ol class="agenda">
+    <li class="current in d1">Two machines: server observes, VM breaks</li>
+    <li class="in d2">Install and verify the tool set</li>
+    <li class="in d3">Build and boot v6.18.63 in the VM</li>
+    <li class="in d4">Find, quote, and cite real source</li>
+  </ol>
+  <aside class="notes">
+SAY (EN): We go machine, tools, kernel, source — each one is a lab.
+SAY (FA): ترتیب ما: ماشین، ابزار، کرنل، سورس؛ هر کدام یک آزمایش است.
+KEY POINT: Steps 1–3 are labs 01–03; step 4 is used in every module.
+EXAMPLE: —
+PITFALL: —
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 CONCEPT_DIAGRAM -->
+<section>
+  <span class="eyebrow in-f">00 · Setup</span>
+  <h2 class="in">Observe on the server, break things in the VM</h2>
+  <div class="diagram in-p d1" style="margin-top:-16px"><img src="assets/host-vm.svg" alt="Host server runs user-space labs and QEMU; the aos-lab VM runs kernel-level labs on 6.18.63-aos-lab; snapshots allow rollback"></div>
+  <aside class="notes">
+SAY (EN): The server is for watching a healthy kernel. Anything that changes or can crash the kernel goes into the VM, and we snapshot before each such lab.
+SAY (FA): سرور برای تماشای یک کرنل سالم است. هر چیزی که کرنل را تغییر دهد یا ممکن است آن را از کار بیندازد به VM می‌رود و قبلش snapshot می‌گیریم.
+KEY POINT: Kernel-level = VM only.
+EXAMPLE: ps -o pid,nlwp,cmd -C qemu-system-x86_64 shows vCPU threads.
+PITFALL: WSL2 is not a substitute for the VM (Microsoft kernel, limited modules).
+ASK: Why is a VM crash cheaper than a server crash?
+TIME: 90
+  </aside>
+</section>
+
+<!-- 05 TWO_COLUMN_COMPARE -->
+<section>
+  <span class="eyebrow in-f">00 · Setup</span>
+  <h2 class="in">Each lab type has one home</h2>
+  <div class="compare">
+    <div class="in d1"><h3>Server</h3><ul>
+      <li><code>strace</code> a real program</li>
+      <li><code>perf stat</code>, <code>perf sched</code></li>
+      <li>bpftrace on tracepoints</li>
+      <li><code>/proc</code>, <code>/sys</code> inspection</li>
+    </ul></div>
+    <div class="in d2"><h3>VM only</h3><ul>
+      <li>load a kernel module</li>
+      <li><code>PREEMPT_RT</code>, lockdep kernels</li>
+      <li>OOM, cgroup limits</li>
+      <li>filesystem crash tests</li>
+    </ul></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Left column observes; right column changes or stresses the kernel. If in doubt, use the VM.
+SAY (FA): ستون چپ فقط مشاهده می‌کند؛ ستون راست کرنل را تغییر می‌دهد یا تحت فشار می‌گذارد. اگر شک دارید، VM.
+KEY POINT: Labs marked "VM only" carry that line at the top of their README.
+EXAMPLE: Module 3 lockdep lab, Module 5 dm-flakey lab.
+PITFALL: Running stress-ng memory tests on a shared server.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 06 BENTO -->
+<section>
+  <span class="eyebrow in-f">00 · Setup</span>
+  <h2 class="in">Four tool families cover every lab</h2>
+  <div class="grid tight">
+    <div class="c-7 card edge r-kernel in d1"><h3>Tracing</h3><p><code>strace</code> · <code>perf</code> · <code>bpftrace</code> · bcc · ftrace</p></div>
+    <div class="c-5 card edge r-user in d2"><h3>Inspection</h3><p><code>/proc</code> · <code>lsof</code> · sysstat · <code>numactl</code></p></div>
+    <div class="c-5 card edge r-data in d3"><h3>Debug &amp; memory</h3><p><code>gdb</code> · <code>valgrind</code> · TSan</p></div>
+    <div class="c-7 card edge r-hardware in d4"><h3>Load &amp; latency</h3><p><code>fio</code> · <code>stress-ng</code> · <code>cyclictest</code></p></div>
+  </div>
+  <p class="takeaway in d5"><code>verify-tools.sh</code> exits 0 only when all of them work.</p>
+  <aside class="notes">
+SAY (EN): Installed is not enough: perf must match the running kernel and bpftrace needs BTF. The verify script checks both.
+SAY (FA): نصب‌شدن کافی نیست: perf باید با کرنل در حال اجرا جور باشد و bpftrace به BTF نیاز دارد. اسکریپت verify هر دو را بررسی می‌کند.
+KEY POINT: Smoke-test each tool on the real kernel.
+EXAMPLE: perf stat -e task-clock true
+PITFALL: perf_event_paranoid=4 on Ubuntu blocks perf for normal users.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 07 FLOW_TIMELINE -->
+<section>
+  <span class="eyebrow in-f">00 · Setup</span>
+  <h2 class="in">Building the course kernel takes six steps</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>Clone the tag</div><code>v6.18.63</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>Ubuntu config</div><code>olddefconfig</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>Only loaded modules</div><code>localmodconfig</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>Course options</div><code>BTF · ftrace</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>Packages</div><code>bindeb-pkg</code></div>
+    <div class="step fragment"><span class="callout-num">6</span><div>Boot + check</div><code>uname -r</code></div>
+  </div>
+  <p class="takeaway">localmodconfig turns a 2-hour build into about 20–40 minutes.</p>
+  <aside class="notes">
+SAY (EN): We clone the exact tag, reuse Ubuntu's working config, keep only modules that are loaded, add tracing options, and package as .deb so it can be removed cleanly.
+SAY (FA): دقیقاً همان tag را clone می‌کنیم، پیکربندی سالم اوبونتو را نگه می‌داریم، فقط ماژول‌های بارگذاری‌شده را می‌سازیم، گزینه‌های ردیابی را اضافه می‌کنیم و خروجی را بستهٔ .deb می‌کنیم تا راحت حذف شود.
+KEY POINT: The sparse checkout cannot be built — it has no scripts/ or drivers/.
+EXAMPLE: build-kernel.sh fails early if CONFIG_DEBUG_INFO_BTF is not =y.
+PITFALL: Ubuntu's SYSTEM_TRUSTED_KEYS points at missing cert files; the script clears it.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 08 CODE_WALKTHROUGH: Kconfig -->
+<section>
+  <span class="eyebrow in-f">00 · Setup · real source</span>
+  <h2 class="in">PREEMPT_RT is hidden until EXPERT is on</h2>
+  <div class="grid">
+    <div class="c-8 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/Kconfig.preempt</span><span>v6.18.63</span></div>
+<pre class="code"><code><span class="ln"><span class="tok-k">config</span> PREEMPT_RT</span><span class="ln">	<span class="tok-t">bool</span> <span class="tok-s">"Fully Preemptible Kernel (Real-Time)"</span></span><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-k">depends on</span> EXPERT &amp;&amp; ARCH_SUPPORTS_RT &amp;&amp; !COMPILE_TEST</span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-k">select</span> PREEMPTION</span></code></pre>
+    </div>
+    <div class="c-4 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>Without <code>EXPERT=y</code>, <code>olddefconfig</code> silently drops it</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>RT forces general preemption on</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>So <code>--rt</code> sets both, then checks</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): This is why our build script enables EXPERT before PREEMPT_RT, and why it verifies the final .config instead of trusting the command.
+SAY (FA): به همین دلیل اسکریپت ساخت ما قبل از PREEMPT_RT گزینهٔ EXPERT را روشن می‌کند، و به‌جای اعتماد به دستور، فایل نهایی .config را بررسی می‌کند.
+KEY POINT: Kconfig dependencies can silently undo your choices.
+EXAMPLE: grep '^CONFIG_PREEMPT_RT=y' .config
+PITFALL: Assuming scripts/config --enable always sticks.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 09 CODE_WALKTHROUGH (wide): do_syscall_64 -->
+<section>
+  <span class="eyebrow in-f">00 · Setup · real source</span>
+  <h2 class="in">The code you read is the code that runs</h2>
+  <div class="code-card in d1">
+    <div class="file-chip"><span>linux/arch/x86/entry/syscall_64.c · do_syscall_64()</span><span>v6.18.63 · L87-100</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1">__visible <span class="tok-k">noinstr</span> <span class="tok-t">bool</span> <span class="tok-f">do_syscall_64</span>(<span class="tok-k">struct</span> <span class="tok-t">pt_regs</span> *regs, <span class="tok-t">int</span> nr)</span><span class="ln">{</span><span class="ln">	<span class="tok-f">add_random_kstack_offset</span>();</span><span class="ln fragment hl-on" data-fragment-index="2">	nr = <span class="tok-f">syscall_enter_from_user_mode</span>(regs, nr);</span><span class="ln">	<span class="tok-c">/* ... instrumentation_begin(); dispatch via do_syscall_x64() ... */</span></span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-f">syscall_exit_to_user_mode</span>(regs);</span></code></pre>
+  </div>
+  <div class="grid tight" style="margin-top:32px">
+    <div class="c-4 row"><span class="callout-num">1</span><span><code>noinstr</code>: no ftrace hooks</span></div>
+    <div class="c-4 row"><span class="callout-num">2</span><span>seccomp, ptrace, tracepoints</span></div>
+    <div class="c-4 row"><span class="callout-num">3</span><span>signals, reschedule on return</span></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Printed with cite.sh from our checkout. noinstr places the function in .noinstr.text, so ftrace cannot hook it — lab 03's extension uses exactly this to prove the running kernel matches the source.
+SAY (FA): این را با cite.sh از checkout خودمان چاپ کردیم. noinstr تابع را در بخش .noinstr.text می‌گذارد و ftrace نمی‌تواند به آن hook بزند؛ تمرین تکمیلی آزمایش ۰۳ از همین برای اثبات یکی‌بودن کرنل و سورس استفاده می‌کند.
+KEY POINT: Lines 91–98 are elided on the slide; the full excerpt is in guide.en.md §4.3.
+EXAMPLE: include/linux/compiler_types.h L417: #define noinstr __noinstr_section(".noinstr.text")
+PITFALL: Searching for "sys_read(" — syscalls are defined with SYSCALL_DEFINEn macros.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 10 TERMINAL_DEMO -->
+<section>
+  <span class="eyebrow in-f">00 · Setup · real output</span>
+  <h2 class="in">Search for the macro, not the function name</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; _shared/sources/linux</div>
+<pre><code><span class="ln"><span class="p">$</span> git grep -n "^pid_t kernel_clone"</span><span class="ln">kernel/fork.c:2578:pid_t kernel_clone(...)</span><span class="ln"> </span><span class="ln"><span class="p">$</span> git grep -n "SYSCALL_DEFINE3(read,"</span><span class="ln hl">fs/read_write.c:722:SYSCALL_DEFINE3(read, ...</span><span class="ln"> </span><span class="ln"><span class="p">$</span> bash ../cite.sh linux kernel/fork.c kernel_clone 2</span><span class="ln hl">linux/kernel/fork.c · kernel_clone() · v6.18.63</span><span class="ln"> 2578  pid_t kernel_clone(struct kernel_clone_args *args)</span><span class="ln"> 2579  {</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">Long lines are cut with "..." to fit; full lines in the guide.</p>
+  <aside class="notes">
+SAY (EN): git grep is the fastest search. For system calls, search the SYSCALL_DEFINE macro. cite.sh prints the excerpt together with the citation line we put on every slide.
+SAY (FA): git grep سریع‌ترین روش جستجوست. برای syscallها دنبال ماکروی SYSCALL_DEFINE بگردید. cite.sh بخش کد را همراه با خط ارجاعی چاپ می‌کند که روی هر اسلاید می‌گذاریم.
+KEY POINT: Never type kernel code from memory.
+EXAMPLE: Real output from this repo's checkout (2026-11-15).
+PITFALL: Quoting a function from a blog post written for an older kernel.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 11 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">Quick check</span>
+  <h2>Why is do_syscall_64 missing from ftrace's list of traceable functions?</h2>
+  <div class="quiz-options">
+    <div><b>A</b> It is inlined everywhere</div>
+    <div><b>B</b> It is marked <code>noinstr</code></div>
+    <div><b>C</b> BTF is disabled</div>
+    <div><b>D</b> ftrace only traces modules</div>
+  </div>
+  <aside class="notes">
+SAY (EN): Take 20 seconds. Think about the line we just read.
+SAY (FA): ۲۰ ثانیه فکر کنید؛ به خطی که همین الان خواندیم.
+KEY POINT: Answer on the next slide.
+EXAMPLE: —
+PITFALL: —
+ASK: Who picked A? Why might that seem plausible?
+TIME: 45
+  </aside>
+</section>
+
+<!-- 12 QUIZ answer (DEFINITION) -->
+<section>
+  <span class="eyebrow">Answer: B</span>
+  <h2>Entry code must not be traced before the kernel is ready</h2>
+  <p class="quote">noinstr puts the function in .noinstr.text, which is compiled without ftrace hooks.</p>
+  <p class="source">linux/include/linux/compiler_types.h · L417 · v6.18.63</p>
+  <aside class="notes">
+SAY (EN): The kernel isn't in a state where tracing is safe at the very start of a syscall, so instrumentation is only allowed between instrumentation_begin and instrumentation_end.
+SAY (FA): در لحظهٔ شروع syscall، کرنل هنوز در وضعیتی نیست که ردیابی امن باشد؛ برای همین instrumentation فقط بین instrumentation_begin و instrumentation_end مجاز است.
+KEY POINT: An absence can be evidence.
+EXAMPLE: grep -w do_syscall_64 /sys/kernel/tracing/available_filter_functions → nothing.
+PITFALL: A (inlining) is false: it appears in /proc/kallsyms as a real symbol.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 13 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">00 · Setup</span>
+  <h2 class="in">Summary</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>Observe on the server; change the kernel only in the VM</li>
+    <li class="in d2"><span class="callout-num">2</span>Tools are verified against the running kernel</li>
+    <li class="in d3"><span class="callout-num">3</span>The VM runs v6.18.63; every quote comes from cite.sh</li>
+  </ul>
+  <p class="next in d4">Module 01 · Architecture &amp; Kernel Structure</p>
+  <aside class="notes">
+SAY (EN): You now have a bench you can trust. Next we use it to follow one system call from user space into the kernel and back.
+SAY (FA): حالا میز کاری دارید که می‌شود به آن اعتماد کرد. در ادامه با آن یک syscall را از فضای کاربر تا داخل کرنل و برگشت دنبال می‌کنیم.
+KEY POINT: Done-when checklist is in guide.en.md §6.
+EXAMPLE: —
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+<!-- REFERENCES:start (generated by _shared/tools/add_references.py from _shared/resources/awesome-os.json; do not edit by hand) -->
+<!-- 14 REFERENCES -->
+<section class="layout-refs">
+  <span class="eyebrow in-f">Go deeper</span>
+  <h2 class="in">Read more, picked from the GitHub “awesome-os” lists</h2>
+  <ul class="refs">
+    <li class="in d1"><span class="pill">Docs</span> <a href="https://www.kernel.org/doc/html/latest/"><b>The Linux Kernel documentation</b></a><span class="why">The official kernel docs: admin guide, core APIs, subsystem notes.</span><span class="url ltr">kernel.org/doc/html/latest</span></li>
+    <li class="in d2"><span class="pill">Tool</span> <a href="https://github.com/arighi/virtme-ng"><b>virtme-ng</b></a><span class="why">Build and run a kernel inside a virtualized snapshot of your live system (needs a Linux host).</span><span class="url ltr">github.com/arighi/virtme-ng</span></li>
+    <li class="in d3"><span class="pill">Course</span> <a href="https://training.linuxfoundation.org/training/a-beginners-guide-to-linux-kernel-development-lfd103/"><b>A Beginner&#x27;s Guide to Linux Kernel Development (LFD103)</b></a><span class="why">Linux Foundation course on getting started with kernel development.</span><span class="url ltr">training.linuxfoundation.org/training/a-beginners-guide-to-linux</span></li>
+    <li class="in d4"><span class="pill">Docs</span> <a href="https://www.kernel.org/doc/html/latest/admin-guide/bug-hunting.html"><b>Bug hunting (kernel docs)</b></a><span class="why">The kernel admin guide on how to hunt a bug.</span><span class="url ltr">kernel.org/doc/html/latest/admin-guide/bug-hunting.html</span></li>
+    <li class="in d5"><span class="pill">Docs</span> <a href="https://www.kernel.org/doc/html/latest/admin-guide/bug-bisect.html"><b>Bisecting a regression (kernel docs)</b></a><span class="why">Find the exact commit that broke something.</span><span class="url ltr">kernel.org/doc/html/latest/admin-guide/bug-bisect.html</span></li>
+    <li class="in d5"><span class="pill">Tool</span> <a href="https://github.com/kworkflow/kworkflow"><b>kworkflow (kw)</b></a><span class="why">A workflow tool that cuts the setup cost of kernel development.</span><span class="url ltr">github.com/kworkflow/kworkflow</span></li>
+  </ul>
+  <p class="caption src">Lists: <span class="ltr">jubalh/awesome-os · penberg/awesome-os</span> · links checked <bdi dir="ltr">2026-11-15</bdi></p>
+  <aside class="notes">
+SAY (EN): These are the best next reads after this module. They come from two GitHub “awesome-os” lists and every link was opened and checked on 2026-11-15. You do not need all of them.
+SAY (FA): این‌ها بهترین منابع برای ادامه پس از این ماژول هستند. از دو فهرست «awesome-os» در GitHub انتخاب شده‌اند و همهٔ لینک‌ها در تاریخ 2026-11-15 باز و بررسی شده‌اند. لازم نیست همه را بخوانید.
+KEY POINT: Start with the first item. The papers and conference pages are for the curious.
+EXAMPLE: —
+PITFALL: Some links are PDFs; open them before class if the room has no internet.
+TIME: 30
+  </aside>
+</section>
+<!-- REFERENCES:end -->
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 00 Setup" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

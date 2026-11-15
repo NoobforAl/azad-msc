@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 02.1 · fork، exec، pipe و /proc</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">02.1</div>
+  <span class="eyebrow in-f">آزمایش 02.1 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">fork</bdi>، <bdi dir="ltr">exec</bdi>، <bdi dir="ltr">pipe</bdi> و <bdi dir="ltr">/proc</bdi></h2>
+  <p class="why in d1">الگوی <bdi dir="ltr">fork</bdi> ← <bdi dir="ltr">dup2</bdi> ← <bdi dir="ltr">exec</bdi> ← <bdi dir="ltr">pipe</bdi> ← <bdi dir="ltr">waitpid</bdi> را در <bdi dir="ltr">C</bdi> بسازید و جدول <bdi dir="ltr">fd</bdi> و یک <bdi dir="ltr">zombie</bdi> را از طریق <bdi dir="ltr">/proc</bdi> ببینید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (aos-lab)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Build fork → dup2 → exec → pipe → waitpid in C and watch the fd table and a zombie through /proc.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.1 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>برنامه</h3><p><bdi dir="ltr">fep.c:</bdi> والد و یک فرزند</p></div><div class="c-6 card edge r-kernel in d2"><h3>مسیر کرنل</h3><p class="ltr-mono"><code>kernel_clone · bprm_execve · exit_notify</code></p></div><div class="c-6 card edge r-data in d3"><h3>کانال</h3><p><bdi dir="ltr">pipe2(O_CLOEXEC)</bdi> و <bdi dir="ltr">dup2</bdi> روی <bdi dir="ltr">fd 1</bdi></p></div><div class="c-6 card edge r-hardware in d4"><h3>مشاهده</h3><p><bdi dir="ltr">/proc/&lt;pid&gt;/status</bdi>، <bdi dir="ltr">fd</bdi>، <bdi dir="ltr">maps</bdi></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.1 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 01-fork-exec-pipe</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/02-processes-threads/labs/01-fork-exec-pipe</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o fep fep.c</span><span class="ln"><span class="p">$</span> ./fep</span><span class="ln"><span class="p">$</span> strace -f -e trace=pipe2,clone,dup2,execve,wait4 \</span><span class="ln">    ./fep &gt;/dev/null</span><span class="ln"><span class="p">$</span> sleep 300 &amp; P=$!</span><span class="ln"><span class="p">$</span> grep -E &#x27;State|Tgid|ctxt&#x27; /proc/$P/status</span><span class="ln"><span class="p">$</span> ls -l /proc/$P/fd</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.1 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">parent pid=4266 forked child pid=4267</span><span class="ln">--- child&#x27;s fd table after exec (read through the pipe) ---</span><span class="ln hl">l-wx------ 1 fred fred 64 Nov 15 16:15 1 -&gt; pipe:[13197]</span><span class="ln">lr-x------ 1 fred fred 64 Nov 15 16:15 3 -&gt; /proc/4267/fd</span><span class="ln">--- EOF after 237 bytes: every write end is closed ---</span><span class="ln">before waitpid, /proc/4267/status:</span><span class="ln">  Name:	ls</span><span class="ln hl">  State:	Z (zombie)</span><span class="ln">waitpid: child 4267 exited with status 0</span><span class="ln">  /proc/4267/status: No such file or directory</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15.</bdi></p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.1 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">fd</bdi>های ۳ و ۴ در <bdi dir="ltr">exec</bdi> ناپدید شدند</b><br><span class="caption"><bdi dir="ltr">O_CLOEXEC</bdi> ← <bdi dir="ltr">do_close_on_exec()</bdi></span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">fork()</bdi> در <bdi dir="ltr">glibc</bdi> همان <bdi dir="ltr">clone()</bdi> است</b><br><span class="caption mono">flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">zombie</bdi> تا <bdi dir="ltr">waitpid()</bdi></b><br><span class="caption"><bdi dir="ltr">exit_notify()</bdi> ← <bdi dir="ltr">EXIT_ZOMBIE</bdi> ← <bdi dir="ltr">release_task()</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.1 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">بعد از فهرست گیر می‌کند</span><span class="arrow-s">←</span><span class="tag r-ok">والد <bdi dir="ltr">fds</bdi>[<bdi dir="ltr">1</bdi>] را نگه داشته؛ بعد از <bdi dir="ltr">fork</bdi> ببندید</span></div><div class="pit in d2"><span class="tag r-danger">فرزند <bdi dir="ltr">fd</bdi>های ۳ و ۴ را می‌بیند</span><span class="arrow-s">←</span><span class="tag r-ok">از <bdi dir="ltr">pipe2(fds</bdi>, <bdi dir="ltr">O_CLOEXEC</bdi>) استفاده کنید</span></div><div class="pit in d3"><span class="tag r-danger">خروجی دو بار چاپ می‌شود</span><span class="arrow-s">←</span><span class="tag r-ok">قبل از <bdi dir="ltr">fork()</bdi> دستور <bdi dir="ltr">fflush(stdout)</bdi></span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 02.1 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px"><bdi dir="ltr">pipeline.c:</bdi> دستور <bdi dir="ltr">ls -l /proc/self/fd</bdi> | <bdi dir="ltr">wc -l</bdi> را با دو فرزند و بدون <bdi dir="ltr">shell</bdi> اجرا کنید و با <bdi dir="ltr">/proc</bdi> ثابت کنید هر کدام فقط سر خودش از <bdi dir="ltr">pipe</bdi> را دارد.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

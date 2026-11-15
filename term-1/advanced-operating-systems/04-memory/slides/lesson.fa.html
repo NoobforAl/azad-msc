@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>۰۴ · مدیریت حافظه — سیستم‌عامل پیشرفته</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+  <style>
+    /* deck-local: compact terminal and 2-col memmap labels */
+    .memmap > div b { font-family: var(--font-latin); font-weight: 700; color: var(--c, var(--text)); }
+    .term.compact pre { font-size: 26px; }
+    .callouts bdi { white-space: nowrap; }
+  </style>
+</head>
+<body>
+<div class="reveal course-os">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">از دستوری که fault می‌دهد تا صفحه‌ای که map می‌شود</h1>
+  <p class="subtitle in d1">سیستم‌عامل پیشرفته · ۰۴ مدیریت حافظه</p>
+  <div class="fields">
+    <span><b>درس</b>[نام درس]</span><span><b>ارائه‌دهنده</b>[ارائه‌دهنده]</span>
+    <span><b>استاد</b>[استاد]</span><span><b>دانشکده</b>[دانشکده / واحد]</span>
+    <span><b>ترم</b>[ترم]</span><span><b>تاریخ</b>[تاریخ شمسی]</span>
+  </div>
+  <aside class="notes">
+SAY (FA): هر load و store برنامهٔ شما از ترجمه‌ای می‌گذرد که کرنل ساخته است، و معمولاً تنبل و در اولین لمس. امروز این مسیر را در کد واقعی v6.18.63 دنبال و روی VM آزمایشگاه اندازه‌گیری می‌کنیم.
+SAY (EN): Every load and store goes through a translation the kernel set up, usually lazily. We follow that path in v6.18.63 and measure it on the lab VM.
+KEY POINT: مدیریت حافظه یعنی ترجمه، تخصیص و پس‌گرفتن.
+EXAMPLE: —
+PITFALL: فیلدهای صفحهٔ عنوان جای‌نگهدار هستند؛ هرگز آن‌ها را از خودتان پر نکنید.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">04</div>
+  <span class="eyebrow in-f">ماژول ۰۴</span>
+  <h2 class="in">مدیریت حافظه</h2>
+  <p class="why in d1">RAM در اولین لمس تخصیص داده می‌شود، تا اولین نوشتن مشترک می‌ماند و زیر فشار پس گرفته می‌شود. دانستن زمان این اتفاق‌ها بیشتر باگ‌های «حافظه» را توضیح می‌دهد.</p>
+  <div class="pills in d2"><span class="pill"><bdi dir="ltr">page fault</bdi></span><span class="pill"><bdi dir="ltr">TLB</bdi> و صفحه‌های بزرگ</span><span class="pill"><bdi dir="ltr">buddy · SLUB · reclaim</bdi></span></div>
+  <aside class="notes">
+SAY (FA): به ماژول ۰۱ برای exception و CR3، به ماژول ۰۲ برای fork و به ماژول ۰۳ برای atomic و RCU وابسته است.
+SAY (EN): Depends on Module 01 (exceptions, CR3), 02 (fork) and 03 (atomics, RCU).
+KEY POINT: سه پرسش: آدرس مجازی چطور ترجمه می‌شود، RAM کی تخصیص داده می‌شود، و چطور پس گرفته می‌شود.
+EXAMPLE: malloc(1 GB) در چند میکروثانیه برمی‌گردد.
+PITFALL: فکر کنیم malloc حافظهٔ RAM می‌گیرد.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه</span>
+  <h2 class="in">پنج گام از یک آدرس مجازی تا یک OOM kill</h2>
+  <ol class="agenda">
+    <li class="current in d1">فضای آدرس، جدول صفحه، <bdi dir="ltr">TLB</bdi></li>
+    <li class="in d2">مسیر <bdi dir="ltr">page fault</bdi> در <bdi dir="ltr">v6.18.63</bdi></li>
+    <li class="in d3"><bdi dir="ltr">demand paging</bdi> و <bdi dir="ltr">copy-on-write</bdi></li>
+    <li class="in d4"><bdi dir="ltr">buddy</bdi>، <bdi dir="ltr">SLUB</bdi> و <bdi dir="ltr">reclaim</bdi></li>
+    <li class="in d5">صفحهٔ بزرگ، <bdi dir="ltr">thrashing</bdi>، <bdi dir="ltr">OOM</bdi> و <bdi dir="ltr">UVM</bdi> در <bdi dir="ltr">OpenBSD</bdi></li>
+  </ol>
+  <aside class="notes">
+SAY (FA): هر گام یک آزمایش دارد: TLB (۴)، fault (۱)، COW (۲)، mmap (۳)، slab (۵) و OOM (۶).
+SAY (EN): Each step has a lab: TLB (4), faults (1), COW (2), mmap (3), slab (5), OOM (6).
+KEY POINT: همهٔ عددهای این اسلایدها از VM آزمایشگاه aos-lab آمده‌اند.
+EXAMPLE: —
+PITFALL: —
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 LAYER_STACK -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه</span>
+  <h2 class="in">هر دسترسی به حافظه از چهار لایه می‌گذرد</h2>
+  <div class="layers">
+    <div class="band r-user in d1"><b>فضای کاربر</b><div class="items"><span>load/store VA</span><span>malloc</span><span>mmap</span></div></div>
+    <div class="boundary in-f d2"><span><bdi dir="ltr">#PF: Ring 3 → Ring 0</bdi></span></div>
+    <div class="band r-kernel in d2"><b>mm در کرنل</b><div class="items"><span>VMA tree</span><span>handle_mm_fault</span><span>buddy</span><span>SLUB</span><span>kswapd</span></div></div>
+    <div class="band r-hardware in d3"><b>سخت‌افزار</b><div class="items"><span>TLB (PCID)</span><span>MMU walk</span><span>CR3</span></div></div>
+    <div class="band r-data in d4"><b>داده</b><div class="items"><span>page frames</span><span>page cache</span><span>swap</span></div></div>
+  </div>
+  <aside class="notes">
+SAY (FA): در TLB hit کرنل اصلاً دخالتی ندارد. کرنل فقط وقتی اجرا می‌شود که MMU یک page fault بدهد، یا وقتی خودش page table را عوض کند و مجبور به shootdown باشد.
+SAY (EN): On a TLB hit the kernel is not involved. It runs only on a page fault or when it changes page tables.
+KEY POINT: مسیر سریع کاملاً سخت‌افزاری است؛ کرنل چیزی را می‌سازد که سخت‌افزار می‌خواند.
+EXAMPLE: perf stat -e page-faults عبورها از این مرز را می‌شمارد.
+PITFALL: فکر کنیم کرنل آدرس‌ها را ترجمه می‌کند.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 05 MEMORY_LAYOUT -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · یادداشت ۰۱</span>
+  <h2 class="in">فضای آدرس هر پردازه از <bdi dir="ltr">VMA</bdi>ها ساخته می‌شود</h2>
+  <div class="grid">
+    <div class="c-7 memmap in d1">
+      <div class="r-kernel"><b>kernel (shared, U/S=0)</b><span>0xffff8000…</span></div>
+      <div><b>non-canonical hole</b><span>#GP</span></div>
+      <div class="r-user"><b>[stack] ↓</b><span>0x7ffd…</span></div>
+      <div class="r-user"><b>mmap: libc, big malloc ↓</b><span>0x7f…</span></div>
+      <div class="r-data"><b>[heap] ↑ brk</b><span>0x55…</span></div>
+      <div class="r-data"><b>ELF text / data / bss</b><span>0x55…</span></div>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>هر خط <bdi dir="ltr"><code>/proc/pid/maps</code></bdi> یعنی یک <bdi dir="ltr"><code>vm_area_struct</code></bdi></span></div>
+      <div class="in d3"><span class="callout-num">2</span><span><bdi dir="ltr">VMA</bdi>ها در یک <bdi dir="ltr">maple tree</bdi> داخل <bdi dir="ltr"><code>mm_struct</code></bdi> هستند</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span><bdi dir="ltr">VMA</bdi> فقط یک وعده است؛ صفحه‌ها در اولین لمس می‌آیند</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (FA): آدرس‌های canonical ۴۸ بیتی فضا را به نیمهٔ کاربر و نیمهٔ کرنل تقسیم می‌کنند. نیمهٔ کرنل در همهٔ پردازه‌ها map شده تا syscall به عوض کردن CR3 نیاز نداشته باشد، مگر زیر KPTI.
+SAY (EN): 48-bit canonical addresses: user half and kernel half; the kernel half is mapped everywhere (except KPTI).
+KEY POINT: Size با RSS فرق دارد؛ Size و Rss را در smaps_rollup مقایسه کنید.
+EXAMPLE: cat /proc/self/maps
+PITFALL: VmSize را مصرف حافظه بدانیم.
+TIME: 75
+  </aside>
+</section>
+
+<!-- 06 CONCEPT_DIAGRAM: page walk -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · یادداشت ۰۲</span>
+  <h2 class="in">چهار اندیس ۹ بیتی و یک <bdi dir="ltr">offset</bdi> دوازده‌بیتی</h2>
+  <div class="diagram in-p d1"><img src="assets/page-walk.svg" alt="VA 0x00007f3a12345678 به اندیس‌های PGD 254، PUD 232، PMD 145، PTE 325 و offset 0x678 تقسیم می‌شود؛ CR3 به PGD اشاره می‌کند؛ هر جدول ۵۱۲ مدخل دارد؛ PS=1 در PUD یا PMD پیمایش را تمام می‌کند"></div>
+  <aside class="notes">
+SAY (FA): CR3 به PGD اشاره می‌کند. هر سطح یک صفحهٔ ۴ کیلوبایتی با ۵۱۲ مدخل است. مدخل PMD با بیت PS یک صفحهٔ ۲ مگابایتی است و پیمایش یک سطح زودتر تمام می‌شود؛ صفحهٔ بزرگ یعنی همین.
+SAY (EN): CR3 → PGD; each level 512 entries; a PMD with PS set is a 2 MiB page.
+KEY POINT: کد لینوکس به‌صورت عمومی پنج‌سطحی است و x86-64 بدون LA57 سطح p4d را هنگام بوت تا می‌کند.
+EXAMPLE: PGDIR_SHIFT یک متغیر است (pgdir_shift برابر ۳۹ یا ۴۸)، در arch/x86/include/asm/pgtable_64_types.h خط ۵۰.
+PITFALL: فراموش کنیم که زیر hypervisor هر miss یک پیمایش دوبعدی است (تا ۲۴ خواندن).
+ASK: کدام بیت‌ها مدخل PMD را انتخاب می‌کنند؟
+TIME: 90
+  </aside>
+</section>
+
+<!-- 07 TERMINAL_DEMO: TLB -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · آزمایش 04.4 · خروجی واقعی</span>
+  <h2 class="in">صفحه‌های بزرگ منحنی TLB miss را صاف می‌کنند</h2>
+  <div class="term compact in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab:~/work/04-memory/04-tlb-hugepages</div>
+<pre><code><span class="ln"><span class="p">$</span> taskset -c 2 ./tlbchase 4k|thp 512 ; paste ...</span><span class="ln">      16 pages      0.1 MiB   4k    5.58 ns   thp    3.58 ns</span><span class="ln">    1024 pages      4.0 MiB   4k   21.76 ns   thp   20.81 ns</span><span class="ln">    4096 pages     16.0 MiB   4k   97.22 ns   thp   99.03 ns</span><span class="ln hl">    8192 pages     32.0 MiB   4k  181.54 ns   thp   75.12 ns</span><span class="ln hl">   16384 pages     64.0 MiB   4k  603.09 ns   thp  157.67 ns</span><span class="ln">   32768 pages    128.0 MiB   4k  948.90 ns   thp  149.66 ns</span><span class="ln hl">  131072 pages    512.0 MiB   4k  815.02 ns   thp  172.45 ns</span><span class="ln"># 4k:  region=512 MiB AnonHugePages=0 kB</span><span class="ln"># thp: region=512 MiB AnonHugePages=524288 kB</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">مهمان VirtualBox با ۸ vCPU که بین چند کاربر مشترک است؛ عددهای مطلق روی ماشین شما فرق می‌کند. PMU نداریم، پس شمارنده‌های dTLB اینجا UNVERIFIED هستند.</p>
+  <aside class="notes">
+SAY (FA): ردپای داده در هر دو اجرا یکی است، یک خط cache برای هر صفحه. با صفحهٔ ۴ کیلوبایتی وقتی بازه از برد TLB بیشتر شود هزینه می‌پرد؛ با صفحهٔ ۲ مگابایتی، ۵۱۲ مگابایت فقط ۲۵۶ مدخل است.
+SAY (EN): Same footprint; 4 KiB pages jump past TLB reach; 2 MiB pages stay flat.
+KEY POINT: برد TLB برابر است با تعداد مدخل‌ها ضرب در اندازهٔ صفحه.
+EXAMPLE: AnonHugePages در smaps نشان می‌دهد THP واقعاً استفاده شده.
+PITFALL: مقایسهٔ اجراهایی که در آن‌ها THP بی‌صدا به صفحهٔ کوچک برگشته.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 08 FLOW_TIMELINE: fault path -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · گشت در کد، بخش‌های ۱ تا ۳</span>
+  <h2 class="in">هر <bdi dir="ltr">page fault</bdi> از شش تابع می‌گذرد</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>trap در CPU</div><code>#PF, CR2</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>ورود معماری</div><code>exc_page_fault</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>یافتن VMA</div><code>lock_vma_under_rcu</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>عمومی</div><code>handle_mm_fault</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>پیمودن سطح‌ها</div><code>__handle_mm_fault</code></div>
+    <div class="step fragment"><span class="callout-num">6</span><div>انتخاب handler</div><code>handle_pte_fault</code></div>
+  </div>
+  <p class="takeaway">اگر VMA نباشد یا دسترسی غلط باشد، کار در گام ۳ با <bdi dir="ltr">SIGSEGV</bdi> تمام می‌شود.</p>
+  <aside class="notes">
+SAY (FA): ورودی در arch/x86/mm/fault.c خط ۱۴۸۳ است. do_user_addr_fault اول قفل per-VMA را امتحان می‌کند (۶٫۴ به بعد) و بعد mmap_lock را. ورودی عمومی mm/memory.c خط ۶۴۹۰ است که faultهای minor و major را می‌شمارد.
+SAY (EN): fault.c L1483 entry; per-VMA lock first; memory.c L6490 generic entry and accounting.
+KEY POINT: کد معماری VMA را پیدا می‌کند؛ کد عمومی PTE را درست می‌کند.
+EXAMPLE: bpftrace روی tracepoint:exceptions:page_fault_user.
+PITFALL: فرض کنیم هر fault قفل mmap_lock را می‌گیرد.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 09 CODE_WALKTHROUGH: handle_pte_fault -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · سورس واقعی</span>
+  <h2 class="in">یک تابع نوع هر <bdi dir="ltr">fault</bdi> را تعیین می‌کند</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/mm/memory.c · handle_pte_fault()</span><span>v6.18.63 · L6209-6226</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">if</span> (!vmf-&gt;pte)</span><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-k">return</span> <span class="tok-f">do_pte_missing</span>(vmf);</span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">if</span> (!<span class="tok-f">pte_present</span>(vmf-&gt;orig_pte))</span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-k">return</span> <span class="tok-f">do_swap_page</span>(vmf);</span><span class="ln"><span class="tok-k">if</span> (<span class="tok-f">pte_protnone</span>(vmf-&gt;orig_pte) &amp;&amp; ...)</span><span class="ln">	<span class="tok-k">return</span> <span class="tok-f">do_numa_page</span>(vmf);</span><span class="ln"><span class="tok-f">spin_lock</span>(vmf-&gt;ptl);</span><span class="ln"><span class="tok-c">/* ... pte_same() race check ... */</span></span><span class="ln fragment hl-on" data-fragment-index="3"><span class="tok-k">if</span> (vmf-&gt;flags &amp; (FAULT_FLAG_WRITE|...)) {</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-k">if</span> (!<span class="tok-f">pte_write</span>(entry))</span><span class="ln fragment hl-on" data-fragment-index="3">		<span class="tok-k">return</span> <span class="tok-f">do_wp_page</span>(vmf);</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>هرگز map نشده، پس <bdi dir="ltr">demand paging</bdi> (ناشناس یا فایل)</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span><bdi dir="ltr">swap entry</bdi>، پس <bdi dir="ltr">swap-in</bdi> که معمولاً fault بزرگ است</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>نوشتن در PTE فقط‌خواندنی، پس <bdi dir="ltr">copy-on-write</bdi></span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (FA): با cite.sh چاپ شده است. do_pte_missing برای VMA ناشناس do_anonymous_page و برای فایل do_fault را انتخاب می‌کند. شاخهٔ NUMA همان hinting fault مربوط به NUMA balancing خودکار است.
+SAY (EN): Printed with cite.sh. do_pte_missing → do_anonymous_page or do_fault.
+KEY POINT: pte_none با !pte_present فرق دارد؛ PTE غیرحاضر هنوز ممکن است swap entry داشته باشد.
+EXAMPLE: در آزمایش 04.1 حالت anon همان شاخهٔ ۱ است، ۶۵۵۳۶ بار.
+PITFALL: هر fault را «swap» بنامیم.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 10 CODE_WALKTHROUGH: do_wp_page -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · سورس واقعی</span>
+  <h2 class="in"><bdi dir="ltr">COW</bdi> فقط وقتی کپی می‌کند که صفحه هنوز مشترک باشد</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/mm/memory.c · do_wp_page()</span><span>v6.18.63 · L4133-4155</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">if</span> (folio &amp;&amp; <span class="tok-f">folio_test_anon</span>(folio) &amp;&amp;</span><span class="ln fragment hl-on" data-fragment-index="1">    (<span class="tok-f">PageAnonExclusive</span>(vmf-&gt;page) ||</span><span class="ln fragment hl-on" data-fragment-index="1">     <span class="tok-f">wp_can_reuse_anon_folio</span>(folio, vma))) {</span><span class="ln">	<span class="tok-c">/* ... SetPageAnonExclusive, unshare ... */</span></span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-f">wp_page_reuse</span>(vmf, folio);</span><span class="ln">	<span class="tok-k">return</span> <span class="tok-s">0</span>;</span><span class="ln">}</span><span class="ln"><span class="tok-c">/* Ok, we need to copy. Oh, well.. */</span></span><span class="ln"><span class="tok-k">if</span> (folio)</span><span class="ln">	<span class="tok-f">folio_get</span>(folio);</span><span class="ln"><span class="tok-f">pte_unmap_unlock</span>(vmf-&gt;pte, vmf-&gt;ptl);</span><span class="ln fragment hl-on" data-fragment-index="3"><span class="tok-k">return</span> <span class="tok-f">wp_page_copy</span>(vmf);</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>صفحه انحصاری است، یا refcount نشان می‌دهد آخرین کاربر هستیم</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>reuse: فقط RW روشن می‌شود، بدون کپی</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>کپی ۴ کیلوبایت در یک folio تازه و flush مدخل قدیمی TLB</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (FA): بعد از fork پرچم PageAnonExclusive در هر دو طرف پاک می‌شود. اولین نویسنده کپی می‌گیرد و آخرین کسی که می‌ماند بدون کپی همان صفحه را دوباره استفاده می‌کند. این قاعدهٔ refcount جای قاعدهٔ باگ‌دار mapcount را گرفت (۵٫۸ و ۵٫۹، و پرچم AnonExclusive در ۵٫۱۹).
+SAY (EN): After fork AnonExclusive is cleared; the first writer copies; the last one reuses.
+KEY POINT: نویسنده کپی را می‌گیرد.
+EXAMPLE: در آزمایش 04.2 PFN فرزند عوض می‌شود و PFN والد نه.
+PITFALL: «fork حافظه را کپی می‌کند.»
+TIME: 120
+  </aside>
+</section>
+
+<!-- 11 TERMINAL_DEMO: COW -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · آزمایش 04.2 · خروجی واقعی</span>
+  <h2 class="in">بعد از fork همان قاب، بعد از اولین نوشتن قابی تازه</h2>
+  <div class="term compact in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab:~/work/04-memory/02-cow-pagemap</div>
+<pre><code><span class="ln"><span class="p">$</span> sudo ./cow 64</span><span class="ln">parent before fork  va=0x7de3eda00000 present=1 excl=1 pfn=0x11e516</span><span class="ln">parent before fork  Rss=65536 kB  Shared_Dirty=0 kB  Private_Dirty=65536 kB</span><span class="ln hl">child  after fork   va=0x7de3eda00000 present=1 excl=0 pfn=0x11e516</span><span class="ln">child  after fork   Rss=65536 kB  Shared_Dirty=65536 kB  Private_Dirty=0 kB</span><span class="ln hl">child  after write  va=0x7de3eda00000 present=1 excl=1 pfn=0x11d498</span><span class="ln">child  after write  Rss=65536 kB  Shared_Dirty=32768 kB  Private_Dirty=32768 kB</span><span class="ln hl">child  wrote 8192 pages -&gt; 8193 minor faults (COW)</span><span class="ln">parent child wrote  va=0x7de3eda00000 present=1 excl=1 pfn=0x11e516</span><span class="ln">parent byte[0]=0xaa (child wrote 0x55 into its own copy)</span></code></pre>
+  </div>
+  <aside class="notes">
+SAY (FA): PFNها را با دسترسی root از /proc/self/pagemap می‌خوانیم. درست بعد از fork مقدار Shared_Dirty برابر ۶۴ مگابایت است، با اینکه فرزند چیزی ننوشته؛ و ۸۱۹۲ نوشتن ۸۱۹۳ minor fault هزینه دارد: یک COW برای هر صفحه و یکی اضافه.
+SAY (EN): PFNs via pagemap as root; 8192 writes = 8193 minor faults (one COW per page, plus one).
+KEY POINT: هر COW یعنی یک minor fault و کپی یک صفحه.
+EXAMPLE: sudo ./cow 64
+PITFALL: بدون root، PFN صفر خوانده می‌شود (از نسخهٔ ۴٫۲).
+TIME: 90
+  </aside>
+</section>
+
+<!-- 12 CONCEPT_DIAGRAM: buddy -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · یادداشت ۰۶</span>
+  <h2 class="in"><bdi dir="ltr">buddy</bdi> رفیق هر بلوک را با یک <bdi dir="ltr">XOR</bdi> پیدا می‌کند</h2>
+  <div class="diagram in-p d1"><img src="assets/buddy.svg" alt="یک بلوک order 4 با ۱۶ صفحه به نیمه‌های order 3 و order 2 شکسته می‌شود؛ آزاد کردن pfn 0x1000 در order 2 رفیق 0x1004 را پیدا می‌کند و به order 3 ادغام می‌شود، بعد رفیق 0x1008 را پیدا می‌کند و به order 4 می‌رسد"></div>
+  <p class="caption"><bdi dir="ltr">linux/mm/internal.h · __find_buddy_pfn() · v6.18.63 · L678: <code>return page_pfn ^ (1 &lt;&lt; order);</code></bdi></p>
+  <aside class="notes">
+SAY (FA): __rmqueue_smallest کوچک‌ترین order آزاد را برمی‌دارد و expand() نیمه‌های بالایی را برمی‌گرداند. __free_one_page تا وقتی رفیق آزاد باشد ادغام می‌کند، تا order 10 یعنی ۴ مگابایت.
+SAY (EN): Smallest order, split with expand(); merge while the buddy is free, up to order 10.
+KEY POINT: external fragmentation به شکل صفر در ستون‌های order بالای /proc/buddyinfo دیده می‌شود.
+EXAMPLE: cat /proc/buddyinfo
+PITFALL: پایین بودن MemFree به‌تنهایی مشکل نیست.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 13 BENTO -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · یادداشت‌های ۰۷ تا ۱۰</span>
+  <h2 class="in">چهار سازوکار تعیین می‌کنند چه کسی حافظه را نگه دارد</h2>
+  <div class="grid tight">
+    <div class="c-7 card edge r-kernel in d1"><h3><bdi dir="ltr">SLUB</bdi></h3><p>فهرست آزاد per-CPU و <bdi dir="ltr"><code>cmpxchg</code></bdi> روی <bdi dir="ltr">(freelist, tid)</bdi>، بدون قفل</p></div>
+    <div class="c-5 card edge r-data in d2"><h3><bdi dir="ltr">Reclaim</bdi></h3><p><bdi dir="ltr">kswapd</bdi> در <bdi dir="ltr">low watermark</bdi>؛ نسل‌های <bdi dir="ltr">MGLRU</bdi></p></div>
+    <div class="c-5 card edge r-hardware in d3"><h3>صفحهٔ بزرگ</h3><p>یک <bdi dir="ltr">PMD</bdi> یعنی ۲ مگابایت؛ ۵۱۲ برابر fault کمتر</p></div>
+    <div class="c-7 card edge r-user in d4"><h3><bdi dir="ltr">OOM killer</bdi></h3><p><bdi dir="ltr"><code>oom_badness</code> = RSS + swap + page tables (+ adj)</bdi></p></div>
+  </div>
+  <p class="takeaway in d5">بدون <bdi dir="ltr">swap</bdi> فقط صفحه‌های فایل و <bdi dir="ltr">slab</bdi> آزادشدنی‌اند.</p>
+  <aside class="notes">
+SAY (FA): اشیای slab هرگز در RSS دیده نمی‌شوند. reclaim اول صفحه‌های فایلِ تمیز را دور می‌ریزد. اگر هیچ چیز آزادشدنی نباشد، oom_badness بزرگ‌ترین ردپا را انتخاب می‌کند.
+SAY (EN): Slab is not RSS; reclaim drops clean file pages first; OOM picks the biggest footprint.
+KEY POINT: آزمایش 04.5 با ۲۰۰ هزار فایل cacheهای dentry و inode را بزرگ می‌کند.
+EXAMPLE: slabtop -o -s c
+PITFALL: drop_caches را ابزار تنظیم بدانیم.
+TIME: 75
+  </aside>
+</section>
+
+<!-- 14 TERMINAL_DEMO: OOM -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · آزمایش 04.6 · خروجی واقعی</span>
+  <h2 class="in"><bdi dir="ltr">OOM kill</bdi> داخل همان <bdi dir="ltr">cgroup</bdi> می‌ماند</h2>
+  <div class="term compact in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab:~/work/04-memory/06-oom-thrashing</div>
+<pre><code><span class="ln"><span class="p">$</span> bash mem-cgroup.sh 128M ./hog 512</span><span class="ln">hog pid=11690 touched 16 MiB</span><span class="ln">...</span><span class="ln">hog pid=11690 touched 112 MiB</span><span class="ln hl">== exit status: 137</span><span class="ln">  max 36</span><span class="ln hl">  oom_kill 1</span><span class="ln"><span class="p">$</span> sudo dmesg | grep &#x27;Killed process&#x27;</span><span class="ln hl">Memory cgroup out of memory: Killed process 11690 (hog) ...</span></code></pre>
+  </div>
+  <aside class="notes">
+SAY (FA): memory.max=128M و swap.max=0. hog با کد ۱۳۷ می‌میرد، memory.events یک oom_kill می‌شمارد و dmesg نام memcg را می‌آورد. بخش B آزمایش thrashing را بدون هیچ swap نشان می‌دهد.
+SAY (EN): 128M limit, no swap; exit 137, one oom_kill, dmesg names the memcg.
+KEY POINT: روی ماشین مشترک فشار حافظه را با cgroup آزمایش کنید.
+EXAMPLE: bash mem-cgroup.sh 128M ./hog 512
+PITFALL: اجرای hog بیرون از cgroup.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 15 TWO_COLUMN_COMPARE -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه · گشت در کد، بخش ۹</span>
+  <h2 class="in"><bdi dir="ltr">Linux</bdi> و <bdi dir="ltr">OpenBSD</bdi> همان fault را متفاوت تقسیم می‌کنند</h2>
+  <div class="compare">
+    <div class="in d1"><h3><bdi dir="ltr">Linux v6.18.63</bdi></h3><ul>
+      <li><bdi dir="ltr"><code>handle_mm_fault</code> → <code>handle_pte_fault</code></bdi></li>
+      <li><bdi dir="ltr">VMA</bdi>ها در <bdi dir="ltr">maple tree</bdi> با قفل per-VMA</li>
+      <li><bdi dir="ltr">COW</bdi>: refcount و <bdi dir="ltr"><code>PageAnonExclusive</code></bdi></li>
+      <li>تلاش دوباره: <bdi dir="ltr"><code>VM_FAULT_RETRY</code></bdi></li>
+    </ul></div>
+    <div class="in d2"><h3><bdi dir="ltr">OpenBSD UVM 8cada8c</bdi></h3><ul>
+      <li><bdi dir="ltr"><code>uvm_fault</code></bdi> و لایهٔ بالا یا پایین</li>
+      <li><bdi dir="ltr">map entry</bdi>ها در درخت RB با قفل map</li>
+      <li><bdi dir="ltr">COW</bdi>: <bdi dir="ltr"><code>anon-&gt;an_ref &gt; 1</code></bdi></li>
+      <li>تلاش دوباره: حلقهٔ <bdi dir="ltr"><code>ERESTART</code></bdi></li>
+    </ul></div>
+  </div>
+  <aside class="notes">
+SAY (FA): UVM برای هر صفحهٔ خصوصی یک vm_anon صریح در amap نگه می‌دارد (لایهٔ بالا) که روی uvm_object پشتیبان (لایهٔ پایین) قرار دارد. آزمون COW یک شمارندهٔ ارجاع ساده است، در sys/uvm/uvm_fault.c خط ۱۰۶۹.
+SAY (EN): UVM: explicit vm_anon per private page in an amap; COW test is a refcount (uvm_fault.c L1069).
+KEY POINT: مسئله یکی است و دفترداری متفاوت: UVM راحت‌تر خوانده می‌شود و لینوکس برای هر صفحه metadata کمتری دارد.
+EXAMPLE: openbsd/sys/uvm/uvm_fault.c · uvm_fault() · L593
+PITFALL: —
+TIME: 90
+  </aside>
+</section>
+
+<!-- 16 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">پرسش کوتاه</span>
+  <h2>برنامه‌ای ۲۵۶ مگابایت حافظهٔ تازهٔ <bdi dir="ltr">malloc</bdi> را می‌خواند. چه بر سر <bdi dir="ltr">RSS</bdi> می‌آید؟</h2>
+  <div class="quiz-options">
+    <div><b>الف</b> ۲۵۶ مگابایت بزرگ می‌شود</div>
+    <div><b>ب</b> ۱۲۸ مگابایت بزرگ می‌شود (نیمی تنبل صفر می‌شود)</div>
+    <div><b>ج</b> تقریباً تغییری نمی‌کند</div>
+    <div><b>د</b> خواندن‌ها با <bdi dir="ltr">SIGSEGV</bdi> شکست می‌خورند</div>
+  </div>
+  <aside class="notes">
+SAY (FA): به do_anonymous_page فکر کنید و اینکه برای خواندن چه می‌کند.
+SAY (EN): Think of do_anonymous_page on a read.
+KEY POINT: پاسخ در اسلاید بعد است.
+EXAMPLE: —
+PITFALL: —
+ASK: چه کسی «الف» را انتخاب کرد؟ چرا به نظر درست می‌آید؟
+TIME: 45
+  </aside>
+</section>
+
+<!-- 17 QUIZ answer -->
+<section>
+  <span class="eyebrow">پاسخ: ج</span>
+  <h2>خواندن حافظهٔ ناشناسِ دست‌نخورده فقط <bdi dir="ltr">zero page</bdi> را map می‌کند</h2>
+  <p class="quote">«برای خواندن از zero page استفاده کن»: یک قاب مشترک، فقط‌خواندنی و پر از صفر برای همهٔ صفحه‌های دست‌نخورده.</p>
+  <p class="source"><bdi dir="ltr">linux/mm/memory.c · do_anonymous_page() · L5169 · v6.18.63</bdi> — آزمایش 04.1، حالت <bdi dir="ltr">anon-read</bdi></p>
+  <aside class="notes">
+SAY (FA): هر خواندن همچنان یک minor fault دارد، پس تعداد fault با حالت نوشتن یکی است، ولی RSS ثابت می‌ماند. اولین نوشتن بعدی یک COW fault روی zero page است.
+SAY (EN): Each read still faults once, but RSS stays flat.
+KEY POINT: تعداد fault با مصرف حافظه یکی نیست.
+EXAMPLE: ./touch anon-read 256
+PITFALL: گزینهٔ «ب» ساختگی است؛ «د» فقط وقتی رخ می‌دهد که VMA وجود نداشته باشد.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 18 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">۰۴ · حافظه</span>
+  <h2 class="in">جمع‌بندی</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>ترجمه کار سخت‌افزار است؛ کرنل جدول‌ها را هر وقت لازم شد می‌سازد</li>
+    <li class="in d2"><span class="callout-num">2</span>RAM در اولین لمس تخصیص داده و در اولین نوشتن کپی می‌شود</li>
+    <li class="in d3"><span class="callout-num">3</span><bdi dir="ltr">buddy</bdi>، <bdi dir="ltr">SLUB</bdi> و <bdi dir="ltr">reclaim</bdi> تعیین می‌کنند چه کسی آن را نگه دارد؛ <bdi dir="ltr">OOM</bdi> آخرین راه است</li>
+  </ul>
+  <p class="next in d4">ماژول ۰۵ · فایل‌سیستم و ورودی/خروجی: <bdi dir="ltr">page cache</bdi> پشت هر <bdi dir="ltr">mapping</bdi> فایل</p>
+  <aside class="notes">
+SAY (FA): ماژول بعد از همان جایی شروع می‌شود که filemap_fault تمام می‌شود: page cache، writeback و لایهٔ block.
+SAY (EN): Next module starts where filemap_fault ends.
+KEY POINT: آزمایش‌های 04.1 تا 04.6 همهٔ عددهای این اسلایدها را تولید می‌کنند.
+EXAMPLE: —
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+<!-- REFERENCES:start (generated by _shared/tools/add_references.py from _shared/resources/awesome-os.json; do not edit by hand) -->
+<!-- 19 REFERENCES -->
+<section class="layout-refs">
+  <span class="eyebrow in-f">ادامهٔ مطالعه</span>
+  <h2 class="in">برای مطالعهٔ بیشتر، منتخب از فهرست‌های <bdi dir="ltr">awesome-os</bdi></h2>
+  <ul class="refs">
+    <li class="in d1"><span class="pill">کتاب</span> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/"><b>Operating Systems: Three Easy Pieces</b></a><span class="why">بخش اول، <bdi dir="ltr">virtualization</bdi>: <bdi dir="ltr">address space</bdi>، <bdi dir="ltr">paging</bdi>، <bdi dir="ltr">TLB</bdi> و <bdi dir="ltr">swapping</bdi>.</span><span class="url ltr">pages.cs.wisc.edu/~remzi/OSTEP</span></li>
+    <li class="in d2"><span class="pill">کتاب</span> <a href="https://pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf"><b>xv6: a simple, Unix-like teaching operating system</b></a><span class="why">فصل «<bdi dir="ltr">Page tables</bdi>».</span><span class="url ltr">pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf</span></li>
+    <li class="in d3"><span class="pill">کتاب</span> <a href="https://0xax.gitbooks.io/linux-insides/content/"><b>linux-insides</b></a><span class="why">مرور کتاب‌گونهٔ درون <bdi dir="ltr">Linux</bdi>: <bdi dir="ltr">boot</bdi>، <bdi dir="ltr">interrupt</bdi>، <bdi dir="ltr">system call</bdi> و حافظه.</span><span class="url ltr">0xax.gitbooks.io/linux-insides/content</span></li>
+    <li class="in d4"><span class="pill">دوره</span> <a href="https://linux-kernel-labs.github.io/refs/heads/master/"><b>Linux Kernel Teaching</b></a><span class="why">درس‌نامه و آزمایشگاه دانشگاهی دربارهٔ کرنل <bdi dir="ltr">Linux</bdi>.</span><span class="url ltr">linux-kernel-labs.github.io/refs/heads/master</span></li>
+    <li class="in d5"><span class="pill">مقاله</span> <a href="https://www.usenix.org/system/files/conference/osdi12/osdi12-final-117.pdf"><b>Dune: Safe User-level Access to Privileged CPU Features</b></a><span class="why"><bdi dir="ltr">OSDI &#x27;12</bdi>: دسترسی امن یک <bdi dir="ltr">process</bdi> به قابلیت‌های <bdi dir="ltr">privileged</bdi> پردازنده با کمک سخت‌افزار مجازی‌سازی.</span><span class="url ltr">usenix.org/system/files/conference/osdi12/osdi12-final-117.pdf</span></li>
+    <li class="in d5"><span class="pill">مستندات</span> <a href="https://www.kernel.org/doc/html/latest/"><b>The Linux Kernel documentation</b></a><span class="why">مستندات رسمی کرنل: راهنمای مدیریت، <bdi dir="ltr">API</bdi>های هسته و یادداشت‌های هر <bdi dir="ltr">subsystem</bdi>.</span><span class="url ltr">kernel.org/doc/html/latest</span></li>
+  </ul>
+  <p class="caption src">فهرست‌ها: <span class="ltr">jubalh/awesome-os · penberg/awesome-os</span> · لینک‌ها بررسی شده <bdi dir="ltr">2026-11-15</bdi></p>
+  <aside class="notes">
+SAY (EN): These are the best next reads after this module. They come from two GitHub “awesome-os” lists and every link was opened and checked on 2026-11-15. You do not need all of them.
+SAY (FA): این‌ها بهترین منابع برای ادامه پس از این ماژول هستند. از دو فهرست «awesome-os» در GitHub انتخاب شده‌اند و همهٔ لینک‌ها در تاریخ 2026-11-15 باز و بررسی شده‌اند. لازم نیست همه را بخوانید.
+KEY POINT: Start with the first item. The papers and conference pages are for the curious.
+EXAMPLE: —
+PITFALL: Some links are PDFs; open them before class if the room has no internet.
+TIME: 30
+  </aside>
+</section>
+<!-- REFERENCES:end -->
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۴ حافظه" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

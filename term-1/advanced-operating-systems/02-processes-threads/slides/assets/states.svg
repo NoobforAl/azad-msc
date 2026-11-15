@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 600" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- Task state machine. Labels are kernel identifiers (language-neutral). -->
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="26" markerHeight="26" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3B4868"/>
+    </marker>
+  </defs>
+  <style>
+    .st { stroke-width:3; }
+    .nm { font-size:30px; font-weight:750; }
+    .sub { font-size:24px; font-family:'JetBrains Mono', monospace; fill:#0A1633; }
+    .ar { stroke:#3B4868; stroke-width:4; fill:none; }
+    .al { font-size:24px; font-family:'JetBrains Mono', monospace; fill:#3B4868; }
+  </style>
+
+  <!-- R queued -->
+  <circle cx="200" cy="300" r="110" fill="#E6EEFC" stroke="#1F4FA8" class="st"/>
+  <text x="200" y="290" text-anchor="middle" class="nm" fill="#1F4FA8">R</text>
+  <text x="200" y="326" text-anchor="middle" class="sub">on rq</text>
+  <!-- R running (current) -->
+  <circle cx="640" cy="300" r="120" fill="#1F4FA8" stroke="#1F4FA8" class="st"/>
+  <text x="640" y="290" text-anchor="middle" class="nm" fill="#FFFFFF">R</text>
+  <text x="640" y="326" text-anchor="middle" font-size="24" font-family="JetBrains Mono, monospace" fill="#FFFFFF">on CPU</text>
+  <!-- S / D -->
+  <circle cx="1090" cy="140" r="100" fill="#FDEFD9" stroke="#B45309" class="st"/>
+  <text x="1090" y="132" text-anchor="middle" class="nm" fill="#B45309">S / D</text>
+  <text x="1090" y="168" text-anchor="middle" class="sub">sleeping</text>
+  <!-- Z -->
+  <circle cx="1090" cy="470" r="100" fill="#FDE4EA" stroke="#B4123A" class="st"/>
+  <text x="1090" y="462" text-anchor="middle" class="nm" fill="#B4123A">Z</text>
+  <text x="1090" y="498" text-anchor="middle" class="sub">zombie</text>
+  <!-- reaped -->
+  <rect x="1360" y="420" width="220" height="100" rx="14" fill="#DCF3EA" stroke="#047857" class="st"/>
+  <text x="1470" y="480" text-anchor="middle" font-size="26" font-family="JetBrains Mono, monospace" fill="#047857" font-weight="700">reaped</text>
+
+  <!-- arrows -->
+  <path d="M310 270 L512 270" class="ar" marker-end="url(#ah)"/>
+  <text x="330" y="250" class="al">pick_next</text>
+  <path d="M520 340 L316 340" class="ar" marker-end="url(#ah)"/>
+  <text x="330" y="380" class="al">preempt nivcsw++</text>
+  <path d="M740 230 L994 160" class="ar" marker-end="url(#ah)"/>
+  <text x="730" y="170" class="al">schedule() nvcsw++</text>
+  <path d="M1000 100 C 700 20, 300 60, 220 186" class="ar" marker-end="url(#ah)" stroke-dasharray="12 10"/>
+  <text x="430" y="60" class="al">try_to_wake_up()</text>
+  <path d="M740 370 L994 450" class="ar" marker-end="url(#ah)"/>
+  <text x="760" y="460" class="al">do_exit()</text>
+  <path d="M1190 470 L1352 470" class="ar" marker-end="url(#ah)"/>
+  <text x="1196" y="450" class="al">wait()</text>
+</svg>

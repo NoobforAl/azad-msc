@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 07.3 · یک sandbox با seccomp-BPF</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">07.3</div>
+  <span class="eyebrow in-f">آزمایش 07.3 · هدف</span>
+  <h2 class="in">یک <bdi dir="ltr">sandbox</bdi> با <bdi dir="ltr">seccomp-BPF</bdi></h2>
+  <p class="why in d1">یک برنامه را با فیلتر <bdi dir="ltr">seccomp</bdi> محدود کنید و <bdi dir="ltr">errno</bdi> و <bdi dir="ltr">kill</bdi> و <bdi dir="ltr">allow</bdi> را از فضای کاربر ببینید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM یا هر لینوکسی (بدون امتیاز)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Confine a program with a seccomp filter and see errno, kill and allow from user space.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.3 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>کتابخانه</h3><p class="ltr-mono"><code>libseccomp-dev · -lseccomp</code></p></div><div class="c-6 card edge r-kernel in d2"><h3>پیش‌شرط</h3><p class="ltr-mono"><code>prctl(PR_SET_NO_NEW_PRIVS, 1)</code></p></div><div class="c-6 card edge r-kernel in d3"><h3>قانون‌ها</h3><p class="ltr-mono"><code>socket→EACCES · mkdir→KILL · ptrace→EPERM</code></p></div><div class="c-6 card edge r-data in d4"><h3>دستی</h3><p><bdi dir="ltr">raw-bpf.c:</bdi> ‏۷ دستور <bdi dir="ltr">BPF</bdi></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.3 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 03-seccomp-bpf</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o sandbox sandbox.c -lseccomp</span><span class="ln"><span class="p">$</span> ./sandbox grep -E &#x27;^(NoNewPrivs|Seccomp)&#x27; /proc/self/status</span><span class="ln"><span class="p">$</span> ./sandbox python3 -c &#x27;import socket; socket.socket()&#x27;</span><span class="ln"><span class="p">$</span> ./sandbox mkdir /tmp/seccomp-test; echo &quot;exit=$?&quot;</span><span class="ln"><span class="p">$</span> SANDBOX_DUMP=1 ./sandbox true 2&gt;&amp;1 | head -30</span><span class="ln"><span class="p">$</span> ./raw-bpf</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.3 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">NoNewPrivs:	1</span><span class="ln">Seccomp:	2</span><span class="ln hl">PermissionError: [Errno 13] Permission denied</span><span class="ln hl">... 2244 Bad system call   (core dumped) ./sandbox mkdir ...</span><span class="ln">exit=159</span><span class="ln">if ($arch == 3221225534)</span><span class="ln">  if ($syscall == 41)</span><span class="ln">    action ERRNO(13);</span><span class="ln">getpid() = 5367</span><span class="ln hl">uname: Operation not permitted</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، ۲۰۲۶-۱۱-۱۵.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.3 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>فیلتر از <bdi dir="ltr">execve()</bdi> عبور می‌کند</b><br><span class="caption mono"><bdi dir="ltr">Seccomp: 2</bdi> · <bdi dir="ltr">NoNewPrivs: 1 in the exec</bdi>&#x27;<bdi dir="ltr">d grep</bdi></span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>exit 159 = 128 + SIGSYS</b><br><span class="caption mono"><bdi dir="ltr">SECCOMP_RET_KILL_PROCESS</bdi> → <bdi dir="ltr">force_sig_seccomp()</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>بررسی <bdi dir="ltr">arch</bdi> اول می‌آید</b><br><span class="caption"><bdi dir="ltr">libseccomp</bdi> جلوی دور زدن با <bdi dir="ltr">ABI</bdi>ِ <bdi dir="ltr">i386</bdi> را می‌گیرد</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.3 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">seccomp_load: EACCES</span><span class="arrow-s">←</span><span class="tag r-ok">prctl(PR_SET_NO_NEW_PRIVS) first</span></div><div class="pit in d2"><span class="tag r-danger">قانون <bdi dir="ltr">open</bdi> اجرا نمی‌شود</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">libc</bdi> از <bdi dir="ltr">openat</bdi> استفاده می‌کند — اول <bdi dir="ltr">strace</bdi></span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">segfault</bdi> در <bdi dir="ltr">allow-list</bdi></span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">futex</bdi> جا افتاده است؛ <bdi dir="ltr">glibc</bdi> در آنجا <bdi dir="ltr">ENOSYS</bdi> را تحمل نمی‌کند</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 07.3 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px"><bdi dir="ltr">allowlist.c</bdi> را بنویسید: پیش‌فرض <bdi dir="ltr">ERRNO(ENOSYS)</bdi>، فقط چیزهایی که <bdi dir="ltr">cat</bdi> لازم دارد مجاز <bdi dir="ltr">(strace -f -c).</bdi> نشان دهید <bdi dir="ltr">cat</bdi> کار می‌کند و <bdi dir="ltr">ls</bdi> نه. چرا <bdi dir="ltr">ENOSYS</bdi> و نه <bdi dir="ltr">KILL</bdi>؟</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۷ Real-Time و پژوهش" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

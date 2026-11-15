@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>۰۵ · فایل‌سیستم و I/O — سیستم‌عامل پیشرفته</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+  <style>
+    /* small additions for this deck only */
+    .layers.tight .band { padding:16px 40px; }
+    .reveal pre.code.sm, .reveal .term pre.sm { font-size:26px; }
+    .diagram img { max-height:560px !important; }
+  </style>
+</head>
+<body>
+<div class="reveal course-os">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">یک <bdi dir="ltr">read()</bdi> از <bdi dir="ltr">syscall</bdi> تا دیسک، و برگشت</h1>
+  <p class="subtitle in d1">سیستم‌عامل پیشرفته · ۰۵ فایل‌سیستم و <bdi dir="ltr">I/O</bdi></p>
+  <div class="fields">
+    <span><b>درس</b>[Course name]</span><span><b>ارائه‌دهنده</b>[Presenter]</span>
+    <span><b>استاد</b>[Professor]</span><span><b>دانشکده</b>[Faculty / Branch]</span>
+    <span><b>ترم</b>[Term]</span><span><b>تاریخ</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (FA): یک read() را از همهٔ لایه‌های پشتهٔ I/O لینوکس دنبال می‌کنیم و بعد می‌پرسیم در write، در fsync و در قطع برق چه می‌شود.
+SAY (EN): We follow one read() through every layer of the Linux I/O stack, then ask what happens on write, on fsync, and on a power cut.
+KEY POINT: هر لایه کد واقعی در v6.18.63 است و روی VM آزمایشگاه اندازه‌گیری شده است.
+PITFALL: فیلدهای صفحهٔ عنوان جای‌نگهدار هستند؛ هرگز از خودتان پرشان نکنید.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">05</div>
+  <span class="eyebrow in-f">ماژول ۰۵</span>
+  <h2 class="in">فایل‌سیستم و <bdi dir="ltr">I/O</bdi></h2>
+  <p class="why in d1">پایگاه‌داده‌ها، لاگ‌ها و containerها به این بستگی دارند که <bdi dir="ltr">page cache</bdi>، لایهٔ بلوک و <bdi dir="ltr">journal</bdi> واقعاً چه قولی می‌دهند.</p>
+  <div class="pills in d2"><span class="pill"><bdi dir="ltr">VFS</bdi> و <bdi dir="ltr">page cache</bdi></span><span class="pill"><bdi dir="ltr">blk-mq</bdi> و زمان‌بندها</span><span class="pill"><bdi dir="ltr">journaling</bdi> و <bdi dir="ltr">io_uring</bdi></span></div>
+  <aside class="notes">
+SAY (FA): به ماژول ۱ برای مسیر syscall، ماژول ۳ برای RCU و ماژول ۴ برای folio و reclaim وابسته است.
+SAY (EN): Depends on Module 01 for the syscall path, Module 03 for RCU, and Module 04 for folios and reclaim.
+KEY POINT: page cache همان مدیریت حافظه است که روی فایل‌ها اعمال شده.
+EXAMPLE: طوفان fsync یک پایگاه‌داده هم‌زمان مسئلهٔ لایهٔ بلوک، journal و page cache است.
+PITFALL: «دیسک» را یک لایهٔ واحد دیدن.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">۰۵ · فایل‌سیستم و <bdi dir="ltr">I/O</bdi></span>
+  <h2 class="in">شش ایستگاه در مسیر <bdi dir="ltr">I/O</bdi></h2>
+  <ol class="agenda">
+    <li class="current in d1">اشیای <bdi dir="ltr">VFS</bdi> و جدول <bdi dir="ltr">fd</bdi></li>
+    <li class="in d2">زنجیرهٔ فراخوانی <bdi dir="ltr">read()</bdi></li>
+    <li class="in d3"><bdi dir="ltr">page cache</bdi>، <bdi dir="ltr">writeback</bdi> و <bdi dir="ltr">fsync</bdi></li>
+    <li class="in d4"><bdi dir="ltr">blk-mq</bdi> و زمان‌بندهای <bdi dir="ltr">I/O</bdi></li>
+    <li class="in d4"><bdi dir="ltr">journaling</bdi> و سازگاری پس از crash</li>
+    <li class="in d5"><bdi dir="ltr">io_uring</bdi> و انتخاب‌های <bdi dir="ltr">OpenBSD</bdi></li>
+  </ol>
+  <aside class="notes">
+SAY (FA): هر ایستگاه یک یادداشت، یک بخش از walkthrough و یک آزمایش دارد.
+SAY (EN): Each stop has a note, a walkthrough section and a lab.
+KEY POINT: آزمایش‌های ۰۵.۱ تا ۰۵.۶ به ایستگاه‌های ۲ تا ۶ مربوط‌اند.
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 LAYER_STACK -->
+<section>
+  <span class="eyebrow in-f">۰۵ · پشتهٔ لایه‌ها</span>
+  <h2 class="in"><bdi dir="ltr">hit</bdi> در کش، در <bdi dir="ltr">page cache</bdi> متوقف می‌شود</h2>
+  <div class="layers tight">
+    <div class="band r-user in d1"><b>فضای کاربر</b><div class="items"><span>read(fd, buf, n)</span><span>io_uring SQE</span></div></div>
+    <div class="boundary"><span>مرز <bdi dir="ltr">syscall</bdi></span></div>
+    <div class="band r-kernel in d2"><b>VFS</b><div class="items"><span>ksys_read</span><span>vfs_read</span><span>f_op-&gt;read_iter</span></div></div>
+    <div class="band r-data in d3"><b>Page cache</b><div class="items"><span>filemap_read</span><span>folios</span><span>readahead</span></div></div>
+    <div class="band r-kernel in d4"><b>لایهٔ بلوک</b><div class="items"><span>submit_bio</span><span>blk-mq</span><span>elevator</span></div></div>
+    <div class="band r-hardware in d5"><b>درایور + دستگاه</b><div class="items"><span>queue_rq</span><span>virtio / nvme</span><span>IRQ</span></div></div>
+  </div>
+  <aside class="notes">
+SAY (FA): فیروزه‌ای فضای کاربر، کهربایی کرنل، سبز داده و بنفش سخت‌افزار است. در hit صفحه، درخواست هرگز از نوار سبز پایین‌تر نمی‌رود.
+SAY (EN): Teal is user space, amber kernel, green data, violet hardware. On a page-cache hit, the request never leaves the green band.
+KEY POINT: فایل‌سیستم‌هایی مثل ext4 بین VFS و page cache قرار دارند و در hit تقریباً دور زده می‌شوند.
+EXAMPLE: bpftrace در آزمایش ۰۵.۱: خواندن گرم هیچ رویداد block_bio_queue تولید نمی‌کند.
+PITFALL: O_DIRECT از نوار سبز می‌پرد ولی همچنان از VFS و ext4 می‌گذرد.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 05 CONCEPT_DIAGRAM: VFS objects -->
+<section>
+  <span class="eyebrow in-f">۰۵ · اشیای <bdi dir="ltr">VFS</bdi></span>
+  <h2 class="in"><bdi dir="ltr">fd → open file → name → object</bdi></h2>
+  <div class="diagram in-p d1"><img src="assets/vfs-objects.svg" alt="fdهای پردازه به اشیای struct file اشاره می‌کنند؛ هر file به یک dentry و یک inode اشاره می‌کند؛ inode یک address_space و یک super_block روی دستگاه بلوکی دارد"></div>
+  <div class="grid tight" style="margin-top:16px">
+    <div class="c-4 row"><span class="callout-num">1</span><span><bdi dir="ltr">fork/dup</bdi> یک <code>struct file</code> را شریک می‌شوند</span></div>
+    <div class="c-4 row"><span class="callout-num">2</span><span><bdi dir="ltr">dentry</bdi> = نام، <bdi dir="ltr">inode</bdi> = شیء</span></div>
+    <div class="c-4 row"><span class="callout-num">3</span><span>یک <bdi dir="ltr">superblock</bdi> برای هر <bdi dir="ltr">mount</bdi></span></div>
+  </div>
+  <aside class="notes">
+SAY (FA): offset در struct file است؛ پس فرزندِ fork از جایی ادامه می‌دهد که والد ایستاد، ولی open دوم از صفر شروع می‌کند.
+SAY (EN): The offset lives in struct file, so a forked child continues where the parent stopped, while a second open starts at zero.
+KEY POINT: چهار شیء، هر کدام با جدول ops خودش.
+EXAMPLE: cat /proc/$$/fdinfo/3 مقدار pos را نشان می‌دهد.
+PITFALL: این تصور که inode نام دارد.
+ASK: hard link کجا زندگی می‌کند؟
+TIME: 90
+  </aside>
+</section>
+
+<!-- 06 FLOW_TIMELINE: call chain -->
+<section>
+  <span class="eyebrow in-f">۰۵ · زنجیرهٔ فراخوانی</span>
+  <h2 class="in"><bdi dir="ltr">read()</bdi> در شش فراخوانی به <bdi dir="ltr">page cache</bdi> می‌رسد</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>syscall</div><code>ksys_read</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>توزیع</div><code>vfs_read</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>kiocb</div><code>new_sync_read</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>ext4</div><code>read_iter</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>کش</div><code>filemap_read</code></div>
+    <div class="step fragment"><span class="callout-num">6</span><div>جستجو</div><code>get_pages</code></div>
+  </div>
+  <p class="takeaway">در <bdi dir="ltr">miss</bdi>، گام ۶ <bdi dir="ltr">readahead</bdi> را شروع می‌کند و <bdi dir="ltr">bio</bdi> به <bdi dir="ltr">blk-mq</bdi> می‌رود.</p>
+  <aside class="notes">
+SAY (FA): آزمایش ۰۵.۱ دقیقاً همین زنجیره را با trace-cmd و function_graph از vfs_read نشان می‌دهد.
+SAY (EN): Lab 05.1 shows exactly this chain with trace-cmd function_graph rooted at vfs_read.
+KEY POINT: ext4 تقریباً چیزی به خواندن buffered اضافه نمی‌کند: فقط generic_file_read_iter را صدا می‌زند.
+EXAMPLE: ext4_file_read_iter → generic_file_read_iter → filemap_read (fs/ext4/file.c L130).
+PITFALL: انتظار نگاشت بلوک ext4 در هر خواندن؛ این کار فقط در miss اجرا می‌شود.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 07 CODE_WALKTHROUGH: vfs_read -->
+<section>
+  <span class="eyebrow in-f">۰۵ · سورس واقعی</span>
+  <h2 class="in"><bdi dir="ltr">vfs_read()</bdi> یک بار بررسی می‌کند، بعد فایل‌سیستم را صدا می‌زند</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/fs/read_write.c · vfs_read()</span><span>v6.18.63</span></div>
+<pre class="code sm"><code><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-k">if</span> (!(file-&gt;f_mode &amp; FMODE_READ))</span><span class="ln">		<span class="tok-k">return</span> -EBADF;</span><span class="ln">	<span class="tok-c">/* ... CAN_READ, access_ok ... */</span></span><span class="ln fragment hl-on" data-fragment-index="2">	ret = <span class="tok-f">rw_verify_area</span>(READ, file, pos, count);</span><span class="ln">	<span class="tok-c">/* ... MAX_RW_COUNT clamp ... */</span></span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-k">if</span> (file-&gt;f_op-&gt;read)</span><span class="ln">		ret = file-&gt;f_op-&gt;<span class="tok-f">read</span>(file, buf,</span><span class="ln">				count, pos);</span><span class="ln">	<span class="tok-k">else if</span> (file-&gt;f_op-&gt;read_iter)</span><span class="ln">		ret = <span class="tok-f">new_sync_read</span>(file, buf,</span><span class="ln">				count, pos);</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>بیت‌های mode از <code>open()</code></span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>بررسی offset + hook <bdi dir="ltr">LSM</bdi></span></div>
+      <div class="in d4"><span class="callout-num">3</span><span><code>/dev/null</code> از <code>.read</code> و <bdi dir="ltr">ext4</bdi> از <code>.read_iter</code> استفاده می‌کند</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (FA): کل ایدهٔ VFS در یک if/else: جدول filesystem تصمیم می‌گیرد. درایورهای ساده هنوز .read دارند و همهٔ filesystemهای دیسکی .read_iter.
+SAY (EN): The whole VFS idea in one if/else: the filesystem's table decides. Simple char drivers still use .read; every disk filesystem uses .read_iter.
+KEY POINT: L552-581؛ خط‌های حذف‌شده روی اسلاید در kernel-walkthrough.en.md بخش ۲ هستند.
+EXAMPLE: drivers/char/mem.c L644: در null_fops مقدار .read = read_null را دارد.
+PITFALL: جستجوی sys_read( — نقطهٔ ورود SYSCALL_DEFINE3(read, ...) در L722 است.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 08 CODE_WALKTHROUGH: filemap_get_pages -->
+<section>
+  <span class="eyebrow in-f">۰۵ · سورس واقعی</span>
+  <h2 class="in"><bdi dir="ltr">miss</bdi> اول <bdi dir="ltr">readahead</bdi> را شروع می‌کند، بعد دوباره نگاه می‌کند</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/mm/filemap.c · filemap_get_pages()</span><span>v6.18.63</span></div>
+<pre class="code sm"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-f">filemap_get_read_batch</span>(mapping, index,</span><span class="ln">		last_index - 1, fbatch);</span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">if</span> (!<span class="tok-f">folio_batch_count</span>(fbatch)) {</span><span class="ln">	<span class="tok-f">DEFINE_READAHEAD</span>(ractl, filp,</span><span class="ln">		&amp;filp-&gt;f_ra, mapping, index);</span><span class="ln">	<span class="tok-k">if</span> (iocb-&gt;ki_flags &amp; IOCB_NOIO)</span><span class="ln">		<span class="tok-k">return</span> -EAGAIN;</span><span class="ln">	<span class="tok-c">/* ... NOWAIT, DONTCACHE ... */</span></span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-f">page_cache_sync_ra</span>(&amp;ractl,</span><span class="ln">		last_index - index);</span><span class="ln">	<span class="tok-f">filemap_get_read_batch</span>(mapping, index,</span><span class="ln">		last_index - 1, fbatch);</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>پیمایش <bdi dir="ltr">xarray</bdi> زیر <bdi dir="ltr">RCU</bdi>، بدون قفل</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span><bdi dir="ltr">batch</bdi> خالی = <bdi dir="ltr">miss</bdi></span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>تخصیص <bdi dir="ltr">folio</bdi> و ساخت <bdi dir="ltr">bio</bdi></span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (FA): جستجوی اول زیر RCU و بدون قفل است. در miss، readahead همگام folioها را می‌سازد و از ext4 می‌خواهد بخواندشان؛ جستجوی دوم پیدایشان می‌کند، شاید هنوز زیر I/O.
+SAY (EN): The first lookup is lock-free under RCU. On a miss, synchronous readahead allocates folios and asks ext4 to read them; the second lookup finds them, possibly still under I/O.
+KEY POINT: L2640-2654؛ وضعیت readahead هر فایل در filp->f_ra نگه داشته می‌شود.
+EXAMPLE: bpftrace روی filemap:mm_filemap_add_to_page_cache تعداد folioهای اضافه‌شده در خواندن سرد را می‌شمارد (آزمایش ۰۵.۲).
+PITFALL: IOCB_NOWAIT تلاش اول io_uring است: نباید روی I/O مسدود شود.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 09 TERMINAL_DEMO: page cache -->
+<section>
+  <span class="eyebrow in-f">۰۵ · خروجی واقعی</span>
+  <h2 class="in">همان فایل، همان کد: کش سرعت را تعیین می‌کند</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab:~/work/05-filesystems-io/labs/02-page-cache</div>
+<pre><code><span class="ln"><span class="p">$</span> ./pcache evict big.bin; ./pcache resident big.bin</span><span class="ln">resident: 0/65536 pages (0.0%)</span><span class="ln"><span class="p">$</span> ./pcache read big.bin      # cold</span><span class="ln hl">read: 256 MiB in 0.745 s = 344 MiB/s</span><span class="ln">@added_folios: 1049   @sync_ra: 1   @async_ra: 34</span><span class="ln"><span class="p">$</span> ./pcache resident big.bin</span><span class="ln">resident: 65536/65536 pages (100.0%)</span><span class="ln"><span class="p">$</span> ./pcache read big.bin      # warm</span><span class="ln hl">read: 256 MiB in 0.079 s = 3256 MiB/s</span><span class="ln">@added_folios: 0</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">روی یک مهمان <bdi dir="ltr">VirtualBox</bdi> مشترک با ۸ <bdi dir="ltr">vCPU</bdi> ثبت شده؛ اعداد مطلق شما متفاوت خواهد بود.</p>
+  <aside class="notes">
+SAY (FA): فقط همین فایل را با POSIX_FADV_DONTNEED بیرون کردیم تا کاربران دیگر VM آسیب نبینند.
+SAY (EN): We evicted only this file with POSIX_FADV_DONTNEED, so other users of the VM were not affected.
+KEY POINT: سرد = سرعت دیسک + readahead؛ گرم = سرعت memcpy.
+EXAMPLE: run.sh در آزمایش ۰۵.۲.
+PITFALL: echo 3 > drop_caches روی ماشین مشترک.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 10 CONCEPT_DIAGRAM: blk-mq -->
+<section>
+  <span class="eyebrow in-f">۰۵ · لایهٔ بلوک</span>
+  <h2 class="in"><bdi dir="ltr">blk-mq</bdi> یکی از سه مسیر را انتخاب می‌کند</h2>
+  <div class="diagram in-p d1"><img src="assets/blk-mq.svg" alt="bio از submit_bio می‌گذرد و به یک request برچسب‌دار تبدیل می‌شود، سپس به فهرست plug، به elevator یا مستقیم به queue_rq درایور می‌رود؛ تکمیل با IRQ برمی‌گردد"></div>
+  <div class="grid tight" style="margin-top:16px">
+    <div class="c-4 row"><span class="callout-num">1</span><span><bdi dir="ltr">plug</bdi> فعال: دسته‌ای</span></div>
+    <div class="c-4 row"><span class="callout-num">2</span><span>زمان‌بند: <bdi dir="ltr">insert</bdi></span></div>
+    <div class="c-4 row"><span class="callout-num">3</span><span><bdi dir="ltr">none</bdi> + صف بیکار: مستقیم</span></div>
+  </div>
+  <aside class="notes">
+SAY (FA): انتهای blk_mq_submit_bio تصمیم می‌گیرد: اگر plug فعال است نگه دار؛ اگر elevator هست یا صف شلوغ است insert کن؛ وگرنه مستقیم روی همین CPU به درایور بده.
+SAY (EN): The end of blk_mq_submit_bio decides: if plugged, park it; if there is an elevator or the queue is busy, insert; otherwise issue directly on this CPU.
+KEY POINT: block/blk-mq.c L3236-3254 (walkthrough بخش ۵، یادداشت ۰۵).
+EXAMPLE: مسیر طلایی پررنگ همان NVMe با زمان‌بند none است.
+PITFALL: این تصور که «none» یعنی بدون merge؛ merge هنگام submit انجام می‌شود.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 11 TERMINAL_DEMO: schedulers -->
+<section>
+  <span class="eyebrow in-f">۰۵ · خروجی واقعی</span>
+  <h2 class="in">زمان‌بندها توان عملیاتی را با تأخیر خواننده معاوضه می‌کنند</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; sched-bench.sh · loop device, direct I/O, fio</div>
+<pre class="sm"><code><span class="ln">scheduler    A:IOPS A:p99(us) | B:rd p50  B:rd p99  B:wr MiB/s</span><span class="ln">none           3988    14877 |   17170    101188      609.7</span><span class="ln hl">mq-deadline    4643    12386 |   43778    219152      208.4</span><span class="ln hl">bfq            4310    15008 |     522      1057       10.6</span><span class="ln">kyber          4108    14746 |   23724    223347      373.3</span><span class="ln"> </span><span class="ln"><span class="dim"># run 1 (same script, minutes earlier):</span></span><span class="ln">bfq            3446    78119 |   13697    162529      648.6</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px"><bdi dir="ltr">A</bdi>: <bdi dir="ltr">4 KiB randread QD32</bdi>. <bdi dir="ltr">B</bdi>: خوانندهٔ <bdi dir="ltr">QD1</bdi> کنار یک نویسندهٔ ترتیبی <bdi dir="ltr">1 MiB</bdi>. VM مشترک: شکل‌ها را مقایسه کنید، نه مقدارها.</p>
+  <aside class="notes">
+SAY (FA): به ستون B نگاه کنید: p99 خواننده در کنار یک نویسندهٔ سنگین همان جایی است که mq-deadline و bfq هزینهٔ CPU خود را جبران می‌کنند.
+SAY (EN): Look at column B: the reader's p99 under a heavy writer is where mq-deadline and bfq earn their CPU cost.
+KEY POINT: پیش‌فرض: mq-deadline برای یک صف سخت‌افزاری، none برای چندصفی (elevator_set_default).
+EXAMPLE: آزمایش ۰۵.۴.
+PITFALL: بنچمارک زمان‌بندِ مهمان، صف میزبان را هم اندازه می‌گیرد.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 12 FLOW_TIMELINE: jbd2 -->
+<section>
+  <span class="eyebrow in-f">۰۵ · <bdi dir="ltr">Journaling</bdi></span>
+  <h2 class="in">تراکنش فقط وقتی وجود دارد که بلوک <bdi dir="ltr">commit</bdi> آن روی دیسک باشد</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>قفل تراکنش</div><code>T_LOCKED</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>اول داده</div><code>ordered</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>فراداده</div><code>→ journal</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>flush</div><code>PREFLUSH</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>commit</div><code>FUA</code></div>
+    <div class="step fragment"><span class="callout-num">6</span><div>checkpoint</div><code>in place</code></div>
+  </div>
+  <p class="takeaway">crash پیش از ⑤: <bdi dir="ltr">replay</bdi> تراکنش را نادیده می‌گیرد. پس از ⑤: <bdi dir="ltr">replay</bdi> آن را اعمال می‌کند.</p>
+  <aside class="notes">
+SAY (FA): jbd2_journal_commit_transaction در حالت ordered اول بلوک‌های داده را می‌نویسد (commit.c L546) و رکورد commit را آخر (L874).
+SAY (EN): jbd2_journal_commit_transaction writes data blocks first in ordered mode (commit.c L546) and the commit record last (L874).
+KEY POINT: حالت ordered داده را مرتب می‌کند؛ آن را journal نمی‌کند.
+EXAMPLE: بازهٔ پیش‌فرض commit پنج ثانیه است (JBD2_DEFAULT_MAX_COMMIT_AGE).
+PITFALL: داده‌ای از delalloc که هنوز تخصیص نیافته در هیچ تراکنشی نیست.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 13 TERMINAL_DEMO: crash -->
+<section>
+  <span class="eyebrow in-f">۰۵ · خروجی واقعی</span>
+  <h2 class="in">پس از قطع برق، فقط فایلِ <bdi dir="ltr">fsync</bdi>‌شده باقی می‌ماند</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; crash-demo.sh · ext4 on dm-flakey on a loop file</div>
+<pre class="sm"><code><span class="ln"><span class="p">$</span> bash crash-demo.sh          # data=ordered</span><span class="ln">== before the crash:</span><span class="ln">  A 19 bytes   B 21 bytes   config: new contents</span><span class="ln"><span class="dim"># dmsetup load DROP; suspend --nolockfs; sync; umount</span></span><span class="ln">== kernel log at remount:</span><span class="ln hl">  EXT4-fs (dm-0): recovery complete</span><span class="ln">== after the crash:</span><span class="ln hl">  A        19 bytes: A: written + fsync</span><span class="ln hl">  B       MISSING</span><span class="ln">  config   13 bytes: old contents</span></code></pre>
+  </div>
+  <aside class="notes">
+SAY (FA): dm-flakey با drop_writes قطع برق را شبیه‌سازی می‌کند: کرنل فکر می‌کند نوشتن موفق بوده ولی چیزی به دستگاه نمی‌رسد. mount دوباره journal را replay می‌کند.
+SAY (EN): dm-flakey with drop_writes simulates power loss: the kernel thinks writes succeed, but nothing reaches the device. Remount replays the journal.
+KEY POINT: فایل‌سیستم سازگار ≠ دادهٔ شما آنجاست.
+EXAMPLE: آزمایش ۰۵.۶، فقط VM.
+PITFALL: آزمودن پایداری با sync در خط فرمان.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 14 CONCEPT_DIAGRAM: io_uring -->
+<section>
+  <span class="eyebrow in-f">۰۵ · <bdi dir="ltr">io_uring</bdi></span>
+  <h2 class="in">دو حلقهٔ مشترک جای <bdi dir="ltr">syscall</bdi>ها را می‌گیرند</h2>
+  <div class="diagram in-p d1"><img src="assets/io-uring-rings.svg" alt="فضای کاربر SQEها را در حلقهٔ مشترک SQ پر می‌کند، io_uring_enter آن‌ها را ارسال می‌کند، کرنل هر کدام را با NOWAIT اجرا می‌کند، کار مسدودکننده را به عقب می‌اندازد و CQEها را در حلقهٔ CQ می‌گذارد"></div>
+  <div class="grid tight" style="margin-top:16px">
+    <div class="c-4 row"><span class="callout-num">1</span><span><bdi dir="ltr">SQ</bdi>: کاربر تولید می‌کند</span></div>
+    <div class="c-4 row"><span class="callout-num">2</span><span>مسدودکننده ← <bdi dir="ltr">io-wq / poll</bdi></span></div>
+    <div class="c-4 row"><span class="callout-num">3</span><span><bdi dir="ltr">CQ</bdi>: کرنل تولید می‌کند</span></div>
+  </div>
+  <aside class="notes">
+SAY (FA): هر طرف فقط index خودش را می‌نویسد، پس قفلی لازم نیست. کرنل هر درخواست را اول با IOCB_NOWAIT روی همان read_iter که read(2) استفاده می‌کند اجرا می‌کند.
+SAY (EN): Each side writes only its own index, so no lock is needed. The kernel issues every request first with IOCB_NOWAIT on the same read_iter as read(2).
+KEY POINT: io_uring/io_uring.c io_submit_sqes() L2560، io_uring/rw.c io_iter_do_read() L828.
+EXAMPLE: آزمایش ۰۵.۵ تعداد فراخوانی‌های io_uring_enter را با read/write مقایسه می‌کند.
+PITFALL: ترتیب تکمیل ≠ ترتیب ارسال؛ با user_data تطبیق دهید.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 15 TWO_COLUMN_COMPARE: Linux vs OpenBSD -->
+<section>
+  <span class="eyebrow in-f">۰۵ · <bdi dir="ltr">Linux</bdi> در برابر <bdi dir="ltr">OpenBSD</bdi></span>
+  <h2 class="in"><bdi dir="ltr">Linux</bdi> صفحه‌های فایل را کش می‌کند؛ <bdi dir="ltr">OpenBSD</bdi> بلوک‌های دیسک را</h2>
+  <div class="compare">
+    <div class="in d1"><h3>Linux v6.18.63</h3><ul>
+      <li><bdi dir="ltr">page cache</bdi> برای هر <bdi dir="ltr">inode</bdi>، از هر RAM آزاد</li>
+      <li><bdi dir="ltr">hit</bdi>: بدون فراخوانی fs، بدون قفل <bdi dir="ltr">inode</bdi></li>
+      <li>جستجوی مسیر با <bdi dir="ltr">RCU-walk</bdi></li>
+      <li><bdi dir="ltr">blk-mq</bdi> + ۴ زمان‌بند</li>
+      <li><bdi dir="ltr">journal</bdi> با <bdi dir="ltr">jbd2</bdi></li>
+    </ul></div>
+    <div class="in d2"><h3>OpenBSD 8cada8c</h3><ul>
+      <li>کش <code>buf(9)</code>، <code>bufcachepercent</code></li>
+      <li><code>ffs_read</code> → <code>bread()</code>، قفل <bdi dir="ltr">vnode</bdi></li>
+      <li>پیمایش قفل‌دار <code>VOP_LOOKUP</code></li>
+      <li><bdi dir="ltr">N-step SCAN</bdi>، ۱۲۸ در هر دسته</li>
+      <li>بدون <bdi dir="ltr">journal</bdi>: <code>fsck</code></li>
+    </ul></div>
+  </div>
+  <aside class="notes">
+SAY (FA): مسیر read در OpenBSD قفل کرنل و قفل انحصاری vnode می‌گیرد؛ ساده و قابل‌بازبینی است ولی خواننده‌ها را پشت سر هم می‌کند.
+SAY (EN): OpenBSD's read path takes the kernel lock and an exclusive vnode lock; it is simple and auditable but serializes readers.
+KEY POINT: sys/kern/vfs_vnops.c vn_read() L347، sys/ufs/ffs/ffs_vnops.c ffs_read() L216، sys/kern/kern_bufq.c.
+EXAMPLE: جدول بده‌بستان در walkthrough بخش ۹.
+PITFALL: «OpenBSD کندتر است» — نقطهٔ دیگری روی منحنی سادگی/مقیاس‌پذیری را انتخاب کرده است.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 16 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">پرسش کوتاه</span>
+  <h2><bdi dir="ltr">write()</bdi> روی <bdi dir="ltr">ext4 (data=ordered)</bdi> مقدار <bdi dir="ltr">4096</bdi> برگرداند. ۲ ثانیه بعد برق می‌رود. آیا داده روی دیسک است؟</h2>
+  <div class="quiz-options">
+    <div><b>الف</b> بله، در <bdi dir="ltr">journal</bdi> هست</div>
+    <div><b>ب</b> بله، حالت <bdi dir="ltr">ordered</bdi> اول داده را می‌نویسد</div>
+    <div><b>ج</b> تضمینی نیست: <bdi dir="ltr">fsync</bdi> نشده</div>
+    <div><b>د</b> بله، <code>close()</code> آن را flush کرده</div>
+  </div>
+  <aside class="notes">
+SAY (FA): بیست ثانیه. به delayed allocation فکر کنید.
+SAY (EN): Twenty seconds. Think about delayed allocation.
+KEY POINT: پاسخ در اسلاید بعد.
+ASK: چه کسی «ب» را انتخاب کرد، و چرا درست به نظر می‌آید؟
+TIME: 45
+  </aside>
+</section>
+
+<!-- 17 QUIZ answer -->
+<section>
+  <span class="eyebrow">پاسخ: ج</span>
+  <h2>حالت <bdi dir="ltr">ordered</bdi> داده‌ای را مرتب می‌کند که در تراکنش است؛ دادهٔ <bdi dir="ltr">delalloc</bdi> همگام‌نشده در هیچ تراکنشی نیست</h2>
+  <p class="quote">جایگزینی پایدار: <bdi dir="ltr">write tmp → fsync(tmp) → rename → fsync(dir)</bdi></p>
+  <p class="source ltr">notes/07 · fs/jbd2/commit.c L546 · fs/ext4/fsync.c L141 · v6.18.63</p>
+  <aside class="notes">
+SAY (FA): در ۵ تا ۳۰ ثانیه writeback احتمالاً آن را می‌نوشت، ولی «احتمالاً» تضمین نیست. آزمایش ۰۵.۶ نشان می‌دهد فایل B از بین رفته است.
+SAY (EN): Within 5 to 30 seconds writeback would probably have written it, but "probably" is not a guarantee. Lab 05.6 shows file B gone.
+KEY POINT: فقط fsync (یا O_SYNC/O_DSYNC) پایداری می‌دهد.
+EXAMPLE: خروجی crash-demo.sh.
+PITFALL: «د» غلط است: close() منتظر writeback نمی‌ماند.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 18 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">۰۵ · فایل‌سیستم و <bdi dir="ltr">I/O</bdi></span>
+  <h2 class="in">جمع‌بندی</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span><bdi dir="ltr">VFS</bdi> از طریق <bdi dir="ltr">f_op</bdi> توزیع می‌کند؛ <bdi dir="ltr">page cache</bdi> به بیشتر خواندن‌ها پاسخ می‌دهد</li>
+    <li class="in d2"><span class="callout-num">2</span><bdi dir="ltr">blk-mq</bdi> و زمان‌بند به <bdi dir="ltr">I/O</bdi> شکل می‌دهند؛ پایداری را <bdi dir="ltr">fsync</bdi> می‌سازد</li>
+    <li class="in d3"><span class="callout-num">3</span><bdi dir="ltr">journal</bdi> فایل‌سیستم <bdi dir="ltr">ext4</bdi> را سازگار نگه می‌دارد؛ <bdi dir="ltr">io_uring</bdi> <bdi dir="ltr">syscall</bdi>ها را حذف می‌کند</li>
+  </ul>
+  <p class="next in d4">ماژول ۰۶ · سیستم‌عامل توزیع‌شده و مجازی‌سازی</p>
+  <aside class="notes">
+SAY (FA): ماژول بعد: همین پشتهٔ ذخیره‌سازی از داخل VM و container، با virtio-blk و overlayfs در بالا.
+SAY (EN): Next module: the same storage stack seen from inside a VM and a container, with virtio-blk and overlayfs on top.
+KEY POINT: پیش از رفتن به ماژول بعد، آزمایش‌های ۰۵.۱ تا ۰۵.۶ و پرسش‌ها را انجام دهید.
+TIME: 30
+  </aside>
+</section>
+
+<!-- REFERENCES:start (generated by _shared/tools/add_references.py from _shared/resources/awesome-os.json; do not edit by hand) -->
+<!-- 19 REFERENCES -->
+<section class="layout-refs">
+  <span class="eyebrow in-f">ادامهٔ مطالعه</span>
+  <h2 class="in">برای مطالعهٔ بیشتر، منتخب از فهرست‌های <bdi dir="ltr">awesome-os</bdi></h2>
+  <ul class="refs">
+    <li class="in d1"><span class="pill">کتاب</span> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/"><b>Operating Systems: Three Easy Pieces</b></a><span class="why">بخش سوم، <bdi dir="ltr">persistence</bdi>: دستگاه‌های <bdi dir="ltr">I/O</bdi>، <bdi dir="ltr">file system</bdi> و <bdi dir="ltr">journaling</bdi>.</span><span class="url ltr">pages.cs.wisc.edu/~remzi/OSTEP</span></li>
+    <li class="in d2"><span class="pill">کتاب</span> <a href="https://pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf"><b>xv6: a simple, Unix-like teaching operating system</b></a><span class="why">فصل‌های «<bdi dir="ltr">File system</bdi>» و «<bdi dir="ltr">Traps and device drivers</bdi>».</span><span class="url ltr">pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf</span></li>
+    <li class="in d3"><span class="pill">کتاب</span> <a href="https://sysprog21.github.io/lkmpg/"><b>The Linux Kernel Module Programming Guide</b></a><span class="why">راهنمای عملی نوشتن <bdi dir="ltr">kernel module</bdi>؛ نقطهٔ شروع <bdi dir="ltr">driver</bdi>ها.</span><span class="url ltr">sysprog21.github.io/lkmpg</span></li>
+    <li class="in d4"><span class="pill">مستندات</span> <a href="https://www.kernel.org/doc/html/latest/"><b>The Linux Kernel documentation</b></a><span class="why">مستندات رسمی کرنل: راهنمای مدیریت، <bdi dir="ltr">API</bdi>های هسته و یادداشت‌های هر <bdi dir="ltr">subsystem</bdi>.</span><span class="url ltr">kernel.org/doc/html/latest</span></li>
+    <li class="in d5"><span class="pill">مقاله</span> <a href="https://www.usenix.org/conference/osdi14/technical-sessions/presentation/peter"><b>Arrakis: The Operating System is the Control Plane</b></a><span class="why"><bdi dir="ltr">OSDI &#x27;14</bdi>: کرنل از مسیر داده‌ی <bdi dir="ltr">I/O</bdi> کنار می‌رود و فقط آن را کنترل می‌کند.</span><span class="url ltr">usenix.org/conference/osdi14/technical-sessions/presentation/pet</span></li>
+    <li class="in d5"><span class="pill">مقاله</span> <a href="https://irenezhang.net/papers/demikernel-sosp21.pdf"><b>The Demikernel Datapath OS Architecture for Microsecond-scale Datacenter Systems</b></a><span class="why"><bdi dir="ltr">SOSP &#x27;21</bdi>: معماری <bdi dir="ltr">OS</bdi> برای <bdi dir="ltr">I/O</bdi> در مقیاس میکروثانیه در دیتاسنترها.</span><span class="url ltr">irenezhang.net/papers/demikernel-sosp21.pdf</span></li>
+  </ul>
+  <p class="caption src">فهرست‌ها: <span class="ltr">jubalh/awesome-os · penberg/awesome-os</span> · لینک‌ها بررسی شده <bdi dir="ltr">2026-11-15</bdi></p>
+  <aside class="notes">
+SAY (EN): These are the best next reads after this module. They come from two GitHub “awesome-os” lists and every link was opened and checked on 2026-11-15. You do not need all of them.
+SAY (FA): این‌ها بهترین منابع برای ادامه پس از این ماژول هستند. از دو فهرست «awesome-os» در GitHub انتخاب شده‌اند و همهٔ لینک‌ها در تاریخ 2026-11-15 باز و بررسی شده‌اند. لازم نیست همه را بخوانید.
+KEY POINT: Start with the first item. The papers and conference pages are for the curious.
+EXAMPLE: —
+PITFALL: Some links are PDFs; open them before class if the room has no internet.
+TIME: 30
+  </aside>
+</section>
+<!-- REFERENCES:end -->
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۵ فایل‌سیستم و I/O" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

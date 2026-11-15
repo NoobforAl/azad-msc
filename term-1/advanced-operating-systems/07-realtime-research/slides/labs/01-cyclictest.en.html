@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 07.1 · Measure wake-up latency with cyclictest</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">07.1</div>
+  <span class="eyebrow in-f">Lab 07.1 · Goal</span>
+  <h2 class="in">Measure wake-up latency with cyclictest</h2>
+  <p class="why in d1">See latency as a histogram, see what load does to the maximum, and compare preemption models.</p>
+  <div class="pills in d2"><span class="pill">Runs on: VM only — global preempt switch</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: See latency as a histogram, see what load does to the maximum, and compare preemption models.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.1 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-kernel in d1"><h3>Kernel</h3><p class="ltr-mono"><code>uname -v → PREEMPT_DYNAMIC (not RT)</code></p></div><div class="c-6 card edge r-user in d2"><h3>Measurer</h3><p class="ltr-mono"><code>cyclictest -m -p 80 -i 1000 -a 2,3 -t 2</code></p></div><div class="c-6 card edge r-hardware in d3"><h3>Load</h3><p class="ltr-mono"><code>stress-ng --cpu 2 --iomix 1 --taskset 2,3</code></p></div><div class="c-6 card edge r-data in d4"><h3>Output</h3><p><bdi dir="ltr">histogram: min / avg / max</bdi> (µ<bdi dir="ltr">s</bdi>)</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.1 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 01-cyclictest</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o latency latency.c</span><span class="ln"><span class="p">$</span> sudo ./latency 80 1000 10000</span><span class="ln"><span class="p">$</span> sudo bash run-cyclictest.sh 60 2,3</span><span class="ln"><span class="dim"># VM only: flips /sys/kernel/debug/sched/preempt</span></span><span class="ln"><span class="p">$</span> sudo bash compare-preempt.sh 30 2,3 &quot;none voluntary full&quot;</span><span class="ln"><span class="dim"># RT side: 00-setup lab 03 --rt (UNVERIFIED here)</span></span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.1 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> sudo ./latency 80 1000 10000</span><span class="ln">latency us: min=35 avg=1012 max=159033</span><span class="ln"><span class="p">$</span> sudo bash run-cyclictest.sh 60 2,3</span><span class="ln">[idle] # Max Latencies: 395586 395126</span><span class="ln">[load] # Min Latencies: 00032 00031</span><span class="ln">[load] # Avg Latencies: 09389 09364</span><span class="ln hl">[load] # Max Latencies: 26624226 26624344</span><span class="ln"><span class="p">$</span> sudo bash compare-preempt.sh 30 2,3 ...</span><span class="ln">(none) voluntary ...  max_us=[433118 1363610]</span><span class="ln">none voluntary (full) ...  max_us=[1484984 1484192]</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.1 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Load moves the max, not the min</b><br><span class="caption">min = fixed path; max = time the CPU couldn&#x27;t switch</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>On a VM the host dominates</b><br><span class="caption">ms spikes = vCPU descheduled; shape only</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>No /sys/kernel/realtime</b><br><span class="caption mono">uname -v | grep -o PREEMPT_RT  (init/Makefile L30)</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.1 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">sched_setscheduler: Operation not permitted</span><span class="arrow-s">→</span><span class="tag r-ok">sudo, or RLIMIT_RTPRIO in limits.conf</span></div><div class="pit in d2"><span class="tag r-danger">sched/preempt: No such file</span><span class="arrow-s">→</span><span class="tag r-ok">mount debugfs; needs PREEMPT_DYNAMIC</span></div><div class="pit in d3"><span class="tag r-danger">tiny max on an idle box</span><span class="arrow-s">→</span><span class="tag r-ok">always report the loaded run</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 07.1 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px"><bdi dir="ltr">Port latency.c to SCHED_DEADLINE (runtime 200</bdi> µ<bdi dir="ltr">s</bdi>, <bdi dir="ltr">period 1 ms</bdi>, <bdi dir="ltr">sched_yield per job). Then provoke EINVAL and EBUSY with chrt -d and name the kernel function behind each.</bdi></p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 07 Real-Time &amp; Research" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

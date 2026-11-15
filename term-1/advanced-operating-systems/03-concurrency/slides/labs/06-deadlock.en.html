@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 03.6 · Deadlock: create, read, detect</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">03.6</div>
+  <span class="eyebrow in-f">Lab 03.6 · Goal</span>
+  <h2 class="in">Deadlock: create, read, detect</h2>
+  <p class="why in d1">Create an AB-BA deadlock, read it from gdb and /proc, detect the inverted order with TSan and helgrind, fix it with address ordering.</p>
+  <div class="pills in d2"><span class="pill">Runs on: aos-lab VM; lockdep part: VM with --lockdep kernel only</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Create an AB-BA deadlock, read it from gdb and /proc, detect the inverted order with TSan and helgrind, fix it with address ordering.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.6 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>Program</h3><p class="ltr-mono"><code>deadlock.c: hang | quick | ordered</code></p></div><div class="c-6 card edge r-kernel in d2"><h3>Thread dump</h3><p class="ltr-mono"><code>gdb -p · /proc/PID/task/*/stack</code></p></div><div class="c-6 card edge r-data in d3"><h3>Order checkers</h3><p class="ltr-mono"><code>TSan · helgrind · lockdep</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>Kernel module</h3><p>lockdep_abba.ko: VM + PROVE_LOCKING only</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.6 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 06-deadlock</div><pre><code><span class="ln"><span class="p">$</span> ./deadlock hang &amp;  P=$!; sleep 1</span><span class="ln"><span class="p">$</span> ps -L -o pid,lwp,stat,wchan:20,comm -p $P</span><span class="ln"><span class="p">$</span> sudo cat /proc/$P/task/*/stack</span><span class="ln"><span class="p">$</span> sudo gdb -p $P -batch -ex &#x27;thread apply all bt&#x27;</span><span class="ln"><span class="p">$</span> kill -9 $P</span><span class="ln"><span class="p">$</span> ./deadlock-tsan quick</span><span class="ln"><span class="p">$</span> valgrind --tool=helgrind ./deadlock quick</span><span class="ln"><span class="p">$</span> ./deadlock ordered</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.6 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> ps -L -o pid,lwp,stat,wchan:20,comm -p $P</span><span class="ln hl">  27823   27826 Sl   futex_do_wait        deadlock</span><span class="ln">  27823   27827 Sl   futex_do_wait        deadlock</span><span class="ln">#0 futex_wait (... futex_word=0x...020 &lt;g_acc_b&gt;)</span><span class="ln">#4 ... in transfer (from=...&lt;g_acc_a&gt;, to=...&lt;g_acc_b&gt;, ...) at deadlock.c:39</span><span class="ln">#0 futex_wait (... futex_word=0x...060 &lt;g_acc_a&gt;)</span><span class="ln">#4 ... in transfer (from=...&lt;g_acc_b&gt;, to=...&lt;g_acc_a&gt;, ...) at deadlock.c:39</span><span class="ln"><span class="p">$</span> setarch x86_64 -R ./deadlock-tsan quick</span><span class="ln hl">WARNING: ThreadSanitizer: lock-order-inversion (potential deadlock)</span><span class="ln">  Cycle in lock order graph: M0 =&gt; M1 =&gt; M0</span><span class="ln"><span class="p">$</span> valgrind --tool=helgrind ./deadlock quick</span><span class="ln hl">Thread #3: lock order &quot;0x10C060 before 0x10C020&quot; violated</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15; shared 8-vCPU guest, timings are noisy.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.6 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Both threads sleep in futex_wait</b><br><span class="caption">state S, 0% CPU: a deadlock does not spin</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>TSan reports without a hang</b><br><span class="caption mono">lock-order-inversion (potential deadlock)</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>Lockdep: same idea in the kernel</b><br><span class="caption">report UNVERIFIED: VM kernel lacks PROVE_LOCKING</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.6 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">gdb: ptrace not permitted</span><span class="arrow-s">→</span><span class="tag r-ok">sudo gdb -p (Yama ptrace_scope=1)</span></div><div class="pit in d2"><span class="tag r-danger">quick mode works</span><span class="arrow-s">→</span><span class="tag r-ok">order still inverted; timing hid it</span></div><div class="pit in d3"><span class="tag r-danger">lockdep silent</span><span class="arrow-s">→</span><span class="tag r-ok">grep PROVE_LOCKING /boot/config-$(uname -r)</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 03.6 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Dining Philosophers: make 5 philosophers deadlock, then fix it two ways (fork ordering; at most 4 seated via a semaphore) and run each 10 s TSan-clean.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 03 Concurrency" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

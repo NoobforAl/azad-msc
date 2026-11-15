@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 01.2 · syscall خام: libc در برابر syscall(3) و inline asm</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.2</div>
+  <span class="eyebrow in-f">آزمایش 01.2 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">syscall</bdi> خام<bdi dir="ltr">: libc</bdi> در برابر <bdi dir="ltr">syscall(3)</bdi> و <bdi dir="ltr">inline asm</bdi></h2>
+  <p class="why in d1"><bdi dir="ltr">ABI</bdi> رجیستری <bdi dir="ltr">x86-64</bdi> و قرارداد <bdi dir="ltr">-errno</bdi> را ببینید، ثابت کنید <bdi dir="ltr">CPL</bdi> برابر ۳ است و هر مسیر را زمان‌سنجی کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM با نام aos-lab</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: See the x86-64 register ABI and the -errno convention, prove CPL = 3, and time each path.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>سه مسیر</h3><p class="ltr-mono"><code>write() · syscall() · asm</code></p></div><div class="c-6 card edge r-hardware in d2"><h3>رجیسترهای ازبین‌رفته</h3><p><bdi dir="ltr">rcx = RIP</bdi>، <bdi dir="ltr">r11 = RFLAGS</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3>خطاها</h3><p>کرنل <bdi dir="ltr">-9</bdi> در برابر <bdi dir="ltr">libc -1/errno</bdi></p></div><div class="c-6 card edge r-data in d4"><h3>ساخت</h3><p class="ltr-mono"><code>gcc -Wall -Wextra -O2</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 02-raw-syscall</div><pre><code><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o raw_syscall raw_syscall.c</span><span class="ln"><span class="p">$</span> gcc -Wall -Wextra -O2 -o cpl cpl.c</span><span class="ln"><span class="p">$</span> taskset -c 3 ./raw_syscall</span><span class="ln"><span class="p">$</span> strace -e trace=write,getpid \</span><span class="ln">    ./raw_syscall 3 &gt; /dev/null</span><span class="ln"><span class="p">$</span> ./cpl</span><span class="ln"><span class="p">$</span> gdb -batch -ex &#x27;disassemble read&#x27; \</span><span class="ln">    /lib/x86_64-linux-gnu/libc.so.6</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">returns: 15 19 19</span><span class="ln">libc write(999): ret=-1 errno=9 (Bad file descriptor)</span><span class="ln hl">raw  write(999): ret=-9  (kernel returns -errno)</span><span class="ln">libc getpid()          103.3 ns/call</span><span class="ln">syscall(SYS_getpid)    110.8 ns/call</span><span class="ln">inline asm syscall     106.8 ns/call</span><span class="ln">empty loop               0.7 ns/iter</span><span class="ln"> </span><span class="ln"><span class="p">$</span> ./cpl</span><span class="ln hl">CS = 0x0033  -&gt; index 6, RPL/CPL = 3</span><span class="ln">cli            -&gt; killed by signal 11 (Segmentation fault)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، ۱۴۰۵/۰۸/۲۴.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">strace</bdi> سه <bdi dir="ltr">write</bdi> یکسان می‌بیند</b><br><span class="caption">همه با <bdi dir="ltr">rax = 1</bdi> به <bdi dir="ltr">syscall</bdi> ختم می‌شوند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">wrapper</bdi> تابع <bdi dir="ltr">read()</bdi></b><br><span class="caption mono">xor %eax,%eax; syscall; cmp $-4096,%rax</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>CS = 0x33</b><br><span class="caption"><bdi dir="ltr">__USER_CS:</bdi> اندیس ۶، <bdi dir="ltr">RPL</bdi> برابر ۳</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">فقط در <bdi dir="ltr">-O2</bdi> خراب می‌شود</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">clobber</bdi>های <bdi dir="ltr">&quot;rcx&quot;</bdi>، <bdi dir="ltr">&quot;r11&quot;</bdi> و <bdi dir="ltr">&quot;memory&quot;</bdi> را اضافه کنید</span></div><div class="pit in d2"><span class="tag r-danger">سردرگمی <bdi dir="ltr">-1</bdi> و <bdi dir="ltr">-22</bdi></span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">-raw</bdi> را با <bdi dir="ltr">errno</bdi> مقایسه کنید</span></div><div class="pit in d3"><span class="tag r-danger">زمان‌ها دو برابر می‌پرند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">VM</bdi> مشترک است؛ فقط در یک اجرا مقایسه کنید</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px"><bdi dir="ltr">mmap</bdi> را با <bdi dir="ltr">wrapper</bdi> شش‌آرگومانی <bdi dir="ltr">inline asm</bdi> خودتان صدا بزنید؛ یک بار با آرگومان ۴ در <bdi dir="ltr">rcx</bdi> و یک بار درست. نتیجهٔ غلط را با <bdi dir="ltr">SC_X86_64_REGS_TO_ARGS</bdi> توضیح دهید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۱ معماری" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

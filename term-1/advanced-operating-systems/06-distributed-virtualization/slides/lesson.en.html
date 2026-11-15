@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>06 · Distributed OS &amp; Virtualization — Advanced OS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+  <style>
+    /* Small table for the fault-tolerance and compare slides (theme has no slide table style). */
+    .reveal table.t { border-collapse:collapse; font-size:32px; width:100%; }
+    .reveal table.t th, .reveal table.t td { border-bottom:3px solid var(--brand-line); padding:16px 24px; text-align:start; }
+    .reveal table.t th { color:var(--brand-ink); font-size:28px; }
+  </style>
+</head>
+<body>
+<div class="reveal course-os">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">Many machines, one machine many times</h1>
+  <p class="subtitle in d1">Advanced Operating Systems · 06 Distributed OS &amp; Virtualization</p>
+  <div class="fields">
+    <span><b>Course</b>[Course name]</span><span><b>Presenter</b>[Presenter]</span>
+    <span><b>Professor</b>[Professor]</span><span><b>Faculty</b>[Faculty / Branch]</span>
+    <span><b>Term</b>[Term]</span><span><b>Date</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (EN): Two halves today. Distributed systems: many machines with no shared clock or memory. Virtualization: one machine split into many isolated systems.
+SAY (FA): امروز دو نیمه داریم. سیستم‌های توزیع‌شده: چند ماشین بدون ساعت و حافظهٔ مشترک. مجازی‌سازی: یک ماشین که به چند سیستم ایزوله تقسیم می‌شود.
+KEY POINT: In production these meet: every node of a distributed system is a VM or a container.
+EXAMPLE: A 3-node Raft cluster on 3 VMs, each running containers.
+PITFALL: Title fields are placeholders; never invent them.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">06</div>
+  <span class="eyebrow in-f">Module 06</span>
+  <h2 class="in">Distributed OS &amp; Virtualization</h2>
+  <p class="why in d1">Networks lose replies and clocks drift; hypervisors and containers decide what a process can see and use.</p>
+  <div class="pills in d2"><span class="pill">RPC · clocks</span><span class="pill">KVM · VT-x</span><span class="pill">namespaces · cgroups</span></div>
+  <aside class="notes">
+SAY (EN): We need Module 02 (clone, threads) and Module 04 (page tables). A container is clone with more flags; a vCPU is a thread; EPT is a second page table.
+SAY (FA): به ماژول ۰۲ (clone و نخ‌ها) و ماژول ۰۴ (جدول صفحه) نیاز داریم. container همان clone با پرچم‌های بیشتر است؛ vCPU یک نخ است؛ EPT یک جدول صفحهٔ دوم است.
+KEY POINT: Dependencies: M02, M04, M01 (traps).
+EXAMPLE: —
+PITFALL: Treating the two halves as unrelated.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">06 · Distributed &amp; Virtualization</span>
+  <h2 class="in">Five questions, five labs</h2>
+  <ol class="agenda">
+    <li class="current in d1">What does a remote call promise?</li>
+    <li class="in d2">Which event came first, without a shared clock?</li>
+    <li class="in d3">How many replicas survive f failures?</li>
+    <li class="in d4">How does a guest kernel run in ring 0?</li>
+    <li class="in d5">What is a container, if not a VM?</li>
+  </ol>
+  <aside class="notes">
+SAY (EN): Each question has a lab: RPC retries in Go, clocks in Go, KVM client in C, VM-exit cost in C, and a container built by hand.
+SAY (FA): هر پرسش یک آزمایش دارد: تکرار RPC در Go، ساعت‌ها در Go، کلاینت KVM در C، هزینهٔ VM exit در C، و containerی که با دست ساخته می‌شود.
+KEY POINT: Labs 06.1–06.5.
+EXAMPLE: —
+PITFALL: —
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 SEQUENCE: RPC retry -->
+<section>
+  <span class="eyebrow in-f">06 · RPC</span>
+  <h2 class="in">A timeout hides whether the call ran</h2>
+  <div class="diagram in-p d1" style="margin-top:-24px"><img style="max-height:600px" src="assets/rpc-retry.svg" alt="Client sends Deposit id dep-7; server executes; reply lost; client times out and retries with the same id; without dedup the server adds again, with a reply cache it replays the old reply"></div>
+  <p class="takeaway in d2">Lab 06.2, 20 deposits of 10: no dedup → balance <b>290</b>; reply cache → <b>200</b>.</p>
+  <aside class="notes">
+SAY (EN): ① the request runs, ② only the reply is lost, ③ the client times out, ④ it retries with the same ID. Without a duplicate filter the deposit runs twice; with a reply cache keyed by ID the server answers from memory.
+SAY (FA): ① درخواست اجرا می‌شود، ② فقط پاسخ گم می‌شود، ③ کلاینت timeout می‌خورد، ④ با همان شناسه دوباره می‌فرستد. بدون فیلتر تکراری واریز دو بار انجام می‌شود؛ با reply cache بر اساس شناسه، سرور از حافظه جواب می‌دهد.
+KEY POINT: Exactly-once effect = at-least-once delivery + server-side dedup.
+EXAMPLE: Linux NFS server: fs/nfsd/nfscache.c nfsd_cache_lookup().
+PITFALL: "TCP gives exactly-once" — not across reconnects and client retries.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 06 CONCEPT_DIAGRAM: clocks -->
+<section>
+  <span class="eyebrow in-f">06 · Logical time</span>
+  <h2 class="in">Lamport order is not causal order</h2>
+  <div class="diagram in-p d1"><img style="max-height:580px" src="assets/clocks.svg" alt="Space-time diagram of three processes with Lamport and vector timestamps; event a has L1 [1,0,0] and g has L2 [0,0,2]: L(a) is smaller but they are concurrent"></div>
+  <p class="takeaway in d2">Vectors decide: a → b ⇔ V(a) ≤ V(b) and V(a) ≠ V(b).</p>
+  <aside class="notes">
+SAY (EN): Receive rule: L = max(L, Lm) + 1, V = max(V, Vm), then V[i]++. d gets L3 because m1 carried L2. a has a smaller L than g, yet nothing connects them: concurrent.
+SAY (FA): قاعدهٔ دریافت: L برابر max(L, Lm)+1 و V برابر max(V, Vm) و بعد V[i]++. رویداد d مقدار L3 می‌گیرد چون m1 مقدار L2 داشت. a از g کوچک‌تر است ولی هیچ مسیر علّی بینشان نیست: همروند.
+KEY POINT: a → b ⇒ L(a) < L(b), never the converse.
+EXAMPLE: Lab 06.1 counts such pairs in a real 3-process run.
+PITFALL: Sorting logs by Lamport time and calling it "causal order".
+ASK: Is f → h? (yes: f [0,0,1] ≤ [2,3,3])
+TIME: 120
+  </aside>
+</section>
+
+<!-- 07 BENTO: fault tolerance -->
+<section>
+  <span class="eyebrow in-f">06 · Fault tolerance</span>
+  <h2 class="in">The failure model sets the replica count</h2>
+  <div class="grid tight">
+    <div class="c-4 card edge r-data in d1"><h3>f + 1</h3><p>crash-stop, failures detectable: one survivor holds the state</p></div>
+    <div class="c-4 card edge r-kernel in d2"><h3>2f + 1</h3><p>crash + agreement (Raft, Paxos): any two majorities overlap</p></div>
+    <div class="c-4 card edge r-hardware in d3"><h3>3f + 1</h3><p>Byzantine: honest replicas outvote f liars</p></div>
+  </div>
+  <p class="takeaway in d4">Raft with 5 nodes: commit on 3, survive 2 crashes. FLP: no guarantee without timeouts.</p>
+  <aside class="notes">
+SAY (EN): The same "tolerate one failure" needs 2, 3 or 4 machines depending on what a failure is allowed to do.
+SAY (FA): همان «تحمل یک خرابی» بسته به این‌که خرابی چه کاری مجاز است بکند، به ۲، ۳ یا ۴ ماشین نیاز دارد.
+KEY POINT: Quorums intersect: R + W > N.
+EXAMPLE: etcd and Consul run 3 or 5 Raft members.
+PITFALL: Two replicas cannot tell "peer crashed" from "network split".
+TIME: 90
+  </aside>
+</section>
+
+<!-- 08 LAYER_STACK: VMX -->
+<section>
+  <span class="eyebrow in-f">06 · Hypervisors</span>
+  <h2 class="in">VT-x gives the guest its own ring 0</h2>
+  <div class="layers">
+    <div class="band r-user in d1"><b>guest apps · ring 3</b><div class="items"><span>syscall stays in guest</span></div></div>
+    <div class="band r-kernel in d2"><b>guest kernel · ring 0</b><div class="items"><span>own page tables</span><span>IDT</span></div></div>
+    <div class="boundary in d3"><span>VMX non-root ↕ VM entry / VM exit</span></div>
+    <div class="band r-kernel in d3"><b>host kernel + KVM · root</b><div class="items"><span>VMCS</span><span>exit handlers</span></div></div>
+    <div class="band r-hardware in d4"><b>CPU</b><div class="items"><span>VT-x</span><span>EPT: guest-phys → host-phys</span></div></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Popek–Goldberg: trap-and-emulate needs every sensitive instruction to trap. x86 had sensitive non-trapping ones like popf. VT-x gives the guest its own ring 0 in non-root mode, and the VMCS decides which events exit to the host.
+SAY (FA): طبق Popek–Goldberg، trap-and-emulate لازم دارد هر دستور حساس trap کند. x86 دستورهای حساسِ بدون trap مثل popf داشت. VT-x در حالت non-root به مهمان ring 0 خودش را می‌دهد و VMCS تعیین می‌کند کدام رویداد به میزبان exit کند.
+KEY POINT: EPT walk: up to (4+1)(4+1)−1 = 24 memory references on a TLB miss.
+EXAMPLE: arch/x86/kvm/vmx/vmx.c kvm_vmx_exit_handlers[].
+PITFALL: Thinking guest syscalls exit to the hypervisor.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 09 TERMINAL_DEMO: vmexit cost -->
+<section>
+  <span class="eyebrow in-f">06 · Hypervisors · real output</span>
+  <h2 class="in">A CPUID exit costs four guest syscalls</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; labs/05-vmexit-cost · WSL2 VM on Hyper-V</div>
+<pre><code><span class="ln"><span class="p">$</span> ./vmexit-cost</span><span class="ln">CPUID.1:ECX bit 31 (hypervisor present) = 1</span><span class="ln">CPUID.0x40000000 hypervisor signature = "Microsoft Hv"</span><span class="ln">add (stays on the CPU)          0.2 ns/op</span><span class="ln">getppid syscall (guest)        96.4 ns/op</span><span class="ln hl">cpuid leaf 0 (VM exit)        383.5 ns/op</span><span class="ln">cpuid leaf 1 (VM exit)        385.7 ns/op</span></code></pre>
+  </div>
+  <p class="caption" style="margin-top:24px">Docker Desktop WSL2 VM, kernel 6.18.58.1-microsoft-standard-WSL2, 2026-11-15. The aos-lab run is in the lab README.</p>
+  <aside class="notes">
+SAY (EN): Measured from inside a guest. The add never leaves the CPU, the syscall stays in the guest kernel, and CPUID always exits to the hypervisor and back: about 380 ns round trip here.
+SAY (FA): این از داخل مهمان اندازه گرفته شده. دستور add از CPU بیرون نمی‌رود، syscall در کرنل مهمان می‌ماند، و CPUID همیشه به hypervisor می‌رود و برمی‌گردد: اینجا حدود ۳۸۰ نانوثانیه.
+KEY POINT: Exits, not instructions, are what virtualization costs.
+EXAMPLE: Emulated port I/O devices exit on every access; virtio batches.
+PITFALL: Absolute numbers depend on CPU and hypervisor; compare ratios.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 10 FLOW_TIMELINE: KVM fds -->
+<section>
+  <span class="eyebrow in-f">06 · KVM</span>
+  <h2 class="in">A VMM is three file descriptors and a loop</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>System fd</div><code>open /dev/kvm</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>VM fd</div><code>KVM_CREATE_VM</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>Guest RAM</div><code>SET_USER_MEMORY</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>vCPU fd</div><code>KVM_CREATE_VCPU</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>Shared page</div><code>mmap kvm_run</code></div>
+    <div class="step fragment"><span class="callout-num">6</span><div>Loop</div><code>KVM_RUN</code></div>
+  </div>
+  <p class="takeaway">Guest RAM is anonymous memory of the VMM process; a vCPU is a thread blocked in KVM_RUN.</p>
+  <aside class="notes">
+SAY (EN): Lab 06.4 is exactly these six steps in about 100 lines of C. After step 6 the loop switches on run->exit_reason: KVM_EXIT_IO prints a byte, KVM_EXIT_HLT ends.
+SAY (FA): آزمایش ۰۶.۴ دقیقاً همین شش گام در حدود ۱۰۰ خط C است. بعد از گام ۶، حلقه روی run->exit_reason سوئیچ می‌کند: KVM_EXIT_IO یک بایت چاپ می‌کند و KVM_EXIT_HLT پایان است.
+KEY POINT: VM fd and vCPU fd are new fds returned by ioctls.
+EXAMPLE: virt/kvm/kvm_main.c kvm_dev_ioctl() → KVM_CREATE_VM.
+PITFALL: The test VM has no /dev/kvm (no nested virt): run output is UNVERIFIED.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 11 CODE_WALKTHROUGH: exit table + handle_io -->
+<section>
+  <span class="eyebrow in-f">06 · KVM · real source</span>
+  <h2 class="in">The exit reason is an array index</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/arch/x86/kvm/vmx/vmx.c</span><span>v6.18.63</span></div>
+<pre class="code"><code><span class="ln"><span class="tok-c">/* kvm_vmx_exit_handlers[] L6092 */</span></span><span class="ln fragment hl-on" data-fragment-index="1">[EXIT_REASON_IO_INSTRUCTION] = <span class="tok-f">handle_io</span>,</span><span class="ln">[EXIT_REASON_CPUID] = <span class="tok-f">kvm_emulate_cpuid</span>,</span><span class="ln">[EXIT_REASON_HLT]   = <span class="tok-f">kvm_emulate_halt</span>,</span><span class="ln"> </span><span class="ln"><span class="tok-k">static</span> <span class="tok-t">int</span> <span class="tok-f">handle_io</span>(<span class="tok-k">struct</span> <span class="tok-t">kvm_vcpu</span> *vcpu)</span><span class="ln">{ <span class="tok-c">/* L5366 */</span></span><span class="ln fragment hl-on" data-fragment-index="2">  exit_qualification = <span class="tok-f">vmx_get_exit_qual</span>(vcpu);</span><span class="ln">  <span class="tok-c">/* ... string I/O → full emulator ... */</span></span><span class="ln fragment hl-on" data-fragment-index="3">  port = exit_qualification &gt;&gt; <span class="tok-s">16</span>;</span><span class="ln">  size = (exit_qualification &amp; <span class="tok-s">7</span>) + <span class="tok-s">1</span>;</span><span class="ln">  in = (exit_qualification &amp; <span class="tok-s">8</span>) != <span class="tok-s">0</span>;</span><span class="ln fragment hl-on" data-fragment-index="4">  <span class="tok-k">return</span> <span class="tok-f">kvm_fast_pio</span>(vcpu, size, port, in);</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>Our <code>out</code> to 0x3f8 lands in <code>handle_io</code></span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>The CPU already decoded the instruction</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>port 0x3f8, 1 byte, OUT</span></div>
+      <div class="in d5"><span class="callout-num">4</span><span>Fast path, then RIP += 1</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): The hardware writes a basic exit reason into the VMCS; __vmx_handle_exit uses it, clamped by array_index_nospec, as the index into this table.
+SAY (FA): سخت‌افزار شمارهٔ دلیل exit را در VMCS می‌نویسد و __vmx_handle_exit آن را، پس از محدودسازی با array_index_nospec، اندیس این جدول می‌کند.
+KEY POINT: Handler returns 1 = re-enter guest, 0 = go to user space.
+EXAMPLE: vmx.c L6610-6615 (dispatch), L6092 (table), L5366 (handle_io).
+PITFALL: Table lines are excerpts; the full table has ~60 entries.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 12 CODE_WALKTHROUGH: emulator_pio_in_out -->
+<section>
+  <span class="eyebrow in-f">06 · KVM · real source</span>
+  <h2 class="in">No device on the port: exit to user space</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/arch/x86/kvm/x86.c · emulator_pio_in_out()</span><span>v6.18.63</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1">r = <span class="tok-f">kvm_io_bus_write</span>(vcpu, KVM_PIO_BUS,</span><span class="ln">                     port, size, data);</span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">if</span> (r) { <span class="tok-k">if</span> (i == <span class="tok-s">0</span>) <span class="tok-k">goto</span> userspace_io; }</span><span class="ln"><span class="tok-c">/* ... */</span></span><span class="ln">userspace_io:</span><span class="ln">  <span class="tok-f">memcpy</span>(vcpu-&gt;arch.pio_data, data, size * count);</span><span class="ln fragment hl-on" data-fragment-index="3">  vcpu-&gt;run-&gt;exit_reason = KVM_EXIT_IO;</span><span class="ln">  vcpu-&gt;run-&gt;io.port = port;</span><span class="ln">  vcpu-&gt;run-&gt;io.data_offset =</span><span class="ln">      KVM_PIO_PAGE_OFFSET * PAGE_SIZE;</span><span class="ln fragment hl-on" data-fragment-index="4">  <span class="tok-k">return</span> <span class="tok-s">0</span>;</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>Try in-kernel devices first (PIT, ioeventfd)</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>Nobody claimed 0x3f8</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>Fill the shared <code>kvm_run</code> page</span></div>
+      <div class="in d5"><span class="callout-num">4</span><span>0 ends <code>vcpu_run()</code>: <code>KVM_RUN</code> returns</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): These are the exact fields our client reads: exit_reason, io.port, io.data_offset. The data byte sits in the second page of the vCPU mmap.
+SAY (FA): این‌ها دقیقاً همان فیلدهایی‌اند که کلاینت ما می‌خواند: exit_reason و io.port و io.data_offset. بایت داده در صفحهٔ دوم mmap مربوط به vCPU است.
+KEY POINT: In-kernel first, user space second: that is Linux's main difference from OpenBSD vmm, where every I/O exit goes to vmd.
+EXAMPLE: x86.c L8039-8087; KVM_GET_VCPU_MMAP_SIZE adds a PIO page on x86 (kvm_main.c L5566-5569).
+PITFALL: The loop excerpt is condensed: lines 8047-8055 and 8070-8087 joined.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 13 CONCEPT_DIAGRAM: VM vs container -->
+<section>
+  <span class="eyebrow in-f">06 · Containers</span>
+  <h2 class="in">A container's boundary is the syscall layer</h2>
+  <div class="diagram in-p d1"><img src="assets/vm-vs-container.svg" alt="Left: VM stack with guest apps, guest kernel, boundary at VM exit, VMM, host kernel with KVM, CPU with VT-x and EPT. Right: container processes with namespaces and cgroups, boundary at syscalls, one shared host kernel, CPU"></div>
+  <aside class="notes">
+SAY (EN): A VM's attack surface is the exit interface and the virtual devices. A container talks to the real host kernel through every syscall, /proc and /sys. One kernel bug reachable by a syscall breaks every container on the host.
+SAY (FA): سطح حملهٔ VM رابط exit و دستگاه‌های مجازی است. container با همهٔ syscallها و /proc و /sys مستقیم با کرنل واقعی میزبان حرف می‌زند. یک باگ کرنل که از راه syscall در دسترس باشد همهٔ containerهای میزبان را می‌شکند.
+KEY POINT: Namespaces = what you see; cgroups = how much you use.
+EXAMPLE: gVisor, Kata, Firecracker narrow the container boundary.
+PITFALL: "A container is a lightweight VM."
+TIME: 90
+  </aside>
+</section>
+
+<!-- 14 CODE_WALKTHROUGH: copy_pid_ns -->
+<section>
+  <span class="eyebrow in-f">06 · Containers · real source</span>
+  <h2 class="in">unshare --pid moves your children, not you</h2>
+  <div class="grid">
+    <div class="c-7 code-card in d1">
+      <div class="file-chip"><span>linux/kernel/pid_namespace.c · copy_pid_ns()</span><span>v6.18.63 · L175</span></div>
+<pre class="code"><code><span class="ln"><span class="tok-k">struct</span> <span class="tok-t">pid_namespace</span> *<span class="tok-f">copy_pid_ns</span>(<span class="tok-t">u64</span> flags,</span><span class="ln">  <span class="tok-k">struct</span> <span class="tok-t">user_namespace</span> *user_ns,</span><span class="ln">  <span class="tok-k">struct</span> <span class="tok-t">pid_namespace</span> *old_ns)</span><span class="ln">{</span><span class="ln fragment hl-on" data-fragment-index="1">  <span class="tok-k">if</span> (!(flags &amp; CLONE_NEWPID))</span><span class="ln">    <span class="tok-k">return</span> <span class="tok-f">get_pid_ns</span>(old_ns);</span><span class="ln fragment hl-on" data-fragment-index="2">  <span class="tok-k">if</span> (<span class="tok-f">task_active_pid_ns</span>(current) != old_ns)</span><span class="ln">    <span class="tok-k">return</span> <span class="tok-f">ERR_PTR</span>(-EINVAL);</span><span class="ln fragment hl-on" data-fragment-index="3">  <span class="tok-k">return</span> <span class="tok-f">create_pid_namespace</span>(user_ns, old_ns);</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-5 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>No flag: share the old one</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>Only one unshare before forking</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>Child of old ns, stored in <code>pid_ns_for_children</code></span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (EN): The caller of create_new_namespaces stores this in nsproxy->pid_ns_for_children. Your own PID cannot change; your next child becomes PID 1. That is why unshare needs --fork.
+SAY (FA): تابع create_new_namespaces این را در nsproxy->pid_ns_for_children می‌گذارد. PID خود شما نمی‌تواند عوض شود؛ فرزند بعدی‌تان PID 1 می‌شود. برای همین unshare به --fork نیاز دارد.
+KEY POINT: The host still sees container PIDs under host numbers (nested namespaces).
+EXAMPLE: kernel/nsproxy.c L96-97.
+PITFALL: Forgetting --mount-proc: ps reads the host's /proc.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 15 TERMINAL_DEMO: mini container -->
+<section>
+  <span class="eyebrow in-f">06 · Containers · real output</span>
+  <h2 class="in">unshare + pivot_root + 3 cgroup files</h2>
+  <div class="term in d1">
+    <div class="bar"><i></i><i></i><i></i>&nbsp; labs/03-mini-container · aos-lab</div>
+<pre><code><span class="ln"><span class="p">$</span> bash minictr.sh /usr/local/bin/demo.sh</span><span class="ln">my pid: 1   hostname: aos-ctr</span><span class="ln">cgroup: 0::/</span><span class="ln">lo: DOWN</span><span class="ln">ls: /.oldroot: No such file or directory</span><span class="ln hl">sh: can&#x27;t fork: Resource temporarily unavailable</span><span class="ln">hog: 48 MiB touched</span><span class="ln">Killed</span><span class="ln">== host view of /sys/fs/cgroup/aos-m06-ctr after exit</span><span class="ln hl">oom_kill 1</span><span class="ln">pids.events: max 1   pids.peak: 20</span></code></pre>
+  </div>
+  <aside class="notes">
+SAY (EN): PID 1 inside, our own hostname, cgroup root "/", only lo; fork fails at pids.max; the memory hog is OOM-killed inside the group, and the host counts it in memory.events.
+SAY (FA): داخل container پردازهٔ ما PID 1 است، hostname مال خودمان است، ریشهٔ cgroup «/» است و فقط lo داریم؛ fork در pids.max شکست می‌خورد؛ hog حافظه داخل گروه با OOM کشته می‌شود و میزبان آن را در memory.events می‌شمارد.
+KEY POINT: Every effect maps to one kernel function from the walkthrough.
+EXAMPLE: Real output, aos-lab 6.18.63.
+PITFALL: Forgetting memory.swap.max=0: the hog swaps instead of dying.
+TIME: 120
+  </aside>
+</section>
+
+<!-- 16 TWO_COLUMN_COMPARE: Linux vs OpenBSD -->
+<section>
+  <span class="eyebrow in-f">06 · Linux vs OpenBSD</span>
+  <h2 class="in">OpenBSD isolates with promises, not views</h2>
+  <div class="compare">
+    <div class="in d1"><h3>Linux</h3><ul>
+      <li>KVM: in-kernel PIO/MMIO bus first</li>
+      <li>8 namespace types, nested</li>
+      <li>cgroup v2: group limits</li>
+      <li>seccomp-BPF, imposed from outside</li>
+    </ul></div>
+    <div class="in d2"><h3>OpenBSD</h3><ul>
+      <li>vmm(4): every I/O exit goes to <code>vmd</code></li>
+      <li>no namespaces, <code>chroot</code> only</li>
+      <li>per-process <code>setrlimit</code></li>
+      <li><code>pledge</code>/<code>unveil</code>, self-imposed</li>
+    </ul></div>
+  </div>
+  <aside class="notes">
+SAY (EN): vmx_handle_inout returns VMM_ACTION_ASSIST for every port access, so vmd emulates all of them. pledge_syscall is one AND against a static table per syscall.
+SAY (FA): تابع vmx_handle_inout برای هر دسترسی پورت VMM_ACTION_ASSIST برمی‌گرداند، پس vmd همه را شبیه‌سازی می‌کند. pledge_syscall برای هر syscall فقط یک AND روی یک جدول ثابت است.
+KEY POINT: Linux: features and speed. OpenBSD: less code in ring 0.
+EXAMPLE: openbsd/sys/arch/amd64/amd64/vmm_machdep.c L4801, sys/kern/kern_pledge.c L536 · 8cada8c.
+PITFALL: "No namespaces" does not mean "no isolation".
+TIME: 90
+  </aside>
+</section>
+
+<!-- 17 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">Quick check</span>
+  <h2>V(a) = [3,1,0], V(b) = [2,2,0]. What is the relation?</h2>
+  <div class="quiz-options">
+    <div><b>A</b> a → b</div>
+    <div><b>B</b> b → a</div>
+    <div><b>C</b> a ∥ b</div>
+    <div><b>D</b> depends on Lamport time</div>
+  </div>
+  <aside class="notes">
+SAY (EN): Compare element by element. Twenty seconds.
+SAY (FA): عنصر به عنصر مقایسه کنید. بیست ثانیه.
+KEY POINT: Answer on the next slide.
+EXAMPLE: —
+PITFALL: —
+ASK: Who picked A because 3 > 2?
+TIME: 45
+  </aside>
+</section>
+
+<!-- 18 QUIZ answer -->
+<section>
+  <span class="eyebrow">Answer: C</span>
+  <h2>Neither vector is ≤ the other, so the events are concurrent</h2>
+  <p class="quote">a is ahead in entry 0 (3 &gt; 2), b is ahead in entry 1 (2 &gt; 1): no causal path either way.</p>
+  <p class="source">Fidge 1988, Mattern 1988 · labs/01-lamport-vector-clocks/clocks.go · before()</p>
+  <aside class="notes">
+SAY (EN): Happened-before needs every entry ≤. One entry larger on each side means concurrency. Lamport times would be ordered anyway, which is why D is a trap.
+SAY (FA): رابطهٔ happened-before لازم دارد همهٔ درایه‌ها ≤ باشند. وقتی در هر طرف یک درایه بزرگ‌تر است، رویدادها همروندند. زمان‌های Lamport به‌هرحال ترتیب دارند و برای همین D تله است.
+KEY POINT: Concurrency is detectable only with vectors.
+EXAMPLE: Quiz Q3.
+PITFALL: —
+TIME: 45
+  </aside>
+</section>
+
+<!-- 19 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">06 · Distributed &amp; Virtualization</span>
+  <h2 class="in">Summary</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>Retries need request IDs; order needs vectors; agreement needs 2f+1</li>
+    <li class="in d2"><span class="callout-num">2</span>KVM = VT-x behind three fds; exits are the cost</li>
+    <li class="in d3"><span class="callout-num">3</span>Container = namespaces (view) + cgroups (budget) on one kernel</li>
+  </ul>
+  <p class="next in d4">Module 07 · Real-Time &amp; Research Topics</p>
+  <aside class="notes">
+SAY (EN): Next module uses isolation again: seccomp and LSMs, and real-time scheduling on top of the scheduler we know.
+SAY (FA): ماژول بعد دوباره از ایزوله‌سازی استفاده می‌کند: seccomp و LSM، و زمان‌بندی بلادرنگ روی همان scheduler که می‌شناسیم.
+KEY POINT: Labs 06.1–06.5 and the quiz close the module.
+EXAMPLE: —
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+<!-- REFERENCES:start (generated by _shared/tools/add_references.py from _shared/resources/awesome-os.json; do not edit by hand) -->
+<!-- 19 REFERENCES -->
+<section class="layout-refs">
+  <span class="eyebrow in-f">Go deeper</span>
+  <h2 class="in">Read more, picked from the GitHub “awesome-os” lists</h2>
+  <ul class="refs">
+    <li class="in d1"><span class="pill">Paper</span> <a href="https://anil.recoil.org/papers/2013-asplos-mirage.pdf"><b>Unikernels: Library Operating Systems for the Cloud</b></a><span class="why">ASPLOS &#x27;13: one application plus a library OS, built as a single cloud image.</span><span class="url ltr">anil.recoil.org/papers/2013-asplos-mirage.pdf</span></li>
+    <li class="in d2"><span class="pill">Tool</span> <a href="https://github.com/unikraft/unikraft"><b>Unikraft</b></a><span class="why">A project for building specialized, fast unikernels.</span><span class="url ltr">github.com/unikraft/unikraft</span></li>
+    <li class="in d3"><span class="pill">Paper</span> <a href="https://www.usenix.org/system/files/osdi18-shan.pdf"><b>LegoOS: A Disseminated, Distributed OS for Hardware Resource Disaggregation</b></a><span class="why">OSDI &#x27;18: one OS split across machines by hardware resource.</span><span class="url ltr">usenix.org/system/files/osdi18-shan.pdf</span></li>
+    <li class="in d4"><span class="pill">Paper</span> <a href="https://www.usenix.org/system/files/conference/osdi12/osdi12-final-117.pdf"><b>Dune: Safe User-level Access to Privileged CPU Features</b></a><span class="why">OSDI &#x27;12: give a process safe access to privileged CPU features using virtualization hardware.</span><span class="url ltr">usenix.org/system/files/conference/osdi12/osdi12-final-117.pdf</span></li>
+    <li class="in d5"><span class="pill">Paper</span> <a href="https://www.sigops.org/s/conferences/sosp/2009/papers/baumann-sosp09.pdf"><b>The Multikernel: A new OS architecture for scalable multicore systems</b></a><span class="why">SOSP &#x27;09: treat a multicore machine as a network of cores that pass messages.</span><span class="url ltr">sigops.org/s/conferences/sosp/2009/papers/baumann-sosp09.pdf</span></li>
+  </ul>
+  <p class="caption src">Lists: <span class="ltr">jubalh/awesome-os · penberg/awesome-os</span> · links checked <bdi dir="ltr">2026-11-15</bdi></p>
+  <aside class="notes">
+SAY (EN): These are the best next reads after this module. They come from two GitHub “awesome-os” lists and every link was opened and checked on 2026-11-15. You do not need all of them.
+SAY (FA): این‌ها بهترین منابع برای ادامه پس از این ماژول هستند. از دو فهرست «awesome-os» در GitHub انتخاب شده‌اند و همهٔ لینک‌ها در تاریخ 2026-11-15 باز و بررسی شده‌اند. لازم نیست همه را بخوانید.
+KEY POINT: Start with the first item. The papers and conference pages are for the curious.
+EXAMPLE: —
+PITFALL: Some links are PDFs; open them before class if the room has no internet.
+TIME: 30
+  </aside>
+</section>
+<!-- REFERENCES:end -->
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 06 Distributed &amp; Virtualization" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

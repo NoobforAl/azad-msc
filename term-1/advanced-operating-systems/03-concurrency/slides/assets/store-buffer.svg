@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 640" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- Roles (Advanced OS): user=teal #0E7490, kernel=amber #B45309, hardware=violet #6D28D9, data=green #047857 -->
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3B4868"/>
+    </marker>
+    <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#F5B301"/>
+    </marker>
+  </defs>
+
+  <!-- Thread code (user) -->
+  <rect x="40" y="24" width="560" height="120" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="70" y="70" font-size="28" font-weight="700" fill="#0E7490">T0 on CPU 0</text>
+  <text x="70" y="114" font-size="28" font-family="JetBrains Mono, monospace" fill="#0A1633">x = 1;  r0 = y;</text>
+  <rect x="1000" y="24" width="560" height="120" rx="14" fill="#DFF4F8" stroke="#0E7490" stroke-width="3"/>
+  <text x="1030" y="70" font-size="28" font-weight="700" fill="#0E7490">T1 on CPU 1</text>
+  <text x="1030" y="114" font-size="28" font-family="JetBrains Mono, monospace" fill="#0A1633">y = 1;  r1 = x;</text>
+
+  <!-- Store buffers (hardware) -->
+  <rect x="40" y="200" width="560" height="110" rx="14" fill="#EEE6FB" stroke="#6D28D9" stroke-width="3"/>
+  <text x="70" y="244" font-size="26" font-weight="700" fill="#6D28D9">① store buffer 0</text>
+  <rect x="380" y="220" width="190" height="70" rx="10" fill="#FFF1C2" stroke="#F5B301" stroke-width="4"/>
+  <text x="400" y="266" font-size="28" font-family="JetBrains Mono, monospace" fill="#0A1633">x = 1</text>
+  <rect x="1000" y="200" width="560" height="110" rx="14" fill="#EEE6FB" stroke="#6D28D9" stroke-width="3"/>
+  <text x="1030" y="244" font-size="26" font-weight="700" fill="#6D28D9">① store buffer 1</text>
+  <rect x="1340" y="220" width="190" height="70" rx="10" fill="#FFF1C2" stroke="#F5B301" stroke-width="4"/>
+  <text x="1360" y="266" font-size="28" font-family="JetBrains Mono, monospace" fill="#0A1633">y = 1</text>
+
+  <!-- Memory (data) -->
+  <rect x="300" y="450" width="1000" height="120" rx="14" fill="#DCF3EA" stroke="#047857" stroke-width="3"/>
+  <text x="330" y="500" font-size="28" font-weight="700" fill="#047857">cache / memory</text>
+  <text x="330" y="546" font-size="30" font-family="JetBrains Mono, monospace" fill="#0A1633">x = 0     y = 0</text>
+
+  <!-- Arrows: stores go into buffers (solid), loads read memory (dashed, hot) -->
+  <line x1="200" y1="144" x2="200" y2="196" stroke="#3B4868" stroke-width="4" marker-end="url(#ah)"/>
+  <line x1="1160" y1="144" x2="1160" y2="196" stroke="#3B4868" stroke-width="4" marker-end="url(#ah)"/>
+  <path d="M520 144 C 760 250, 820 360, 900 446" stroke="#F5B301" stroke-width="7" fill="none" stroke-dasharray="14 10" marker-end="url(#ahg)"/>
+  <path d="M1080 144 C 840 250, 780 360, 700 446" stroke="#F5B301" stroke-width="7" fill="none" stroke-dasharray="14 10" marker-end="url(#ahg)"/>
+  <text x="500" y="424" font-size="26" font-weight="700" fill="#0A1633">② r1 = x → 0</text>
+  <text x="930" y="424" font-size="26" font-weight="700" fill="#0A1633">② r0 = y → 0</text>
+
+  <!-- Drain later -->
+  <line x1="475" y1="310" x2="475" y2="446" stroke="#3B4868" stroke-width="4" stroke-dasharray="12 10" marker-end="url(#ah)"/>
+  <line x1="1125" y1="310" x2="1125" y2="446" stroke="#3B4868" stroke-width="4" stroke-dasharray="12 10" marker-end="url(#ah)"/>
+  <text x="40" y="400" font-size="26" font-weight="700" fill="#0A1633">③ drains later</text>
+  <text x="1340" y="400" font-size="26" font-weight="700" fill="#0A1633">③ drains later</text>
+
+  <text x="300" y="618" font-size="28" font-weight="700" fill="#B4123A">result r0 = 0, r1 = 0: impossible under SC, legal on x86-TSO</text>
+</svg>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 04.6 · Thrashing and OOM in a cgroup</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">04.6</div>
+  <span class="eyebrow in-f">Lab 04.6 · Goal</span>
+  <h2 class="in">Thrashing and OOM in a cgroup</h2>
+  <p class="why in d1">Watch the OOM killer inside a 128 MiB cgroup, and thrashing in a 64 MiB cgroup reading a 128 MiB file with no swap.</p>
+  <div class="pills in d2"><span class="pill">Runs on: VM only · cgroup v2 memory.max</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Watch the OOM killer inside a 128 MiB cgroup, and thrashing in a 64 MiB cgroup reading a 128 MiB file with no swap.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.6 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-kernel in d1"><h3>cgroup</h3><p class="ltr-mono"><code>memory.max · memory.swap.max=0</code></p></div><div class="c-6 card edge r-user in d2"><h3>Programs</h3><p class="ltr-mono"><code>hog.c · thrash.c (MADV_RANDOM)</code></p></div><div class="c-6 card edge r-data in d3"><h3>Signals</h3><p class="ltr-mono"><code>memory.events · memory.stat · PSI</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>Safety</h3><p class="ltr-mono"><code>only the cgroup is limited</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.6 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 06-oom-thrashing</div><pre><code><span class="ln"><span class="p">$</span> bash mem-cgroup.sh 128M ./hog 512</span><span class="ln"><span class="p">$</span> sudo dmesg | grep -E &#x27;oom-kill:&#x27; | tail -1</span><span class="ln"> </span><span class="ln"><span class="p">$</span> dd if=/dev/urandom of=big.bin bs=1M count=128</span><span class="ln"><span class="p">$</span> bash mem-cgroup.sh 64M  ./thrash big.bin 3</span><span class="ln"><span class="p">$</span> bash mem-cgroup.sh 256M ./thrash big.bin 3</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.6 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">hog pid=11690 touched 112 MiB</span><span class="ln hl">== exit status: 137</span><span class="ln hl">  oom_kill 1</span><span class="ln"><span class="dim"># 64M: thrashing, no swap</span></span><span class="ln hl">pass 1: pages=32768 majflt=32768 minflt=3  223870 ms</span><span class="ln hl">pass 2: pages=32768 majflt=32768 minflt=0  52152 ms</span><span class="ln hl">pass 3: pages=32768 majflt=32768 minflt=0  63778 ms</span><span class="ln"><span class="dim"># 256M: fits</span></span><span class="ln">pass 1: pages=32768 majflt=32768 minflt=3  26193 ms</span><span class="ln">pass 2: pages=32768 majflt=0 minflt=0  2 ms</span><span class="ln">pass 3: pages=32768 majflt=0 minflt=0  4 ms</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.6 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>exit 137, oom_kill 1</b><br><span class="caption">memcg OOM, rest of VM untouched</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>64M: same majflt every pass</b><br><span class="caption">working set &gt; limit = thrashing</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>256M: passes 2-3 ~0 faults</b><br><span class="caption">working set fits</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.6 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">mkdir: Permission denied</span><span class="arrow-s">→</span><span class="tag r-ok">needs sudo (script does it)</span></div><div class="pit in d2"><span class="tag r-danger">pass 1: 0 major faults</span><span class="arrow-s">→</span><span class="tag r-ok">pages charged elsewhere: fadvise DONTNEED</span></div><div class="pit in d3"><span class="tag r-danger">hog reaches 512 MiB</span><span class="arrow-s">→</span><span class="tag r-ok">shell not in the cgroup</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 04.6 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Use memory.high=64M instead of memory.max for part B: kill, throttle, or both? Then memory.oom.group=1 with two hogs: how many die?</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced OS · 04 Memory" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 01.5 · function_graph از ftrace برای vfs_read()</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.5</div>
+  <span class="eyebrow in-f">آزمایش 01.5 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">function_graph</bdi> از <bdi dir="ltr">ftrace</bdi> برای <bdi dir="ltr">vfs_read()</bdi></h2>
+  <p class="why in d1">درخت واقعی فراخوانی زیر یک <bdi dir="ltr">read()</bdi> را از <bdi dir="ltr">vfs_read()</bdi> تا فایل‌سیستم ببینید و تأیید کنید کد ورود <bdi dir="ltr">noinstr</bdi> دیده نمی‌شود.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: فقط VM (root، ftrace)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: See the real call tree under one read(), from vfs_read() into the file system, and confirm noinstr entry code is invisible.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.5 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-kernel in d1"><h3>ردیاب</h3><p class="ltr-mono"><code>function_graph + funcgraph-tail</code></p></div><div class="c-6 card edge r-data in d2"><h3>فیلترها</h3><p class="ltr-mono"><code>-g vfs_read · -l &lt;read path&gt; · -F cat</code></p></div><div class="c-6 card edge r-user in d3"><h3>محدودیت‌ها</h3><p class="ltr-mono"><code>--max-graph-depth 6 · timeout 10</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>پاک‌سازی</h3><p class="ltr-mono"><code>trap: trace-cmd reset</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.5 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 05-ftrace-vfs-read</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/01-architecture/lab05</span><span class="ln"><span class="p">$</span> sudo bash ftrace-vfs-read.sh /etc/hostname cat.graph</span><span class="ln"><span class="p">$</span> sudo N=6 bash ftrace-vfs-read.sh /etc/hostname cat.graph</span><span class="ln"><span class="p">$</span> sudo bash ftrace-vfs-read.sh /proc/version proc.graph</span><span class="ln"><span class="dim"># inside: timeout 10 trace-cmd record -p function_graph \</span></span><span class="ln"><span class="dim">#   -g vfs_read --max-graph-depth 6 -l &lt;read path&gt; -F cat ...</span></span><span class="ln"><span class="p">$</span> sudo grep -c -w do_syscall_64 \</span><span class="ln">    /sys/kernel/tracing/available_filter_functions</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.5 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">  #1   15 lines    6.204 us  ext4_file_read_iter()</span><span class="ln hl">  #6   21 lines  ! 949.028 us  ext4_file_read_iter()</span><span class="ln">                  |  vfs_read() {</span><span class="ln">                  |    ext4_file_read_iter() {</span><span class="ln">                  |      generic_file_read_iter() {</span><span class="ln">                  |        filemap_read() {</span><span class="ln">     ! 152.831 us |            filemap_add_folio();</span><span class="ln hl">     ! 548.053 us |            filemap_update_page();</span><span class="ln"> </span><span class="ln"><span class="dim"># /proc/version:  #6  ...  proc_reg_read_iter()</span></span><span class="ln"><span class="p">$</span> ... grep -c -w do_syscall_64 ...</span><span class="ln">0</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، ۱۴۰۵/۰۸/۲۴.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.5 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>۷ بار <bdi dir="ltr">vfs_read()</bdi> برای ۵ بار <bdi dir="ltr">read()</bdi></b><br><span class="caption"><bdi dir="ltr">pread64</bdi> هم <bdi dir="ltr">vfs_read()</bdi> را صدا می‌زند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>نبودن در <bdi dir="ltr">cache:</bdi> ۹۴۹ در برابر ۶ میکروثانیه</b><br><span class="caption mono">filemap_add_folio + filemap_update_page</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>کد ورود قابل ردیابی نیست</b><br><span class="caption"><bdi dir="ltr">do_syscall_64: noinstr</bdi> ← شمارش <bdi dir="ltr">0</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.5 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">خطای <bdi dir="ltr">record:</bdi> الگوی <bdi dir="ltr">-l</bdi> نامعتبر</span><span class="arrow-s">←</span><span class="tag r-ok">تابع <bdi dir="ltr">inline</bdi> شده <bdi dir="ltr">(new_sync_read)</bdi> را حذف کنید</span></div><div class="pit in d2"><span class="tag r-danger">برداشتن فیلترها</span><span class="arrow-s">←</span><span class="tag r-ok">هرگز؛ ردیابی بی‌فیلتر می‌تواند <bdi dir="ltr">soft lockup</bdi> بدهد</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">N=6</bdi> نادیده گرفته می‌شود</span><span class="arrow-s">←</span><span class="tag r-ok">sudo N=6 bash ...</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.5 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">‏<bdi dir="ltr">/etc/hostname</bdi> و <bdi dir="ltr">/proc/version</bdi> و یک <bdi dir="ltr">pipe</bdi> را <bdi dir="ltr">trace</bdi> کنید. ‎<bdi dir="ltr">-&gt;read_iter</bdi> هر کدام را نام ببرید و با <bdi dir="ltr">vfs_read()</bdi> خط‌های ۵۶۹ تا ۵۷۴ توضیح دهید. چرا <bdi dir="ltr">__switch_to</bdi> هرگز در گراف نیست؟</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۱ معماری" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

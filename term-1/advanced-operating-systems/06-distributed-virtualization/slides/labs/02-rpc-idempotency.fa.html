@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 06.2 · تکرار RPC و idempotency</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">06.2</div>
+  <span class="eyebrow in-f">آزمایش 06.2 · هدف</span>
+  <h2 class="in">تکرار <bdi dir="ltr">RPC</bdi> و <bdi dir="ltr">idempotency</bdi></h2>
+  <p class="why in d1">ببینید <bdi dir="ltr">at-most-once</bdi> و <bdi dir="ltr">at-least-once</bdi> و اثر <bdi dir="ltr">exactly-once</bdi> روی همان ۲۰ واریز چه می‌کنند و فیلتر تکراری را بسازید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: aos-lab · Go net/rpc · TCP 9650-9652</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Watch at-most-once, at-least-once and exactly-once effect happen to the same 20 deposits, and build the duplicate filter.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.2 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-data in d1"><h3>سرور</h3><p><bdi dir="ltr">Deposit</bdi> اجرا می‌شود و ۳۰٪ پاسخ‌ها دیر می‌رسند</p></div><div class="c-6 card edge r-user in d2"><h3>کلاینت</h3><p class="ltr-mono"><code>timeout 200ms · retries 0 or 5</code></p></div><div class="c-6 card edge r-kernel in d3"><h3>شناسهٔ درخواست</h3><p>یکی برای هر واریز منطقی، تکرار در <bdi dir="ltr">retry</bdi>ها</p></div><div class="c-6 card edge r-hardware in d4"><h3>فیلتر</h3><p class="ltr-mono"><code>-dedup: replies[RequestID]</code></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.2 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 02-rpc-idempotency</div><pre><code><span class="ln"><span class="p">$</span> cd ~/work/06-distributed-virtualization/02-rpc-idempotency</span><span class="ln"><span class="p">$</span> bash run.sh</span><span class="ln"><span class="dim"># A: retries=0  B: retries=5  C: retries=5 + dedup</span></span><span class="ln"> </span><span class="ln"><span class="p">$</span> ./rpcbank server -addr 127.0.0.1:9660 -lose 0.5 &amp;</span><span class="ln"><span class="p">$</span> ./rpcbank client -addr 127.0.0.1:9660 -n 10 -retries 3</span><span class="ln"><span class="p">$</span> kill %1</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.2 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> bash run.sh</span><span class="ln">== A: retries=0 dedup=false (at-most-once)</span><span class="ln">rpcs sent=20  retries=0  gave up=8</span><span class="ln hl">expected balance=200  server balance=200  executions=20</span><span class="ln">== B: retries=5 dedup=false (at-least-once)</span><span class="ln">rpcs sent=29  retries=9  gave up=0</span><span class="ln hl">expected balance=200  server balance=290  executions=29</span><span class="ln">== C: retries=5 dedup=true  (exactly-once effect)</span><span class="ln">rpcs sent=28  retries=8  gave up=0</span><span class="ln hl">expected balance=200  server balance=200  executions=20</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">aos-lab (VirtualBox</bdi>، <bdi dir="ltr">Ubuntu 24.04</bdi>، <bdi dir="ltr">Linux 6.18.63</bdi>)، <bdi dir="ltr">2026-11-15.</bdi></p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.2 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">A:</bdi> کلاینت تسلیم شد ولی <bdi dir="ltr">executions=20</bdi></b><br><span class="caption"><bdi dir="ltr">timeout</bdi> یعنی نامعلوم، نه ناموفق</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>B: executions = 20 + retries</b><br><span class="caption">هر تکرار دوباره اجرا شد</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">C:</bdi> همان تکرارها، موجودی درست</b><br><span class="caption"><bdi dir="ltr">at-least-once</bdi> به‌علاوهٔ <bdi dir="ltr">dedup</bdi> برابر اثر <bdi dir="ltr">exactly-once</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.2 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">bind: address already in use</span><span class="arrow-s">←</span><span class="tag r-ok">pkill -f &#x27;rpcbank server&#x27;</span></div><div class="pit in d2"><span class="tag r-danger">تکرار با <bdi dir="ltr">dedup</bdi> روشن</span><span class="arrow-s">←</span><span class="tag r-ok">شناسه را بیرون از حلقهٔ <bdi dir="ltr">retry</bdi> بسازید</span></div><div class="pit in d3"><span class="tag r-danger">حافظهٔ سرور رشد می‌کند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">reply cache</bdi> هرگز پاک نمی‌شود: تمرین تکمیلی</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 06.2 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px"><bdi dir="ltr">reply cache</bdi> را محدود کنید: شناسهٔ کلاینت و شمارهٔ ترتیبی صعودی، یک مدخل برای هر کلاینت. ۳ کلاینت × ۲۰ واریز: موجودی درست، ۶۰ اجرا، ۳ مدخل.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۶ توزیع‌شده و مجازی‌سازی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

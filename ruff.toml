@@ -1,0 +1,8 @@
+# Lint + format settings for the Python in this repository (tools, lab programs). Used by: make fix / make lint
+line-length = 120
+target-version = "py38"          # the workspace documents Python >= 3.8
+extend-exclude = ["_shared/sources", ".cache", "site", "exports"]
+
+[lint]
+select = ["E", "F", "W", "B"]
+ignore = ["E501"]                # line length is handled by the formatter
