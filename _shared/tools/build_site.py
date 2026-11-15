@@ -79,18 +79,55 @@ def is_deck(f, out):
     return "slides" in f.relative_to(out).parts
 
 
+_JS_ESCAPES = {"n": "\n", "t": "\t", "r": "\r", "0": "\0", "b": "\b", "f": "\f", "v": "\v"}
+
+
+def speaker_view_hashes():
+    """reveal.js's speaker view (key S) opens a popup and document.write()s a page with ONE inline <script> into it; the
+    popup inherits our Content-Security-Policy, so that exact script must be allowed (by hash) or the view is dead.
+    reveal.js is checksum-pinned, so the script is a fixed string: read it out of the vendored notes plugin and hash it."""
+    js = (VENDOR / "reveal.js@5.1.0" / "plugin" / "notes" / "notes.js").read_text(encoding="utf-8")
+    i = js.index('document.write("') + len("document.write(") + 1  # first character after the opening quote
+    out = []
+    while js[i] != '"':
+        c = js[i]
+        if c != "\\":
+            out.append(c)
+            i += 1
+            continue
+        n = js[i + 1]
+        if n == "x":
+            out.append(chr(int(js[i + 2 : i + 4], 16)))
+            i += 4
+        elif n == "u":
+            out.append(chr(int(js[i + 2 : i + 6], 16)))
+            i += 6
+        else:
+            out.append(_JS_ESCAPES.get(n, n))
+            i += 2
+    page = "".join(out)
+    scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
+    if len(scripts) != 1:
+        sys.exit(
+            f"unexpected speaker view markup ({len(scripts)} inline scripts): update speaker_view_hashes() for this reveal.js version"
+        )
+    return [sha(s) for s in scripts]
+
+
 def csp_for(text, deck):
     """Strict policy: only this site's own files. Generated pages allow exactly their own inline script/style by hash;
     decks have no inline scripts but use style="" attributes, so they need 'unsafe-inline' for styles only."""
     if deck:
-        script, style = "'self'", "'self' 'unsafe-inline'"
+        script, style = " ".join(["'self'", *speaker_view_hashes()]), "'self' 'unsafe-inline'"
+        frame = "'self'"  # the speaker view shows the current and next slide in iframes of the same deck
     else:
         scripts = [sha(m) for m in re.findall(r"<script>(.*?)</script>", text, re.S)]
         styles = [sha(m) for m in re.findall(r"<style>(.*?)</style>", text, re.S)]
         script, style = " ".join(["'self'"] + scripts), " ".join(["'self'"] + styles)
+        frame = "'none'"
     return (
         f"default-src 'none'; script-src {script}; style-src {style}; img-src 'self' data:; font-src 'self'; "
-        "connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; manifest-src 'none'"
+        f"connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src {frame}; manifest-src 'none'"
     )
 
 
