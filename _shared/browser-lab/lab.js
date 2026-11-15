@@ -69,8 +69,21 @@ const store = {
 const loadScript = (src) => new Promise((ok, err) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => err(new Error("cannot load " + src)); document.head.append(s); });
 const loadCss = (href) => { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = href; document.head.append(l); };
 /* Lab text: HTML-escaped; in Farsi each English run (commands, names) is isolated so punctuation does not jump around. */
-const LATIN = /[A-Za-z0-9\/][A-Za-z0-9_\-.()\/+ :=%'’$]*[A-Za-z0-9_)\/%']|[A-Za-z0-9]/g;
-const LT = (o) => (lang === "fa" && o.fa ? esc(o.fa).replace(LATIN, (m) => `<bdi dir="ltr">${m}</bdi>`) : esc(o.en));
+const TOKEN = String.raw`(?:['’][0-9]{2}|[\/~]?[A-Za-z0-9_][A-Za-z0-9_.+#:%@=\/~-]*(?:\([A-Za-z0-9_*&.,:+\/ \-\[\]]*\))*)`;
+const PAREN = String.raw`\([A-Za-z0-9_*&.,:+\/ \-\[\]]*\)`;    // an all-English parenthetical that follows an English term
+const LATIN_RUN = new RegExp(`${TOKEN}(?: ${TOKEN}| ${PAREN})*`, "g");
+function bidi(text) {
+  let out = "", last = 0;
+  for (const m of text.matchAll(LATIN_RUN)) {
+    const tail = m[0].match(/[.,:;=]+$/);
+    const run = tail ? m[0].slice(0, -tail[0].length) : m[0];
+    if (!/[A-Za-z0-9]/.test(run)) continue;
+    out += esc(text.slice(last, m.index)) + `<bdi dir="ltr">${esc(run)}</bdi>`;
+    last = m.index + run.length;
+  }
+  return out + esc(text.slice(last));
+}
+const LT = (o) => (lang === "fa" && o.fa ? bidi(o.fa) : esc(o.en));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const stripAnsi = (s) => s.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "");
 

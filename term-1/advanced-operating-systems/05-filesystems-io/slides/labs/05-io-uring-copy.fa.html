@@ -30,7 +30,7 @@ TIME: 30
 <section>
   <span class="eyebrow in-f">آزمایش 05.5 · آماده‌سازی</span>
   <h2 class="in">آماده‌سازی</h2>
-  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>copy_rw.c</h3><p>۲ <bdi dir="ltr">syscall</bdi> برای هر بلوک ۱۲۸ کیلوبایتی</p></div><div class="c-6 card edge r-user in d2"><h3>copy_uring.c</h3><p>۸ جفت <bdi dir="ltr">READ-&gt;WRITE</bdi> پیوندخورده در هر <bdi dir="ltr">enter</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3>شمارنده‌ها</h3><p><bdi dir="ltr">perf stat task-clock</bdi> و <bdi dir="ltr">strace -c</bdi></p></div><div class="c-6 card edge r-kernel in d4"><h3><bdi dir="ltr">tracepoint</bdi>ها</h3><p class="ltr-mono"><code>io_uring:io_uring_queue_async_work</code></p></div></div>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>copy_rw.c</h3><p>۲ <bdi dir="ltr">syscall</bdi> برای هر بلوک ۱۲۸ کیلوبایتی</p></div><div class="c-6 card edge r-user in d2"><h3>copy_uring.c</h3><p>۸ جفت <bdi dir="ltr">READ-&gt;WRITE linked</bdi> در هر <bdi dir="ltr">enter</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3>شمارنده‌ها</h3><p><bdi dir="ltr">perf stat task-clock</bdi> و <bdi dir="ltr">strace -c</bdi></p></div><div class="c-6 card edge r-kernel in d4"><h3><bdi dir="ltr">tracepoint</bdi>ها</h3><p class="ltr-mono"><code>io_uring:io_uring_queue_async_work</code></p></div></div>
   <aside class="notes">
 SAY (EN): Walk through what must be true before the first command.
 SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 05.5 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger">undefined reference to io_uring_*</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">-luring</bdi> در انتهای خط <bdi dir="ltr">gcc</bdi></span></div><div class="pit in d2"><span class="tag r-danger">write failed: res=-125</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">-ECANCELED: read</bdi> پیوندخورده کوتاه بود</span></div><div class="pit in d3"><span class="tag r-danger">io_uring_setup: EPERM</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">kernel.io_uring_disabled</bdi> یا <bdi dir="ltr">seccomp</bdi></span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">undefined reference to io_uring_*</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">-luring</bdi> در انتهای خط <bdi dir="ltr">gcc</bdi></span></div><div class="pit in d2"><span class="tag r-danger">write failed: res=-125</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">-ECANCELED: read linked</bdi> کوتاه بود</span></div><div class="pit in d3"><span class="tag r-danger">io_uring_setup: EPERM</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">kernel.io_uring_disabled</bdi> یا <bdi dir="ltr">seccomp</bdi></span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
@@ -93,7 +93,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 05.5 · تمرین تکمیلی</span>
   <h2 class="in">تمرین تکمیلی</h2>
-  <p class="highlight in d1" style="font-size:38px"><bdi dir="ltr">IORING_SETUP_SQPOLL</bdi> و بافرهای ثبت‌شده <bdi dir="ltr">(io_uring_register_buffers + read_fixed/write_fixed)</bdi> را اضافه کنید. چند <bdi dir="ltr">io_uring_enter</bdi> باقی می‌ماند و نخ <bdi dir="ltr">iou-sqp</bdi> چقدر <bdi dir="ltr">CPU</bdi> مصرف می‌کند؟</p>
+  <p class="highlight in d1" style="font-size:38px"><bdi dir="ltr">IORING_SETUP_SQPOLL</bdi> و بافرهای ثبت‌شده <bdi dir="ltr">(io_uring_register_buffers + read_fixed/write_fixed)</bdi> را اضافه کنید. چند <bdi dir="ltr">io_uring_enter</bdi> باقی می‌ماند و <bdi dir="ltr">thread iou-sqp</bdi> چقدر <bdi dir="ltr">CPU</bdi> مصرف می‌کند؟</p>
   <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
   <aside class="notes">
 SAY (EN): Give the task, not the solution.

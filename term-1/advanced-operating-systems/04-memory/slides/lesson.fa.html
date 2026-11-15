@@ -30,7 +30,7 @@
     <span><b>ترم</b>[ترم]</span><span><b>تاریخ</b>[تاریخ شمسی]</span>
   </div>
   <aside class="notes">
-SAY (FA): هر load و store برنامهٔ شما از ترجمه‌ای می‌گذرد که کرنل ساخته است، و معمولاً تنبل و در اولین لمس. امروز این مسیر را در کد واقعی v6.18.63 دنبال و روی VM آزمایشگاه اندازه‌گیری می‌کنیم.
+SAY (FA): هر load و store برنامهٔ شما از ترجمه‌ای می‌گذرد که کرنل ساخته است، و معمولاً تنبل و در اولین touch. امروز این مسیر را در کد واقعی v6.18.63 دنبال و روی VM آزمایشگاه اندازه‌گیری می‌کنیم.
 SAY (EN): Every load and store goes through a translation the kernel set up, usually lazily. We follow that path in v6.18.63 and measure it on the lab VM.
 KEY POINT: مدیریت حافظه یعنی ترجمه، تخصیص و پس‌گرفتن.
 EXAMPLE: —
@@ -44,12 +44,12 @@ TIME: 30
   <div class="numeral in-f">04</div>
   <span class="eyebrow in-f">ماژول ۰۴</span>
   <h2 class="in">مدیریت حافظه</h2>
-  <p class="why in d1">RAM در اولین لمس تخصیص داده می‌شود، تا اولین نوشتن مشترک می‌ماند و زیر فشار پس گرفته می‌شود. دانستن زمان این اتفاق‌ها بیشتر باگ‌های «حافظه» را توضیح می‌دهد.</p>
+  <p class="why in d1">RAM در اولین touch تخصیص داده می‌شود، تا اولین نوشتن مشترک می‌ماند و زیر فشار reclaim می‌شود. دانستن زمان این اتفاق‌ها بیشتر باگ‌های «حافظه» را توضیح می‌دهد.</p>
   <div class="pills in d2"><span class="pill"><bdi dir="ltr">page fault</bdi></span><span class="pill"><bdi dir="ltr">TLB</bdi> و صفحه‌های بزرگ</span><span class="pill"><bdi dir="ltr">buddy · SLUB · reclaim</bdi></span></div>
   <aside class="notes">
 SAY (FA): به ماژول ۰۱ برای exception و CR3، به ماژول ۰۲ برای fork و به ماژول ۰۳ برای atomic و RCU وابسته است.
 SAY (EN): Depends on Module 01 (exceptions, CR3), 02 (fork) and 03 (atomics, RCU).
-KEY POINT: سه پرسش: آدرس مجازی چطور ترجمه می‌شود، RAM کی تخصیص داده می‌شود، و چطور پس گرفته می‌شود.
+KEY POINT: سه پرسش: آدرس مجازی چطور ترجمه می‌شود، RAM کی تخصیص داده می‌شود، و چطور reclaim می‌شود.
 EXAMPLE: malloc(1 GB) در چند میکروثانیه برمی‌گردد.
 PITFALL: فکر کنیم malloc حافظهٔ RAM می‌گیرد.
 TIME: 30
@@ -101,7 +101,7 @@ TIME: 60
 <!-- 05 MEMORY_LAYOUT -->
 <section>
   <span class="eyebrow in-f">۰۴ · حافظه · یادداشت ۰۱</span>
-  <h2 class="in">فضای آدرس هر پردازه از <bdi dir="ltr">VMA</bdi>ها ساخته می‌شود</h2>
+  <h2 class="in">فضای آدرس هر process از <bdi dir="ltr">VMA</bdi>ها ساخته می‌شود</h2>
   <div class="grid">
     <div class="c-7 memmap in d1">
       <div class="r-kernel"><b>kernel (shared, U/S=0)</b><span>0xffff8000…</span></div>
@@ -114,11 +114,11 @@ TIME: 60
     <div class="c-5 callouts">
       <div class="in d2"><span class="callout-num">1</span><span>هر خط <bdi dir="ltr"><code>/proc/pid/maps</code></bdi> یعنی یک <bdi dir="ltr"><code>vm_area_struct</code></bdi></span></div>
       <div class="in d3"><span class="callout-num">2</span><span><bdi dir="ltr">VMA</bdi>ها در یک <bdi dir="ltr">maple tree</bdi> داخل <bdi dir="ltr"><code>mm_struct</code></bdi> هستند</span></div>
-      <div class="in d4"><span class="callout-num">3</span><span><bdi dir="ltr">VMA</bdi> فقط یک وعده است؛ صفحه‌ها در اولین لمس می‌آیند</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span><bdi dir="ltr">VMA</bdi> فقط یک وعده است؛ صفحه‌ها در اولین touch می‌آیند</span></div>
     </div>
   </div>
   <aside class="notes">
-SAY (FA): آدرس‌های canonical ۴۸ بیتی فضا را به نیمهٔ کاربر و نیمهٔ کرنل تقسیم می‌کنند. نیمهٔ کرنل در همهٔ پردازه‌ها map شده تا syscall به عوض کردن CR3 نیاز نداشته باشد، مگر زیر KPTI.
+SAY (FA): آدرس‌های canonical ۴۸ بیتی فضا را به نیمهٔ کاربر و نیمهٔ کرنل تقسیم می‌کنند. نیمهٔ کرنل در همهٔ process‌ها map شده تا syscall به عوض کردن CR3 نیاز نداشته باشد، مگر زیر KPTI.
 SAY (EN): 48-bit canonical addresses: user half and kernel half; the kernel half is mapped everywhere (except KPTI).
 KEY POINT: Size با RSS فرق دارد؛ Size و Rss را در smaps_rollup مقایسه کنید.
 EXAMPLE: cat /proc/self/maps
@@ -195,13 +195,13 @@ TIME: 90
 <pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">if</span> (!vmf-&gt;pte)</span><span class="ln fragment hl-on" data-fragment-index="1">	<span class="tok-k">return</span> <span class="tok-f">do_pte_missing</span>(vmf);</span><span class="ln fragment hl-on" data-fragment-index="2"><span class="tok-k">if</span> (!<span class="tok-f">pte_present</span>(vmf-&gt;orig_pte))</span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-k">return</span> <span class="tok-f">do_swap_page</span>(vmf);</span><span class="ln"><span class="tok-k">if</span> (<span class="tok-f">pte_protnone</span>(vmf-&gt;orig_pte) &amp;&amp; ...)</span><span class="ln">	<span class="tok-k">return</span> <span class="tok-f">do_numa_page</span>(vmf);</span><span class="ln"><span class="tok-f">spin_lock</span>(vmf-&gt;ptl);</span><span class="ln"><span class="tok-c">/* ... pte_same() race check ... */</span></span><span class="ln fragment hl-on" data-fragment-index="3"><span class="tok-k">if</span> (vmf-&gt;flags &amp; (FAULT_FLAG_WRITE|...)) {</span><span class="ln fragment hl-on" data-fragment-index="3">	<span class="tok-k">if</span> (!<span class="tok-f">pte_write</span>(entry))</span><span class="ln fragment hl-on" data-fragment-index="3">		<span class="tok-k">return</span> <span class="tok-f">do_wp_page</span>(vmf);</span></code></pre>
     </div>
     <div class="c-5 callouts">
-      <div class="in d2"><span class="callout-num">1</span><span>هرگز map نشده، پس <bdi dir="ltr">demand paging</bdi> (ناشناس یا فایل)</span></div>
+      <div class="in d2"><span class="callout-num">1</span><span>هرگز map نشده، پس <bdi dir="ltr">demand paging</bdi> (anonymous یا فایل)</span></div>
       <div class="in d3"><span class="callout-num">2</span><span><bdi dir="ltr">swap entry</bdi>، پس <bdi dir="ltr">swap-in</bdi> که معمولاً fault بزرگ است</span></div>
       <div class="in d4"><span class="callout-num">3</span><span>نوشتن در PTE فقط‌خواندنی، پس <bdi dir="ltr">copy-on-write</bdi></span></div>
     </div>
   </div>
   <aside class="notes">
-SAY (FA): با cite.sh چاپ شده است. do_pte_missing برای VMA ناشناس do_anonymous_page و برای فایل do_fault را انتخاب می‌کند. شاخهٔ NUMA همان hinting fault مربوط به NUMA balancing خودکار است.
+SAY (FA): با cite.sh چاپ شده است. do_pte_missing برای VMA anonymous do_anonymous_page و برای فایل do_fault را انتخاب می‌کند. شاخهٔ NUMA همان hinting fault مربوط به NUMA balancing خودکار است.
 SAY (EN): Printed with cite.sh. do_pte_missing → do_anonymous_page or do_fault.
 KEY POINT: pte_none با !pte_present فرق دارد؛ PTE غیرحاضر هنوز ممکن است swap entry داشته باشد.
 EXAMPLE: در آزمایش 04.1 حالت anon همان شاخهٔ ۱ است، ۶۵۵۳۶ بار.
@@ -256,11 +256,11 @@ TIME: 90
 <!-- 12 CONCEPT_DIAGRAM: buddy -->
 <section>
   <span class="eyebrow in-f">۰۴ · حافظه · یادداشت ۰۶</span>
-  <h2 class="in"><bdi dir="ltr">buddy</bdi> رفیق هر بلوک را با یک <bdi dir="ltr">XOR</bdi> پیدا می‌کند</h2>
-  <div class="diagram in-p d1"><img src="assets/buddy.svg" alt="یک بلوک order 4 با ۱۶ صفحه به نیمه‌های order 3 و order 2 شکسته می‌شود؛ آزاد کردن pfn 0x1000 در order 2 رفیق 0x1004 را پیدا می‌کند و به order 3 ادغام می‌شود، بعد رفیق 0x1008 را پیدا می‌کند و به order 4 می‌رسد"></div>
+  <h2 class="in"><bdi dir="ltr">buddy</bdi> buddy هر بلوک را با یک <bdi dir="ltr">XOR</bdi> پیدا می‌کند</h2>
+  <div class="diagram in-p d1"><img src="assets/buddy.svg" alt="یک بلوک order 4 با ۱۶ صفحه به نیمه‌های order 3 و order 2 شکسته می‌شود؛ آزاد کردن pfn 0x1000 در order 2 buddy 0x1004 را پیدا می‌کند و به order 3 ادغام می‌شود، بعد buddy 0x1008 را پیدا می‌کند و به order 4 می‌رسد"></div>
   <p class="caption"><bdi dir="ltr">linux/mm/internal.h · __find_buddy_pfn() · v6.18.63 · L678: <code>return page_pfn ^ (1 &lt;&lt; order);</code></bdi></p>
   <aside class="notes">
-SAY (FA): __rmqueue_smallest کوچک‌ترین order آزاد را برمی‌دارد و expand() نیمه‌های بالایی را برمی‌گرداند. __free_one_page تا وقتی رفیق آزاد باشد ادغام می‌کند، تا order 10 یعنی ۴ مگابایت.
+SAY (FA): __rmqueue_smallest کوچک‌ترین order آزاد را برمی‌دارد و expand() نیمه‌های بالایی را برمی‌گرداند. __free_one_page تا وقتی buddy آزاد باشد ادغام می‌کند، تا order 10 یعنی ۴ مگابایت.
 SAY (EN): Smallest order, split with expand(); merge while the buddy is free, up to order 10.
 KEY POINT: external fragmentation به شکل صفر در ستون‌های order بالای /proc/buddyinfo دیده می‌شود.
 EXAMPLE: cat /proc/buddyinfo
@@ -279,9 +279,9 @@ TIME: 90
     <div class="c-5 card edge r-hardware in d3"><h3>صفحهٔ بزرگ</h3><p>یک <bdi dir="ltr">PMD</bdi> یعنی ۲ مگابایت؛ ۵۱۲ برابر fault کمتر</p></div>
     <div class="c-7 card edge r-user in d4"><h3><bdi dir="ltr">OOM killer</bdi></h3><p><bdi dir="ltr"><code>oom_badness</code> = RSS + swap + page tables (+ adj)</bdi></p></div>
   </div>
-  <p class="takeaway in d5">بدون <bdi dir="ltr">swap</bdi> فقط صفحه‌های فایل و <bdi dir="ltr">slab</bdi> آزادشدنی‌اند.</p>
+  <p class="takeaway in d5">بدون <bdi dir="ltr">swap</bdi> فقط صفحه‌های فایل و <bdi dir="ltr">slab</bdi> reclaimable‌اند.</p>
   <aside class="notes">
-SAY (FA): اشیای slab هرگز در RSS دیده نمی‌شوند. reclaim اول صفحه‌های فایلِ تمیز را دور می‌ریزد. اگر هیچ چیز آزادشدنی نباشد، oom_badness بزرگ‌ترین ردپا را انتخاب می‌کند.
+SAY (FA): اشیای slab هرگز در RSS دیده نمی‌شوند. reclaim اول صفحه‌های فایلِ تمیز را دور می‌ریزد. اگر هیچ چیز reclaimable نباشد، oom_badness بزرگ‌ترین ردپا را انتخاب می‌کند.
 SAY (EN): Slab is not RSS; reclaim drops clean file pages first; OOM picks the biggest footprint.
 KEY POINT: آزمایش 04.5 با ۲۰۰ هزار فایل cacheهای dentry و inode را بزرگ می‌کند.
 EXAMPLE: slabtop -o -s c
@@ -360,7 +360,7 @@ TIME: 45
 <!-- 17 QUIZ answer -->
 <section>
   <span class="eyebrow">پاسخ: ج</span>
-  <h2>خواندن حافظهٔ ناشناسِ دست‌نخورده فقط <bdi dir="ltr">zero page</bdi> را map می‌کند</h2>
+  <h2>خواندن حافظهٔ anonymous دست‌نخورده فقط <bdi dir="ltr">zero page</bdi> را map می‌کند</h2>
   <p class="quote">«برای خواندن از zero page استفاده کن»: یک قاب مشترک، فقط‌خواندنی و پر از صفر برای همهٔ صفحه‌های دست‌نخورده.</p>
   <p class="source"><bdi dir="ltr">linux/mm/memory.c · do_anonymous_page() · L5169 · v6.18.63</bdi> — آزمایش 04.1، حالت <bdi dir="ltr">anon-read</bdi></p>
   <aside class="notes">
@@ -379,7 +379,7 @@ TIME: 60
   <h2 class="in">جمع‌بندی</h2>
   <ul class="summary">
     <li class="in d1"><span class="callout-num">1</span>ترجمه کار سخت‌افزار است؛ کرنل جدول‌ها را هر وقت لازم شد می‌سازد</li>
-    <li class="in d2"><span class="callout-num">2</span>RAM در اولین لمس تخصیص داده و در اولین نوشتن کپی می‌شود</li>
+    <li class="in d2"><span class="callout-num">2</span>RAM در اولین touch تخصیص داده و در اولین نوشتن کپی می‌شود</li>
     <li class="in d3"><span class="callout-num">3</span><bdi dir="ltr">buddy</bdi>، <bdi dir="ltr">SLUB</bdi> و <bdi dir="ltr">reclaim</bdi> تعیین می‌کنند چه کسی آن را نگه دارد؛ <bdi dir="ltr">OOM</bdi> آخرین راه است</li>
   </ul>
   <p class="next in d4">ماژول ۰۵ · فایل‌سیستم و ورودی/خروجی: <bdi dir="ltr">page cache</bdi> پشت هر <bdi dir="ltr">mapping</bdi> فایل</p>
@@ -399,9 +399,9 @@ TIME: 30
   <span class="eyebrow in-f">ادامهٔ مطالعه</span>
   <h2 class="in">برای مطالعهٔ بیشتر، منتخب از فهرست‌های <bdi dir="ltr">awesome-os</bdi></h2>
   <ul class="refs">
-    <li class="in d1"><span class="pill">کتاب</span> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/"><b>Operating Systems: Three Easy Pieces</b></a><span class="why">بخش اول، <bdi dir="ltr">virtualization</bdi>: <bdi dir="ltr">address space</bdi>، <bdi dir="ltr">paging</bdi>، <bdi dir="ltr">TLB</bdi> و <bdi dir="ltr">swapping</bdi>.</span><span class="url ltr">pages.cs.wisc.edu/~remzi/OSTEP</span></li>
+    <li class="in d1"><span class="pill">کتاب</span> <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/"><b>Operating Systems: Three Easy Pieces</b></a><span class="why">بخش اول، <bdi dir="ltr">virtualization: address space</bdi>، <bdi dir="ltr">paging</bdi>، <bdi dir="ltr">TLB</bdi> و <bdi dir="ltr">swapping</bdi>.</span><span class="url ltr">pages.cs.wisc.edu/~remzi/OSTEP</span></li>
     <li class="in d2"><span class="pill">کتاب</span> <a href="https://pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf"><b>xv6: a simple, Unix-like teaching operating system</b></a><span class="why">فصل «<bdi dir="ltr">Page tables</bdi>».</span><span class="url ltr">pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf</span></li>
-    <li class="in d3"><span class="pill">کتاب</span> <a href="https://0xax.gitbooks.io/linux-insides/content/"><b>linux-insides</b></a><span class="why">مرور کتاب‌گونهٔ درون <bdi dir="ltr">Linux</bdi>: <bdi dir="ltr">boot</bdi>، <bdi dir="ltr">interrupt</bdi>، <bdi dir="ltr">system call</bdi> و حافظه.</span><span class="url ltr">0xax.gitbooks.io/linux-insides/content</span></li>
+    <li class="in d3"><span class="pill">کتاب</span> <a href="https://0xax.gitbooks.io/linux-insides/content/"><b>linux-insides</b></a><span class="why">مرور کتاب‌گونهٔ درون <bdi dir="ltr">Linux: boot</bdi>، <bdi dir="ltr">interrupt</bdi>، <bdi dir="ltr">system call</bdi> و حافظه.</span><span class="url ltr">0xax.gitbooks.io/linux-insides/content</span></li>
     <li class="in d4"><span class="pill">دوره</span> <a href="https://linux-kernel-labs.github.io/refs/heads/master/"><b>Linux Kernel Teaching</b></a><span class="why">درس‌نامه و آزمایشگاه دانشگاهی دربارهٔ کرنل <bdi dir="ltr">Linux</bdi>.</span><span class="url ltr">linux-kernel-labs.github.io/refs/heads/master</span></li>
     <li class="in d5"><span class="pill">مقاله</span> <a href="https://www.usenix.org/system/files/conference/osdi12/osdi12-final-117.pdf"><b>Dune: Safe User-level Access to Privileged CPU Features</b></a><span class="why"><bdi dir="ltr">OSDI &#x27;12</bdi>: دسترسی امن یک <bdi dir="ltr">process</bdi> به قابلیت‌های <bdi dir="ltr">privileged</bdi> پردازنده با کمک سخت‌افزار مجازی‌سازی.</span><span class="url ltr">usenix.org/system/files/conference/osdi12/osdi12-final-117.pdf</span></li>
     <li class="in d5"><span class="pill">مستندات</span> <a href="https://www.kernel.org/doc/html/latest/"><b>The Linux Kernel documentation</b></a><span class="why">مستندات رسمی کرنل: راهنمای مدیریت، <bdi dir="ltr">API</bdi>های هسته و یادداشت‌های هر <bdi dir="ltr">subsystem</bdi>.</span><span class="url ltr">kernel.org/doc/html/latest</span></li>

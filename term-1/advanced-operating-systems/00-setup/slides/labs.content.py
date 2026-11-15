@@ -29,7 +29,7 @@ LABS = [
             ),
             (
                 "r-kernel",
-                {"en": "Safety net", "fa": "تور ایمنی"},
+                {"en": "Safety net", "fa": "نقطهٔ بازگشت"},
                 {"en": "snapshot 'fresh' after cloud-init", "fa": "snapshot به نام fresh پس از cloud-init"},
             ),
         ],
@@ -53,7 +53,7 @@ LABS = [
         ],
         observe=[
             (
-                {"en": "One process, many threads", "fa": "یک پردازه، چند نخ"},
+                {"en": "One process, many threads", "fa": "یک process، چند thread"},
                 {"en": "ps -o pid,nlwp,cmd -C qemu-system-x86_64", "fa": "ps -o pid,nlwp,cmd -C qemu-system-x86_64"},
             ),
             (

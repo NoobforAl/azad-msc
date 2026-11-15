@@ -30,7 +30,7 @@ TIME: 30
 <section>
   <span class="eyebrow in-f">آزمایش 00.1 · آماده‌سازی</span>
   <h2 class="in">آماده‌سازی</h2>
-  <div class="grid tight"><div class="c-6 card edge r-hardware in d1"><h3>بررسی میزبان</h3><p>پرچم <bdi dir="ltr">vmx/svm</bdi> · <bdi dir="ltr">/dev/kvm</bdi> · <bdi dir="ltr">nesting</bdi></p></div><div class="c-6 card edge r-data in d2"><h3>دیسک</h3><p><bdi dir="ltr">overlay</bdi> از نوع <bdi dir="ltr">qcow2</bdi> روی <bdi dir="ltr">image</bdi> ابری</p></div><div class="c-6 card edge r-user in d3"><h3>اولین بوت</h3><p><bdi dir="ltr">cloud-init:</bdi> کاربر، کلید <bdi dir="ltr">SSH</bdi>، <bdi dir="ltr">ttyS0</bdi></p></div><div class="c-6 card edge r-kernel in d4"><h3>تور ایمنی</h3><p><bdi dir="ltr">snapshot</bdi> به نام <bdi dir="ltr">fresh</bdi> پس از <bdi dir="ltr">cloud-init</bdi></p></div></div>
+  <div class="grid tight"><div class="c-6 card edge r-hardware in d1"><h3>بررسی میزبان</h3><p>پرچم <bdi dir="ltr">vmx/svm</bdi> · <bdi dir="ltr">/dev/kvm</bdi> · <bdi dir="ltr">nesting</bdi></p></div><div class="c-6 card edge r-data in d2"><h3>دیسک</h3><p><bdi dir="ltr">overlay</bdi> از نوع <bdi dir="ltr">qcow2</bdi> روی <bdi dir="ltr">image</bdi> ابری</p></div><div class="c-6 card edge r-user in d3"><h3>اولین بوت</h3><p><bdi dir="ltr">cloud-init:</bdi> کاربر، کلید <bdi dir="ltr">SSH</bdi>، <bdi dir="ltr">ttyS0</bdi></p></div><div class="c-6 card edge r-kernel in d4"><h3>نقطهٔ بازگشت</h3><p><bdi dir="ltr">snapshot</bdi> به نام <bdi dir="ltr">fresh</bdi> پس از <bdi dir="ltr">cloud-init</bdi></p></div></div>
   <aside class="notes">
 SAY (EN): Walk through what must be true before the first command.
 SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 00.1 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>یک پردازه، چند نخ</b><br><span class="caption mono">ps -o pid,nlwp,cmd -C qemu-system-x86_64</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>دیسک <bdi dir="ltr">copy-on-write</bdi></b><br><span class="caption mono">ls -l /var/lib/libvirt/images/</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>پیام‌های بوت</b><br><span class="caption mono">sudo virsh console aos-lab</span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>یک <bdi dir="ltr">process</bdi>، چند <bdi dir="ltr">thread</bdi></b><br><span class="caption mono">ps -o pid,nlwp,cmd -C qemu-system-x86_64</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>دیسک <bdi dir="ltr">copy-on-write</bdi></b><br><span class="caption mono">ls -l /var/lib/libvirt/images/</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>پیام‌های بوت</b><br><span class="caption mono">sudo virsh console aos-lab</span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.

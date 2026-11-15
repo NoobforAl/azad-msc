@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>آزمایش 07.2 · وارونگی اولویت و PTHREAD_PRIO_INHERIT</title>
+  <title>آزمایش 07.2 · priority inversion و PTHREAD_PRIO_INHERIT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
   <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
@@ -16,8 +16,8 @@
 <section class="layout-section" data-transition="slide">
   <div class="numeral in-f">07.2</div>
   <span class="eyebrow in-f">آزمایش 07.2 · هدف</span>
-  <h2 class="in">وارونگی اولویت و <bdi dir="ltr">PTHREAD_PRIO_INHERIT</bdi></h2>
-  <p class="why in d1">وارونگی نامحدود اولویت را هر وقت خواستید ایجاد کنید، بعد با یک ویژگی <bdi dir="ltr">mutex</bdi> حذفش کنید.</p>
+  <h2 class="in"><bdi dir="ltr">priority inversion</bdi> و <bdi dir="ltr">PTHREAD_PRIO_INHERIT</bdi></h2>
+  <p class="why in d1"><bdi dir="ltr">unbounded priority inversion</bdi> را هر وقت خواستید ایجاد کنید، بعد با یک ویژگی <bdi dir="ltr">mutex</bdi> حذفش کنید.</p>
   <div class="pills in d2"><span class="pill">محل اجرا: فقط VM — ۱ ثانیه حلقهٔ پرکار RT</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 07.2 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger">وارونگی دیده نمی‌شود</span><span class="arrow-s">←</span><span class="tag r-ok">همهٔ <bdi dir="ltr">thread</bdi>ها را ببندید<bdi dir="ltr">: taskset -c N</bdi></span></div><div class="pit in d2"><span class="tag r-danger">bpftrace: %s expects a string</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">str(args.comm)</bdi> — <bdi dir="ltr">__data_loc field</bdi></span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">inherit</bdi> هنوز کند است</span><span class="arrow-s">←</span><span class="tag r-ok">پروتکل را پیش از <bdi dir="ltr">pthread_mutex_init</bdi> بگذارید</span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">inversion</bdi> دیده نمی‌شود</span><span class="arrow-s">←</span><span class="tag r-ok">همهٔ <bdi dir="ltr">thread</bdi>ها را ببندید<bdi dir="ltr">: taskset -c N</bdi></span></div><div class="pit in d2"><span class="tag r-danger">bpftrace: %s expects a string</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">str(args.comm)</bdi> — <bdi dir="ltr">__data_loc field</bdi></span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">inherit</bdi> هنوز کند است</span><span class="arrow-s">←</span><span class="tag r-ok">پروتکل را پیش از <bdi dir="ltr">pthread_mutex_init</bdi> بگذارید</span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.

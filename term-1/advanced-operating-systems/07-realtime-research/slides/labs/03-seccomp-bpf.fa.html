@@ -18,7 +18,7 @@
   <span class="eyebrow in-f">آزمایش 07.3 · هدف</span>
   <h2 class="in">یک <bdi dir="ltr">sandbox</bdi> با <bdi dir="ltr">seccomp-BPF</bdi></h2>
   <p class="why in d1">یک برنامه را با فیلتر <bdi dir="ltr">seccomp</bdi> محدود کنید و <bdi dir="ltr">errno</bdi> و <bdi dir="ltr">kill</bdi> و <bdi dir="ltr">allow</bdi> را از فضای کاربر ببینید.</p>
-  <div class="pills in d2"><span class="pill">محل اجرا: VM یا هر لینوکسی (بدون امتیاز)</span></div>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM یا هر لینوکسی (unprivileged)</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
 SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 07.3 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>فیلتر از <bdi dir="ltr">execve()</bdi> عبور می‌کند</b><br><span class="caption mono"><bdi dir="ltr">Seccomp: 2</bdi> · <bdi dir="ltr">NoNewPrivs: 1 in the exec</bdi>&#x27;<bdi dir="ltr">d grep</bdi></span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>exit 159 = 128 + SIGSYS</b><br><span class="caption mono"><bdi dir="ltr">SECCOMP_RET_KILL_PROCESS</bdi> → <bdi dir="ltr">force_sig_seccomp()</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>بررسی <bdi dir="ltr">arch</bdi> اول می‌آید</b><br><span class="caption"><bdi dir="ltr">libseccomp</bdi> جلوی دور زدن با <bdi dir="ltr">ABI</bdi>ِ <bdi dir="ltr">i386</bdi> را می‌گیرد</span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>فیلتر از <bdi dir="ltr">execve()</bdi> عبور می‌کند</b><br><span class="caption mono"><bdi dir="ltr">Seccomp: 2</bdi> · <bdi dir="ltr">NoNewPrivs: 1 in the exec</bdi>&#x27;<bdi dir="ltr">d grep</bdi></span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>exit 159 = 128 + SIGSYS</b><br><span class="caption mono"><bdi dir="ltr">SECCOMP_RET_KILL_PROCESS</bdi> → <bdi dir="ltr">force_sig_seccomp()</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>بررسی <bdi dir="ltr">arch</bdi> اول می‌آید</b><br><span class="caption"><bdi dir="ltr">libseccomp</bdi> جلوی دور زدن با <bdi dir="ltr">ABI i386</bdi> را می‌گیرد</span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.

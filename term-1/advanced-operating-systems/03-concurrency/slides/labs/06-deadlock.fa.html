@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 03.6 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>هر دو نخ در <bdi dir="ltr">futex_wait</bdi> خوابیده‌اند</b><br><span class="caption">وضعیت <bdi dir="ltr">S</bdi> و ۰٪ <bdi dir="ltr">CPU: deadlock</bdi> نمی‌چرخد</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">TSan</bdi> بدون گیرکردن گزارش می‌دهد</b><br><span class="caption mono">lock-order-inversion (potential deadlock)</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">lockdep:</bdi> همین ایده در کرنل</b><br><span class="caption">گزارش <bdi dir="ltr">UNVERIFIED:</bdi> کرنل <bdi dir="ltr">VM</bdi> فاقد <bdi dir="ltr">PROVE_LOCKING</bdi> است</span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>هر دو <bdi dir="ltr">thread</bdi> در <bdi dir="ltr">futex_wait</bdi> خوابیده‌اند</b><br><span class="caption">وضعیت <bdi dir="ltr">S</bdi> و ۰٪ <bdi dir="ltr">CPU: deadlock</bdi> نمی‌چرخد</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">TSan</bdi> بدون گیرکردن گزارش می‌دهد</b><br><span class="caption mono">lock-order-inversion (potential deadlock)</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">lockdep:</bdi> همین ایده در کرنل</b><br><span class="caption">گزارش <bdi dir="ltr">UNVERIFIED:</bdi> کرنل <bdi dir="ltr">VM</bdi> فاقد <bdi dir="ltr">PROVE_LOCKING</bdi> است</span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ هم‌روندی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ concurrency" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

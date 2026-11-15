@@ -17,7 +17,7 @@
   <div class="numeral in-f">02.2</div>
   <span class="eyebrow in-f">آزمایش 02.2 · هدف</span>
   <h2 class="in">پرچم‌های <bdi dir="ltr">clone():</bdi> چه چیزی مشترک است</h2>
-  <p class="why in d1">پرچم به پرچم ثابت کنید هر پرچم <bdi dir="ltr">CLONE_*</bdi> کدام منبع (<bdi dir="ltr">mm</bdi>، جدول <bdi dir="ltr">fd</bdi>، <bdi dir="ltr">cwd</bdi>، گروه نخ) را مشترک می‌کند.</p>
+  <p class="why in d1">پرچم به پرچم ثابت کنید هر پرچم <bdi dir="ltr">CLONE_*</bdi> کدام منبع (<bdi dir="ltr">mm</bdi>، جدول <bdi dir="ltr">fd</bdi>، <bdi dir="ltr">cwd</bdi>، گروه <bdi dir="ltr">thread</bdi>) را مشترک می‌کند.</p>
   <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (aos-lab)</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
@@ -30,7 +30,7 @@ TIME: 30
 <section>
   <span class="eyebrow in-f">آزمایش 02.2 · آماده‌سازی</span>
   <h2 class="in">آماده‌سازی</h2>
-  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>کار فرزند</h3><p>نوشتن متغیر سراسری · <bdi dir="ltr">open()</bdi> · <bdi dir="ltr">chdir(/tmp)</bdi></p></div><div class="c-6 card edge r-kernel in d2"><h3>کرنل</h3><p class="ltr-mono"><code>copy_process: copy_mm/files/fs</code></p></div><div class="c-6 card edge r-data in d3"><h3>شیءهای مشترک</h3><p class="ltr-mono"><code>mm_struct · files_struct · fs_struct</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>خروج نخ</h3><p><bdi dir="ltr">futex</bdi> روی کلمهٔ <bdi dir="ltr">CLONE_CHILD_CLEARTID</bdi></p></div></div>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>کار فرزند</h3><p>نوشتن متغیر سراسری · <bdi dir="ltr">open()</bdi> · <bdi dir="ltr">chdir(/tmp)</bdi></p></div><div class="c-6 card edge r-kernel in d2"><h3>کرنل</h3><p class="ltr-mono"><code>copy_process: copy_mm/files/fs</code></p></div><div class="c-6 card edge r-data in d3"><h3>شیءهای مشترک</h3><p class="ltr-mono"><code>mm_struct · files_struct · fs_struct</code></p></div><div class="c-6 card edge r-hardware in d4"><h3>خروج <bdi dir="ltr">thread</bdi></h3><p><bdi dir="ltr">futex</bdi> روی کلمهٔ <bdi dir="ltr">CLONE_CHILD_CLEARTID</bdi></p></div></div>
   <aside class="notes">
 SAY (EN): Walk through what must be true before the first command.
 SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 02.2 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>یک پرچم، یک منبع</b><br><span class="caption mono">copy_mm / copy_files / copy_fs</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">CLONE_VM</bdi> به‌تنهایی نخ نیست</b><br><span class="caption"><bdi dir="ltr">TGID</bdi> دیگر؛ همان که <bdi dir="ltr">vfork</bdi> و <bdi dir="ltr">posix_spawn</bdi> به کار می‌برند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>نخ <bdi dir="ltr">= TGID</bdi> یکسان</b><br><span class="caption mono">fork.c L2261: p-&gt;tgid = current-&gt;tgid</span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>یک پرچم، یک منبع</b><br><span class="caption mono">copy_mm / copy_files / copy_fs</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">CLONE_VM</bdi> به‌تنهایی <bdi dir="ltr">thread</bdi> نیست</b><br><span class="caption"><bdi dir="ltr">TGID</bdi> دیگر؛ همان که <bdi dir="ltr">vfork</bdi> و <bdi dir="ltr">posix_spawn</bdi> به کار می‌برند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">thread = TGID</bdi> یکسان</b><br><span class="caption mono">fork.c L2261: p-&gt;tgid = current-&gt;tgid</span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 02.2 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger">clone: Invalid argument</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">THREAD</bdi> به <bdi dir="ltr">SIGHAND</bdi> و آن به <bdi dir="ltr">VM</bdi> نیاز دارد</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">segfault</bdi> در فرزند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">stack + STACK_SIZE</bdi> (بالای پشته) را بدهید</span></div><div class="pit in d3"><span class="tag r-danger">waitpid: No child processes</span><span class="arrow-s">←</span><span class="tag r-ok">برای نخ روی <bdi dir="ltr">futex</bdi> مربوط به <bdi dir="ltr">CLEARTID</bdi> صبر کنید</span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">clone: Invalid argument</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">THREAD</bdi> به <bdi dir="ltr">SIGHAND</bdi> و آن به <bdi dir="ltr">VM</bdi> نیاز دارد</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">segfault</bdi> در فرزند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">stack + STACK_SIZE</bdi> (بالای پشته) را بدهید</span></div><div class="pit in d3"><span class="tag r-danger">waitpid: No child processes</span><span class="arrow-s">←</span><span class="tag r-ok">برای <bdi dir="ltr">thread</bdi> روی <bdi dir="ltr">futex</bdi> مربوط به <bdi dir="ltr">CLEARTID</bdi> صبر کنید</span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ process‌ها و thread‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

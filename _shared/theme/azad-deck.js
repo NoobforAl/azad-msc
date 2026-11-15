@@ -118,7 +118,7 @@
     const wanted = params.get("transition") || store.get("transition", "fade");
     const cur = TRANSITIONS.includes(wanted) ? wanted : "fade";
     bar.innerHTML = `
-      <a class="azad-lnk" href="${siteRoot.href}">⌂ ${t("Home", "خانه")}</a>
+      <a class="azad-lnk" href="${siteRoot.href}">⌂ ${t("Home", "صفحهٔ اصلی")}</a>
       ${courseUrl ? `<a class="azad-lnk" href="${courseUrl}">☰ ${t("Course", "درس")}</a>` : ""}
       <span class="sep"></span>
       <select data-act="transition" aria-label="${t("Slide transition", "افکت گذار")}">
@@ -196,6 +196,38 @@
       () => { if (!el.hidden) location.href = href; });
   }
 
+  /* ---------- Right-to-left: isolate each English term ----------
+   * In a Persian sentence the browser glues neighbouring English words and parentheses into ONE left-to-right block, so
+   * "روی aos-lab (Linux 6.18.63)" shows its two English parts in the wrong order and ")" / "." jump to the wrong side.
+   * Isolating every English run (LRI/PDI controls) makes each one its own island; the Persian (and the parentheses
+   * around the islands) then flow right to left as a reader expects. Code, terminals, diagrams and existing <bdi> are left alone. */
+  const TOKEN = String.raw`(?:['’][0-9]{2}|[\/~]?[A-Za-z0-9_][A-Za-z0-9_.+#:%@=\/~-]*(?:\([A-Za-z0-9_*&.,:+\/ \-\[\]]*\))*)`;
+  const PAREN = String.raw`\([A-Za-z0-9_*&.,:+\/ \-\[\]]*\)`;    // an all-English parenthetical that follows an English term
+  const LATIN_RUN = new RegExp(`${TOKEN}(?: ${TOKEN}| ${PAREN})*`, "g");     // a term, a call like read(fd, buf), or words like "page cache"
+  const SKIP = "code, pre, kbd, samp, script, style, svg, textarea, bdi, aside, .ltr, [dir=ltr], .term, .code-card, .memmap";
+
+  function isolateLatin(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        if (!/[؀-ۿ]/.test(n.nodeValue) || !/[A-Za-z0-9]/.test(n.nodeValue)) return NodeFilter.FILTER_REJECT;
+        return n.parentElement && n.parentElement.closest(SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    // U+2066 (LRI) ... U+2069 (PDI) isolate a run exactly like <bdi dir="ltr">, but add no element: wrapping elements broke
+    // flex layouts (every <bdi> became its own flex item, with the container's gap around it).
+    for (const node of nodes) {
+      const text = node.nodeValue;
+      const out = text.replace(LATIN_RUN, (m) => {
+        const tail = m.match(/[.,:;=]+$/);                       // sentence punctuation belongs to the Persian side
+        const run = tail ? m.slice(0, -tail[0].length) : m;
+        return /[A-Za-z0-9]/.test(run) ? "⁦" + run + "⁩" + (tail ? tail[0] : "") : m;
+      });
+      if (out !== text) node.nodeValue = out;
+    }
+  }
+
   /* Portrait phones show the 16:9 slide very small: suggest landscape once per visit. */
   function rotateHint() {
     if (!matchMedia("(orientation: portrait) and (max-width: 700px)").matches) return;
@@ -212,6 +244,7 @@
 
   function boot() {
     decorate();
+    if (rtl) isolateLatin(document.querySelector(".reveal"));
     const wanted = params.get("transition") || store.get("transition", "fade");
     const transition = printing || exporting ? "none" : (TRANSITIONS.includes(wanted) ? wanted : "fade");
     Reveal.initialize({

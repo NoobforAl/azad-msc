@@ -58,7 +58,7 @@ STRINGS = {
     "fa": {
         "siteTitle": "اسلایدهای درس‌ها",
         "siteSub": "دانشگاه آزاد اسلامی · درس‌های کارشناسی ارشد",
-        "home": "خانه",
+        "home": "صفحهٔ اصلی",
         "open": "باز کردن ←",
         "soon": "به‌زودی",
         "lesson": "درس",
@@ -72,15 +72,15 @@ STRINGS = {
         "chooseModule": "یک ماژول و سپس درس یا آزمایش را انتخاب کنید",
         "tipsH": "داخل اسلاید",
         "tip0": "زبان اسلایدها را یک بار بالای صفحه انتخاب کنید؛ همهٔ اسلایدها با همان زبان باز می‌شوند (در همین مرورگر به خاطر سپرده می‌شود).",
-        "tip1": "<kbd>S</kbd> یادداشت سخنران · <kbd>F</kbd> تمام‌صفحه · <kbd>Esc</kbd> نمای کلی · <kbd>A</kbd> روشن/خاموش کردن انیمیشن · <kbd>T</kbd> نوار ابزار (افکت گذار، سرعت، خروجی، بازگشت به درس)",
-        "tip1site": "<kbd>F</kbd> تمام‌صفحه · <kbd>Esc</kbd> نمای کلی · <kbd>A</kbd> روشن/خاموش کردن انیمیشن · <kbd>T</kbd> نوار ابزار (افکت گذار، سرعت، خروجی PDF، بازگشت به درس)",
+        "tip1": "<kbd>S</kbd> یادداشت سخنران · <kbd>F</kbd> تمام‌صفحه · <kbd>Esc</kbd> نمای کلی · <kbd>A</kbd> روشن/خاموش کردن انیمیشن · <kbd>T</kbd> نوار ابزار (جلوهٔ گذار، سرعت، خروجی، بازگشت به درس)",
+        "tip1site": "<kbd>F</kbd> تمام‌صفحه · <kbd>Esc</kbd> نمای کلی · <kbd>A</kbd> روشن/خاموش کردن انیمیشن · <kbd>T</kbd> نوار ابزار (جلوهٔ گذار، سرعت، خروجی PDF، بازگشت به درس)",
         "tip2": "در آخرین اسلاید هر deck یک نوار، deck بعدی را پیشنهاد می‌دهد (درس به آزمایش‌هایش و سپس به ماژول بعدی می‌رسد).",
-        "one": "۱ اسلاید",
-        "many": "{n} اسلاید",
+        "one": "۱ deck",
+        "many": "{n} deck",
         "credit": 'مطالب مطالعاتی غیررسمی؛ وابسته به دانشگاه آزاد اسلامی نیست و از سوی آن تأیید نشده است. نشان دانشگاه آزاد: <a href="%s" rel="noopener">Wikimedia Commons</a> (مجوز CC BY-SA 4.0). اسلایدها با reveal.js ساخته شده‌اند. بخش‌های کد کرنل: Linux (‏GPL-2.0) و OpenBSD (‏BSD).'
         % CREDIT_URL,
         "labTitle": "ماشین مجازی ندارید؟ آزمایشگاه مرورگر را امتحان کنید",
-        "labBody": "یک کرنل واقعی ۳۲ بیتی Linux که داخل مرورگر شما اجرا می‌شود، با ۱۰ آزمایش کوچک راهنمادار. جایگزینی ساده‌شده است: هر وقت می‌توانید از ماشین مجازی (یا Docker برای آزمایش‌های user-space) استفاده کنید.",
+        "labBody": "یک کرنل واقعی ۳۲ بیتی Linux که داخل مرورگر شما اجرا می‌شود، با ۱۰ آزمایش کوچک گام‌به‌گام. یک جایگزین ساده‌شده است: هر وقت می‌توانید از ماشین مجازی (یا Docker برای آزمایش‌های user-space) استفاده کنید.",
         "labGo": "باز کردن آزمایشگاه مرورگر ←",
     },
 }
@@ -181,7 +181,11 @@ const q=document.getElementById('q'),cards=[...document.querySelectorAll('.card'
 let lang='en';
 /* In Farsi text, isolate each English run (names, calls like vfs_read()) so punctuation does not jump around. */
 const esc=t=>t.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-const bidi=t=>esc(t).replace(/[A-Za-z][A-Za-z0-9_\-.()\/+ ]*[A-Za-z0-9_)]|[A-Za-z]/g,m=>'<bdi dir="ltr">'+m+'</bdi>');
+const TOK='(?:[\'’][0-9]{2}|[\\/~]?[A-Za-z0-9_][A-Za-z0-9_.+#:%@=\\/~-]*(?:\\([A-Za-z0-9_*&.,:+\\/ \\-\\[\\]]*\\))*)';
+const PAR='\\([A-Za-z0-9_*&.,:+\\/ \\-\\[\\]]*\\)';
+const RUN=new RegExp(TOK+'(?: '+TOK+'| '+PAR+')*','g');
+const bidi=t=>{let o='',l=0;for(const m of t.matchAll(RUN)){let r=m[0];const tl=r.match(/[.,:;=]+$/);if(tl)r=r.slice(0,-tl[0].length);
+ if(!/[A-Za-z0-9]/.test(r))continue;o+=esc(t.slice(l,m.index))+'<bdi dir="ltr">'+esc(r)+'</bdi>';l=m.index+r.length;}return o+esc(t.slice(l));};
 function f(){
  if(!q)return;
  const s=q.value.trim().toLowerCase();let n=0;
@@ -408,7 +412,7 @@ def render_home(local=False):
     body = f'<h2 data-k="termsH"></h2><div class="grid">{"".join(cards)}</div>'
     return _page(
         0,
-        [("Home", "خانه", None)],
+        [("Home", "صفحهٔ اصلی", None)],
         ("Course slides", "اسلایدهای درس‌ها"),
         "siteSub",
         body,
@@ -439,7 +443,7 @@ def render_term(tname):
     body = f'<h2 data-k="coursesH"></h2><div class="grid">{"".join(cards)}</div>'
     return _page(
         1,
-        [("Home", "خانه", "../"), (f"Term {n}", f"ترم {n}", None)],
+        [("Home", "صفحهٔ اصلی", "../"), (f"Term {n}", f"ترم {n}", None)],
         (f"Term {n}", f"ترم {n}"),
         "chooseCourse",
         body,
@@ -475,7 +479,7 @@ def render_course(tname, slug, local=True):
             f'<article class="card"><h3><span class="n">{html.escape(mod["num"])}</span><span {_i18n(mod["en"], mod["fa"])}></span></h3>{"".join(lines)}</article>'
         )
     body = f'<section class="course"><h2 {_i18n(course["en"], course["fa"])}></h2><div class="grid">{"".join(cards)}</div></section>'
-    crumbs = [("Home", "خانه", "../../"), (f"Term {n}", f"ترم {n}", "../"), (course["en"], course["fa"], None)]
+    crumbs = [("Home", "صفحهٔ اصلی", "../../"), (f"Term {n}", f"ترم {n}", "../"), (course["en"], course["fa"], None)]
     return _page(
         2,
         crumbs,

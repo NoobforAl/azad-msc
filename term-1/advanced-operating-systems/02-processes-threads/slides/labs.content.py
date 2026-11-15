@@ -1,5 +1,5 @@
 # Lab-deck content for 02-processes-threads. Render: python _shared/tools/labdeck.py <this file>
-COURSE = {"en": "Advanced OS · 02 Processes & Threads", "fa": "سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها"}
+COURSE = {"en": "Advanced OS · 02 Processes & Threads", "fa": "سیستم‌عامل پیشرفته · ۰۲ process‌ها و thread‌ها"}
 CAP = {
     "en": "aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15",
     "fa": "aos-lab (VirtualBox، Ubuntu 24.04، Linux 6.18.63)، 2026-11-15",
@@ -106,7 +106,7 @@ LABS = [
         title={"en": "clone() flags: what is shared", "fa": "پرچم‌های clone(): چه چیزی مشترک است"},
         goal={
             "en": "Prove flag by flag which resource (mm, fd table, cwd, thread group) each CLONE_* flag shares.",
-            "fa": "پرچم به پرچم ثابت کنید هر پرچم CLONE_* کدام منبع (mm، جدول fd، cwd، گروه نخ) را مشترک می‌کند.",
+            "fa": "پرچم به پرچم ثابت کنید هر پرچم CLONE_* کدام منبع (mm، جدول fd، cwd، گروه thread) را مشترک می‌کند.",
         },
         where=VM,
         setup_cards=[
@@ -127,7 +127,7 @@ LABS = [
             ),
             (
                 "r-hardware",
-                {"en": "Thread exit", "fa": "خروج نخ"},
+                {"en": "Thread exit", "fa": "خروج thread"},
                 {"en": "futex on CLONE_CHILD_CLEARTID word", "fa": "futex روی کلمهٔ CLONE_CHILD_CLEARTID"},
             ),
         ],
@@ -159,14 +159,14 @@ LABS = [
                 {"en": "copy_mm / copy_files / copy_fs", "fa": "copy_mm / copy_files / copy_fs"},
             ),
             (
-                {"en": "CLONE_VM alone ≠ thread", "fa": "CLONE_VM به‌تنهایی نخ نیست"},
+                {"en": "CLONE_VM alone ≠ thread", "fa": "CLONE_VM به‌تنهایی thread نیست"},
                 {
                     "en": "other TGID: what vfork / posix_spawn use",
                     "fa": "TGID دیگر؛ همان که vfork و posix_spawn به کار می‌برند",
                 },
             ),
             (
-                {"en": "Thread = same TGID", "fa": "نخ = TGID یکسان"},
+                {"en": "Thread = same TGID", "fa": "thread = TGID یکسان"},
                 {"en": "fork.c L2261: p->tgid = current->tgid", "fa": "fork.c L2261: p->tgid = current->tgid"},
             ),
         ],
@@ -181,7 +181,7 @@ LABS = [
             ),
             (
                 {"en": "waitpid: No child processes", "fa": "waitpid: No child processes"},
-                {"en": "threads: wait on the CLEARTID futex", "fa": "برای نخ روی futex مربوط به CLEARTID صبر کنید"},
+                {"en": "threads: wait on the CLEARTID futex", "fa": "برای thread روی futex مربوط به CLEARTID صبر کنید"},
             ),
         ],
         ext={
@@ -195,13 +195,13 @@ LABS = [
         title={"en": "Context-switch cost: pipe ping-pong", "fa": "هزینهٔ context switch: ping-pong با pipe"},
         goal={
             "en": "Measure a blocking round trip with both tasks on one CPU vs two CPUs, and explain why two CPUs are slower here.",
-            "fa": "رفت‌وبرگشت مسدودکننده را وقتی هر دو task روی یک CPU یا روی دو CPU هستند اندازه بگیرید و توضیح دهید چرا اینجا دو CPU کندتر است.",
+            "fa": "رفت‌وبرگشت blocking را وقتی هر دو task روی یک CPU یا روی دو CPU هستند اندازه بگیرید و توضیح دهید چرا اینجا دو CPU کندتر است.",
         },
         where=VM,
         setup_cards=[
             (
                 "r-user",
-                {"en": "Two processes", "fa": "دو پردازه"},
+                {"en": "Two processes", "fa": "دو process"},
                 {"en": "1 byte back and forth, 200 000 times", "fa": "یک بایت رفت و برگشت، ۲۰۰ هزار بار"},
             ),
             (
@@ -243,10 +243,10 @@ LABS = [
         captured=CAP,
         observe=[
             (
-                {"en": "same: 43% involuntary", "fa": "same: ۴۳٪ غیرداوطلبانه"},
+                {"en": "same: 43% involuntary", "fa": "same: ۴۳٪ involuntary"},
                 {
                     "en": "wakee preempts the writer before read()",
-                    "fa": "task بیدارشده نویسنده را پیش از read() کنار می‌زند",
+                    "fa": "task بیدارشده نویسنده را پیش از read() preempt می‌کند",
                 },
             ),
             (
@@ -283,7 +283,7 @@ LABS = [
         title={"en": "perf sched and bpftrace on sched_switch", "fa": "perf sched و bpftrace روی sched_switch"},
         goal={
             "en": "Read scheduling latency with perf sched and split every context switch into voluntary vs involuntary with bpftrace.",
-            "fa": "تأخیر زمان‌بندی را با perf sched بخوانید و هر context switch را با bpftrace به داوطلبانه و غیرداوطلبانه تقسیم کنید.",
+            "fa": "تأخیر زمان‌بندی را با perf sched بخوانید و هر context switch را با bpftrace به voluntary و involuntary تقسیم کنید.",
         },
         where={"en": "Lab VM (root, tracing only)", "fa": "VM آزمایشگاه (root، فقط ردیابی)"},
         setup_cards=[
@@ -333,14 +333,17 @@ LABS = [
         observe=[
             (
                 {"en": "pingpong waits 0.014 ms", "fa": "pingpong فقط ۰٫۰۱۴ ms منتظر می‌ماند"},
-                {"en": "wakes with lag ≥ 0, preempts the hogs", "fa": "با lag ≥ 0 بیدار می‌شود و hogها را کنار می‌زند"},
+                {
+                    "en": "wakes with lag ≥ 0, preempts the hogs",
+                    "fa": "با lag ≥ 0 بیدار می‌شود و hogها را preempt می‌کند",
+                },
             ),
             (
-                {"en": "sh hogs: involuntary only", "fa": "hogهای sh: فقط غیرداوطلبانه"},
+                {"en": "sh hogs: involuntary only", "fa": "hogهای sh: فقط involuntary"},
                 {"en": "prev_state == 0 → preempted", "fa": "prev_state == 0 ← preempt شده"},
             ),
             (
-                {"en": "pingpong: voluntary", "fa": "pingpong: داوطلبانه"},
+                {"en": "pingpong: voluntary", "fa": "pingpong: voluntary"},
                 {"en": "blocks in read() every round trip", "fa": "در هر رفت‌وبرگشت در read() مسدود می‌شود"},
             ),
         ],
@@ -451,16 +454,16 @@ LABS = [
         ],
         ext={
             "en": "Measure wakeup lateness of a 1 ms sleeper against two nice-0 spinners with the default slice vs a 0.1 ms slice (p50/p99 of 2,000 wakeups). Explain with vd = v + slice/w.",
-            "fa": "دیرکرد بیدار شدن یک task که ۱ میلی‌ثانیه می‌خوابد را در رقابت با دو حلقهٔ nice 0، با slice پیش‌فرض و slice صدمیکروثانیه‌ای اندازه بگیرید (p50 و p99 از ۲۰۰۰ بیدار شدن) و با vd = v + slice/w توضیح دهید.",
+            "fa": "latency بیدار شدن یک task که ۱ میلی‌ثانیه می‌خوابد را در رقابت با دو حلقهٔ nice 0، با slice پیش‌فرض و slice صدمیکروثانیه‌ای اندازه بگیرید (p50 و p99 از ۲۰۰۰ بیدار شدن) و با vd = v + slice/w توضیح دهید.",
         },
     ),
     dict(
         slug="06-goroutines-vs-threads",
         num="02.6",
-        title={"en": "Goroutines vs OS threads", "fa": "goroutine در برابر نخ سیستم‌عامل"},
+        title={"en": "Goroutines vs OS threads", "fa": "goroutine در برابر thread سیستم‌عامل"},
         goal={
             "en": "Show that the kernel sees only OS threads and that Go multiplexes goroutines onto few of them, except during blocking syscalls.",
-            "fa": "نشان دهید کرنل فقط نخ‌های سیستم‌عامل را می‌بیند و Go goroutineها را روی تعداد کمی از آن‌ها سوار می‌کند، مگر هنگام syscallهای مسدودکننده.",
+            "fa": "نشان دهید کرنل فقط thread‌های سیستم‌عامل را می‌بیند و Go goroutineها را روی تعداد کمی از آن‌ها سوار می‌کند، مگر هنگام syscallهای blocking.",
         },
         where=VM,
         setup_cards=[
@@ -507,10 +510,10 @@ LABS = [
         observe=[
             (
                 {"en": "10 000 sleeping goroutines", "fa": "۱۰٬۰۰۰ goroutine در خواب"},
-                {"en": "a handful of OS threads", "fa": "فقط چند نخ سیستم‌عامل"},
+                {"en": "a handful of OS threads", "fa": "فقط چند thread سیستم‌عامل"},
             ),
             (
-                {"en": "Blocking syscalls cost threads", "fa": "syscall مسدودکننده نخ مصرف می‌کند"},
+                {"en": "Blocking syscalls cost threads", "fa": "syscall blocking thread مصرف می‌کند"},
                 {"en": "the P is handed to a new M", "fa": "P به یک M جدید داده می‌شود"},
             ),
             (
@@ -523,7 +526,7 @@ LABS = [
         ],
         pitfalls=[
             (
-                {"en": "syscall mode: few threads", "fa": "حالت syscall: نخ کم"},
+                {"en": "syscall mode: few threads", "fa": "حالت syscall: thread کم"},
                 {"en": "os.File.Read uses the netpoller", "fa": "os.File.Read از netpoller استفاده می‌کند"},
             ),
             (
@@ -537,7 +540,7 @@ LABS = [
         ],
         ext={
             "en": "Make syscall mode create no threads by reading the pipe non-blocking through os.NewFile (netpoller); find the epoll fd in /proc/<pid>/fd.",
-            "fa": "کاری کنید حالت syscall نخی نسازد: pipe را non-blocking و از طریق os.NewFile (netpoller) بخوانید و fd مربوط به epoll را در /proc/<pid>/fd پیدا کنید.",
+            "fa": "کاری کنید syscall هیچ thread جدیدی نسازد: pipe را non-blocking و از طریق os.NewFile (netpoller) بخوانید و fd مربوط به epoll را در /proc/<pid>/fd پیدا کنید.",
         },
     ),
 ]

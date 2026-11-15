@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 03.5 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">relaxed</bdi> صفر نشان می‌دهد</span><span class="arrow-s">←</span><span class="tag r-ok">هر دو نخ روی یک <bdi dir="ltr">CPU: nproc</bdi> و <bdi dir="ltr">pinning</bdi> را بررسی کنید</span></div><div class="pit in d2"><span class="tag r-danger">دنبال <bdi dir="ltr">mfence</bdi> گشتن</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">gcc</bdi> دستور <bdi dir="ltr">lock or</bdi> می‌دهد: آن هم <bdi dir="ltr">barrier</bdi> کامل است</span></div><div class="pit in d3"><span class="tag r-danger">تعدادها تغییر می‌کنند</span><span class="arrow-s">←</span><span class="tag r-ok">وابسته به زمان‌بندی: مرتبهٔ بزرگی را مقایسه کنید</span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">relaxed</bdi> صفر نشان می‌دهد</span><span class="arrow-s">←</span><span class="tag r-ok">هر دو <bdi dir="ltr">thread</bdi> روی یک <bdi dir="ltr">CPU: nproc</bdi> و <bdi dir="ltr">pinning</bdi> را بررسی کنید</span></div><div class="pit in d2"><span class="tag r-danger">دنبال <bdi dir="ltr">mfence</bdi> گشتن</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">gcc</bdi> دستور <bdi dir="ltr">lock or</bdi> می‌دهد: آن هم <bdi dir="ltr">barrier</bdi> کامل است</span></div><div class="pit in d3"><span class="tag r-danger">تعدادها تغییر می‌کنند</span><span class="arrow-s">←</span><span class="tag r-ok">وابسته به زمان‌بندی: مرتبهٔ بزرگی را مقایسه کنید</span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ هم‌روندی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ concurrency" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

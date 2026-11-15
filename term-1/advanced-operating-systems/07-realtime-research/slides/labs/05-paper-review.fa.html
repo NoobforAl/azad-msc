@@ -17,8 +17,8 @@
   <div class="numeral in-f">07.5</div>
   <span class="eyebrow in-f">آزمایش 07.5 · هدف</span>
   <h2 class="in">خواندن دو مقالهٔ سیستم‌عامل و نوشتن دو داوری</h2>
-  <p class="why in d1">خواندن سه‌گذره و یک داوری یک‌صفحه‌ای که هر مقاله را روی <bdi dir="ltr">Linux v6.18.63</bdi> نگاشت کند.</p>
-  <div class="pills in d2"><span class="pill">محل اجرا: لپ‌تاپ + checkoutِ سورس مخزن</span></div>
+  <p class="why in d1">خواندن <bdi dir="ltr">three-pass</bdi> و یک داوری یک‌صفحه‌ای که هر مقاله را روی <bdi dir="ltr">Linux v6.18.63</bdi> نگاشت کند.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: لپ‌تاپ + checkout سورس مخزن</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
 SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
@@ -55,7 +55,7 @@ TIME: 90
   <span class="eyebrow in-f">آزمایش 07.5 · خروجی مورد انتظار</span>
   <h2 class="in">خروجی مورد انتظار</h2>
   <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> git grep -n &quot;^static int sched_balance_rq&quot; kernel/sched/fair.c</span><span class="ln hl">kernel/sched/fair.c:12052:static int sched_balance_rq(int this_cpu, ...</span><span class="ln"><span class="p">$</span> git grep -n &quot;^static bool update_sd_pick_busiest&quot; kernel/sched/fair.c</span><span class="ln hl">kernel/sched/fair.c:10740:static bool update_sd_pick_busiest(...</span><span class="ln"><span class="p">$</span> git grep -n &quot;struct lockref d_lockref&quot; include/linux/dcache.h</span><span class="ln hl">include/linux/dcache.h:113:	struct lockref d_lockref;</span></code></pre></div>
-  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">checkout</bdi>ِ مخزن <bdi dir="ltr">(Linux v6.18.63)</bdi>، ۲۰۲۶-۱۱-۱۵.</p>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">checkout</bdi> مخزن <bdi dir="ltr">(Linux v6.18.63)</bdi>، ۲۰۲۶-۱۱-۱۵.</p>
   <aside class="notes">
 SAY (EN): Point at the highlighted lines: these prove success.
 SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 07.5 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">load balancer</bdi>ِ مقالهٔ <bdi dir="ltr">B</bdi> هنوز هست</b><br><span class="caption">نامش عوض شده؛ <bdi dir="ltr">EEVDF</bdi> انتخاب <bdi dir="ltr">CFS</bdi> را عوض کرد، نه توازن را</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>شمارندهٔ <bdi dir="ltr">dentry</bdi> مقالهٔ <bdi dir="ltr">A</bdi> عوض شده</b><br><span class="caption"><bdi dir="ltr">lockref</bdi> به‌جای <bdi dir="ltr">sloppy counter</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>هر دو ماشین بزرگ <bdi dir="ltr">NUMA</bdi> داشتند</b><br><span class="caption">۴۸ / ۶۴ هسته — نه یک <bdi dir="ltr">VM</bdi> با ۸ <bdi dir="ltr">vCPU</bdi></span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">load balancer</bdi> مقالهٔ <bdi dir="ltr">B</bdi> هنوز هست</b><br><span class="caption">نامش عوض شده؛ <bdi dir="ltr">EEVDF</bdi> انتخاب <bdi dir="ltr">CFS</bdi> را عوض کرد، نه توازن را</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>شمارندهٔ <bdi dir="ltr">dentry</bdi> مقالهٔ <bdi dir="ltr">A</bdi> عوض شده</b><br><span class="caption"><bdi dir="ltr">lockref</bdi> به‌جای <bdi dir="ltr">sloppy counter</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>هر دو ماشین بزرگ <bdi dir="ltr">NUMA</bdi> داشتند</b><br><span class="caption">۴۸ / ۶۴ هسته — نه یک <bdi dir="ltr">VM</bdi> با ۸ <bdi dir="ltr">vCPU</bdi></span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.

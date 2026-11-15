@@ -30,7 +30,7 @@ TIME: 30
 <section>
   <span class="eyebrow in-f">آزمایش 01.2 · آماده‌سازی</span>
   <h2 class="in">آماده‌سازی</h2>
-  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>سه مسیر</h3><p class="ltr-mono"><code>write() · syscall() · asm</code></p></div><div class="c-6 card edge r-hardware in d2"><h3>رجیسترهای ازبین‌رفته</h3><p><bdi dir="ltr">rcx = RIP</bdi>، <bdi dir="ltr">r11 = RFLAGS</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3>خطاها</h3><p>کرنل <bdi dir="ltr">-9</bdi> در برابر <bdi dir="ltr">libc -1/errno</bdi></p></div><div class="c-6 card edge r-data in d4"><h3>ساخت</h3><p class="ltr-mono"><code>gcc -Wall -Wextra -O2</code></p></div></div>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>سه مسیر</h3><p class="ltr-mono"><code>write() · syscall() · asm</code></p></div><div class="c-6 card edge r-hardware in d2"><h3>رجیسترهای <bdi dir="ltr">clobbered</bdi></h3><p><bdi dir="ltr">rcx = RIP</bdi>، <bdi dir="ltr">r11 = RFLAGS</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3>خطاها</h3><p>کرنل <bdi dir="ltr">-9</bdi> در برابر <bdi dir="ltr">libc -1/errno</bdi></p></div><div class="c-6 card edge r-data in d4"><h3>ساخت</h3><p class="ltr-mono"><code>gcc -Wall -Wextra -O2</code></p></div></div>
   <aside class="notes">
 SAY (EN): Walk through what must be true before the first command.
 SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.

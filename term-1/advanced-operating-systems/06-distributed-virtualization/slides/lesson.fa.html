@@ -44,10 +44,10 @@ TIME: 30
   <div class="numeral in-f">06</div>
   <span class="eyebrow in-f">ماژول ۰۶</span>
   <h2 class="in">سیستم‌عامل توزیع‌شده و مجازی‌سازی</h2>
-  <p class="why in d1">شبکه پاسخ‌ها را گم می‌کند و ساعت‌ها از هم دور می‌شوند؛ hypervisorها و containerها تعیین می‌کنند یک پردازه چه چیزی ببیند و چقدر مصرف کند.</p>
+  <p class="why in d1">شبکه پاسخ‌ها را گم می‌کند و ساعت‌ها از هم دور می‌شوند؛ hypervisorها و containerها تعیین می‌کنند یک process چه چیزی ببیند و چقدر مصرف کند.</p>
   <div class="pills in d2"><span class="pill"><bdi dir="ltr">RPC</bdi> · ساعت‌ها</span><span class="pill"><bdi dir="ltr">KVM · VT-x</bdi></span><span class="pill"><bdi dir="ltr">namespaces · cgroups</bdi></span></div>
   <aside class="notes">
-SAY (FA): به ماژول ۰۲ (clone و نخ‌ها) و ماژول ۰۴ (جدول صفحه) نیاز داریم. container همان clone با پرچم‌های بیشتر است؛ vCPU یک نخ است؛ EPT یک جدول صفحهٔ دوم است.
+SAY (FA): به ماژول ۰۲ (clone و thread‌ها) و ماژول ۰۴ (جدول صفحه) نیاز داریم. container همان clone با پرچم‌های بیشتر است؛ vCPU یک thread است؛ EPT یک جدول صفحهٔ دوم است.
 SAY (EN): We need Module 02 (clone, threads) and Module 04 (page tables). A container is clone with more flags; a vCPU is a thread; EPT is a second page table.
 KEY POINT: پیش‌نیازها: ماژول ۰۲، ۰۴ و ۰۱ (trap).
 EXAMPLE: —
@@ -61,7 +61,7 @@ TIME: 30
   <span class="eyebrow in-f">۰۶ · توزیع‌شده و مجازی‌سازی</span>
   <h2 class="in">پنج پرسش، پنج آزمایش</h2>
   <ol class="agenda">
-    <li class="current in d1">یک فراخوانی از راه دور چه قولی می‌دهد؟</li>
+    <li class="current in d1">یک فراخوانی از راه دور چه تضمینی می‌دهد؟</li>
     <li class="in d2">بدون ساعت مشترک، کدام رویداد اول بود؟</li>
     <li class="in d3">چند replica از پس <bdi dir="ltr">f</bdi> خرابی برمی‌آیند؟</li>
     <li class="in d4">کرنل مهمان چطور در <bdi dir="ltr">ring 0</bdi> اجرا می‌شود؟</li>
@@ -97,13 +97,13 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">۰۶ · زمان منطقی</span>
   <h2 class="in">ترتیب <bdi dir="ltr">Lamport</bdi> همان ترتیب علّی نیست</h2>
-  <div class="diagram in-p d1"><img style="max-height:580px" src="assets/clocks.svg" alt="نمودار فضا-زمان سه پردازه با برچسب‌های Lamport و vector؛ رویداد a برچسب L1 [1,0,0] و g برچسب L2 [0,0,2] دارد: L(a) کوچک‌تر است ولی همروندند"></div>
+  <div class="diagram in-p d1"><img style="max-height:580px" src="assets/clocks.svg" alt="نمودار فضا-زمان سه process با برچسب‌های Lamport و vector؛ رویداد a برچسب L1 [1,0,0] و g برچسب L2 [0,0,2] دارد: L(a) کوچک‌تر است ولی همروندند"></div>
   <p class="takeaway in d2">تصمیم با بردارهاست: <bdi dir="ltr">a → b ⇔ V(a) ≤ V(b), V(a) ≠ V(b)</bdi></p>
   <aside class="notes">
 SAY (FA): قاعدهٔ دریافت: L برابر max(L, Lm)+1 و V برابر max(V, Vm) و بعد V[i]++. رویداد d مقدار L3 می‌گیرد چون m1 مقدار L2 داشت. a از g کوچک‌تر است ولی هیچ مسیر علّی بینشان نیست: همروند.
 SAY (EN): Receive rule: L = max(L, Lm) + 1, V = max(V, Vm), then V[i]++. d gets L3 because m1 carried L2. a has a smaller L than g, yet nothing connects them: concurrent.
 KEY POINT: a → b ⇒ L(a) < L(b)، و عکسش هرگز.
-EXAMPLE: آزمایش ۰۶.۱ چنین جفت‌هایی را در یک اجرای واقعی با سه پردازه می‌شمارد.
+EXAMPLE: آزمایش ۰۶.۱ چنین جفت‌هایی را در یک اجرای واقعی با سه process می‌شمارد.
 PITFALL: مرتب کردن logها با زمان Lamport و «ترتیب علّی» نامیدنش.
 ASK: آیا f → h؟ (بله: [0,0,1] ≤ [2,3,3])
 TIME: 120
@@ -182,7 +182,7 @@ TIME: 90
     <div class="step fragment"><span class="callout-num">5</span><div>صفحهٔ مشترک</div><code>mmap kvm_run</code></div>
     <div class="step fragment"><span class="callout-num">6</span><div>حلقه</div><code>KVM_RUN</code></div>
   </div>
-  <p class="takeaway">RAM مهمان حافظهٔ ناشناس پردازهٔ VMM است؛ هر vCPU نخی است که در <bdi dir="ltr">KVM_RUN</bdi> مسدود شده.</p>
+  <p class="takeaway">RAM مهمان حافظهٔ anonymous process VMM است؛ هر vCPU یک thread است که در <bdi dir="ltr">KVM_RUN</bdi> مسدود شده.</p>
   <aside class="notes">
 SAY (FA): آزمایش ۰۶.۴ دقیقاً همین شش گام در حدود ۱۰۰ خط C است. بعد از گام ۶، حلقه روی run->exit_reason سوئیچ می‌کند: KVM_EXIT_IO یک بایت چاپ می‌کند و KVM_EXIT_HLT پایان است.
 SAY (EN): Lab 06.4 is exactly these six steps in about 100 lines of C. After step 6 the loop switches on run->exit_reason: KVM_EXIT_IO prints a byte, KVM_EXIT_HLT ends.
@@ -213,7 +213,7 @@ TIME: 90
 SAY (FA): سخت‌افزار شمارهٔ دلیل exit را در VMCS می‌نویسد و __vmx_handle_exit آن را، پس از محدودسازی با array_index_nospec، اندیس این جدول می‌کند.
 SAY (EN): The hardware writes a basic exit reason into the VMCS; __vmx_handle_exit uses it, clamped by array_index_nospec, as the index into this table.
 KEY POINT: مقدار برگشتی handler: ۱ = دوباره به مهمان، ۰ = به فضای کاربر.
-EXAMPLE: vmx.c خط‌های L6610-6615 (توزیع)، L6092 (جدول)، L5366 (handle_io).
+EXAMPLE: vmx.c خط‌های L6610-6615 (dispatch)، L6092 (جدول)، L5366 (handle_io).
 PITFALL: خط‌های جدول گزیده‌اند؛ جدول کامل حدود ۶۰ مدخل دارد.
 TIME: 120
   </aside>
@@ -249,7 +249,7 @@ TIME: 120
 <section>
   <span class="eyebrow in-f">۰۶ · Containerها</span>
   <h2 class="in">مرز container لایهٔ syscall است</h2>
-  <div class="diagram in-p d1"><img src="assets/vm-vs-container.svg" alt="چپ: پشتهٔ VM با برنامه‌های مهمان، کرنل مهمان، مرز در VM exit، VMM، کرنل میزبان با KVM و CPU با VT-x و EPT. راست: پردازه‌های container با namespace و cgroup، مرز در syscallها، یک کرنل میزبان مشترک و CPU"></div>
+  <div class="diagram in-p d1"><img src="assets/vm-vs-container.svg" alt="چپ: پشتهٔ VM با برنامه‌های مهمان، کرنل مهمان، مرز در VM exit، VMM، کرنل میزبان با KVM و CPU با VT-x و EPT. راست: process‌های container با namespace و cgroup، مرز در syscallها، یک کرنل میزبان مشترک و CPU"></div>
   <aside class="notes">
 SAY (FA): سطح حملهٔ VM رابط exit و دستگاه‌های مجازی است. container با همهٔ syscallها و /proc و /sys مستقیم با کرنل واقعی میزبان حرف می‌زند. یک باگ کرنل که از راه syscall در دسترس باشد همهٔ containerهای میزبان را می‌شکند.
 SAY (EN): A VM's attack surface is the exit interface and the virtual devices. A container talks to the real host kernel through every syscall, /proc and /sys. One kernel bug reachable by a syscall breaks every container on the host.
@@ -294,7 +294,7 @@ TIME: 120
 <pre><code><span class="ln"><span class="p">$</span> bash minictr.sh /usr/local/bin/demo.sh</span><span class="ln">my pid: 1   hostname: aos-ctr</span><span class="ln">cgroup: 0::/</span><span class="ln">lo: DOWN</span><span class="ln">ls: /.oldroot: No such file or directory</span><span class="ln hl">sh: can&#x27;t fork: Resource temporarily unavailable</span><span class="ln">hog: 48 MiB touched</span><span class="ln">Killed</span><span class="ln">== host view of /sys/fs/cgroup/aos-m06-ctr after exit</span><span class="ln hl">oom_kill 1</span><span class="ln">pids.events: max 1   pids.peak: 20</span></code></pre>
   </div>
   <aside class="notes">
-SAY (FA): داخل container پردازهٔ ما PID 1 است، hostname مال خودمان است، ریشهٔ cgroup «/» است و فقط lo داریم؛ fork در pids.max شکست می‌خورد؛ hog حافظه داخل گروه با OOM کشته می‌شود و میزبان آن را در memory.events می‌شمارد.
+SAY (FA): داخل container process ما PID 1 است، hostname مال خودمان است، ریشهٔ cgroup «/» است و فقط lo داریم؛ fork در pids.max شکست می‌خورد؛ hog حافظه داخل گروه با OOM کشته می‌شود و میزبان آن را در memory.events می‌شمارد.
 SAY (EN): PID 1 inside, our own hostname, cgroup root "/", only lo; fork fails at pids.max; the memory hog is OOM-killed inside the group, and the host counts it in memory.events.
 KEY POINT: هر اثر به یک تابع کرنل از walkthrough نگاشت می‌شود.
 EXAMPLE: خروجی واقعی، aos-lab با کرنل 6.18.63.
@@ -306,7 +306,7 @@ TIME: 120
 <!-- 15 TWO_COLUMN_COMPARE: Linux vs OpenBSD -->
 <section>
   <span class="eyebrow in-f">۰۶ · Linux در برابر OpenBSD</span>
-  <h2 class="in">OpenBSD با قول ایزوله می‌کند، نه با نما</h2>
+  <h2 class="in">OpenBSD با pledge ایزوله می‌کند، نه با نما</h2>
   <div class="compare">
     <div class="in d1"><h3>Linux</h3><ul>
       <li>KVM: اول گذرگاه PIO/MMIO داخل کرنل</li>
@@ -317,7 +317,7 @@ TIME: 120
     <div class="in d2"><h3>OpenBSD</h3><ul>
       <li><bdi dir="ltr">vmm(4)</bdi>: هر exit مربوط به I/O به <code>vmd</code> می‌رود</li>
       <li>بدون namespace، فقط <code>chroot</code></li>
-      <li><code>setrlimit</code> برای هر پردازه</li>
+      <li><code>setrlimit</code> برای هر process</li>
       <li><code>pledge</code>/<code>unveil</code>، خودخواسته</li>
     </ul></div>
   </div>
@@ -361,7 +361,7 @@ TIME: 45
   <aside class="notes">
 SAY (FA): رابطهٔ happened-before لازم دارد همهٔ درایه‌ها ≤ باشند. وقتی در هر طرف یک درایه بزرگ‌تر است، رویدادها همروندند. زمان‌های Lamport به‌هرحال ترتیب دارند و برای همین D تله است.
 SAY (EN): Happened-before needs every entry ≤. One entry larger on each side means concurrency. Lamport times would be ordered anyway, which is why D is a trap.
-KEY POINT: همروندی را فقط با بردار می‌شود تشخیص داد.
+KEY POINT: concurrency را فقط با بردار می‌شود تشخیص داد.
 EXAMPLE: پرسش Q3 آزمونک.
 PITFALL: —
 TIME: 45

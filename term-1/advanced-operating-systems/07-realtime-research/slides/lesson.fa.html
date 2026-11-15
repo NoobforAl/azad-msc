@@ -34,7 +34,7 @@
     <span><b>ترم</b>[Term]</span><span><b>تاریخ</b>[Date, Jalali]</span>
   </div>
   <aside class="notes">
-SAY (FA): این ماژول می‌پرسد کرنل چه قولی می‌تواند به یک پردازه بدهد: اینکه به‌موقع اجرا شود، و اینکه فقط به چیزی برسد که باید. بعد یاد می‌گیریم ادعاهای پژوهشی دربارهٔ هر دو را قضاوت کنیم.
+SAY (FA): این ماژول می‌پرسد کرنل چه تضمینی می‌تواند به یک process بدهد: اینکه به‌موقع اجرا شود، و اینکه فقط به چیزی برسد که باید. بعد یاد می‌گیریم ادعاهای پژوهشی دربارهٔ هر دو را قضاوت کنیم.
 SAY (EN): This module asks what a kernel can promise a process: that it runs on time, and that it can only reach what it should. Then we learn to judge research claims about both.
 KEY POINT: real-time یعنی تضمین در زمان؛ sandboxing یعنی تضمین در دسترسی.
 PITFALL: فیلدهای صفحهٔ عنوان جای‌نگهدارند؛ هرگز از خودتان پرشان نکنید.
@@ -66,12 +66,12 @@ TIME: 30
   <ol class="agenda">
     <li class="current in d1">سیستم کی real-time است و لینوکس چه چیزی به latency اضافه می‌کند؟</li>
     <li class="in d2">کدام taskها به deadline می‌رسند؟ ‏<bdi dir="ltr">RMS · EDF · SCHED_DEADLINE</bdi></li>
-    <li class="in d3">چرا Pathfinder ‏reboot می‌شد؟ وارونگی و وراثت اولویت</li>
-    <li class="in d4">پردازه چطور خودش را محدود می‌کند؟ ‏<bdi dir="ltr">seccomp · Landlock · pledge</bdi></li>
+    <li class="in d3">چرا Pathfinder ‏reboot می‌شد؟ priority inversion و priority inheritance</li>
+    <li class="in d4">process چطور خودش را محدود می‌کند؟ ‏<bdi dir="ltr">seccomp · Landlock · pledge</bdi></li>
     <li class="in d5">مقالهٔ سیستم‌عامل را چطور مثل داور بخوانم؟</li>
   </ol>
   <aside class="notes">
-SAY (FA): هر ردیف به یک آزمایش وصل است: cyclictest، تمرین تکمیلی deadline، وارونگی اولویت، seccomp و Landlock، و داوری مقاله.
+SAY (FA): هر ردیف به یک آزمایش وصل است: cyclictest، تمرین تکمیلی deadline، priority inversion، seccomp و Landlock، و داوری مقاله.
 SAY (EN): Each row maps to a lab: cyclictest, the deadline extension, priority inversion, seccomp and Landlock, and the paper review.
 KEY POINT: ردیف‌های ۱ تا ۳ دربارهٔ زمان‌اند، ردیف ۴ دربارهٔ دسترسی، ردیف ۵ دربارهٔ قضاوت ادعاها.
 TIME: 20
@@ -107,7 +107,7 @@ TIME: 75
     <div class="step fragment"><span class="callout-num">1</span><div>timer فعال می‌شود</div><code>hrtimer IRQ</code></div>
     <div class="step fragment"><span class="callout-num">2</span><div>task بیدار می‌شود</div><code>try_to_wake_up()</code></div>
     <div class="step fragment current"><span class="callout-num">3</span><div>انتظار برای preempt</div><code>spin_lock · softirq</code></div>
-    <div class="step fragment"><span class="callout-num">4</span><div>جابه‌جایی</div><code>__schedule()</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>context switch</div><code>__schedule()</code></div>
     <div class="step fragment"><span class="callout-num">5</span><div>task اجرا می‌شود</div><code>clock_gettime()</code></div>
   </div>
   <p class="takeaway"><bdi dir="ltr">PREEMPT_RT</bdi> گام ۳ را کوچک می‌کند: spinlockها می‌خوابند و IRQها thread می‌شوند.</p>
@@ -124,13 +124,13 @@ TIME: 90
 <!-- 06 TERMINAL_DEMO: cyclictest -->
 <section>
   <span class="eyebrow in-f">۰۷ · خروجی واقعی</span>
-  <h2 class="in">بار دُم توزیع را جابه‌جا می‌کند، نه کمینه را</h2>
+  <h2 class="in">بار tail توزیع را جابه‌جا می‌کند، نه کمینه را</h2>
   <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; aos-lab · run-cyclictest.sh 60 2,3</div>
 <pre><code><span class="ln"><span class="p">$</span> sudo bash run-cyclictest.sh 60 2,3</span><span class="ln">[idle] # Min Latencies: 00030 00026</span><span class="ln">[idle] # Avg Latencies: 01236 01165</span><span class="ln hl">[idle] # Max Latencies: 395586 395126</span><span class="ln">[load] # Min Latencies: 00032 00031</span><span class="ln">[load] # Avg Latencies: 09389 09364</span><span class="ln hl">[load] # Max Latencies: 26624226 26624344</span><span class="ln"># µs; FIFO 80, 1 ms period, CPUs 2-3</span></code></pre>
   </div>
-  <p class="caption" style="margin-top:24px">خروجی واقعی روی aos-lab ‏(6.18.63، PREEMPT_DYNAMIC)، ۲۰۲۶-۱۱-۱۵. VMِ مشترک: بیشینهٔ ۲۶٫۶ ثانیه یعنی میزبان vCPUها را متوقف کرده، نه لینوکس.</p>
+  <p class="caption" style="margin-top:24px">خروجی واقعی روی aos-lab ‏(6.18.63، PREEMPT_DYNAMIC)، ۲۰۲۶-۱۱-۱۵. VM مشترک: بیشینهٔ ۲۶٫۶ ثانیه یعنی میزبان vCPUها را متوقف کرده، نه لینوکس.</p>
   <aside class="notes">
-SAY (FA): دو اجرای cyclictest روی دو CPU، بیکار و با stress-ng روی همان CPUها. اول ردیف Max را بخوانید. این یک VMِ مشترک روی Hyper-V است، پس جهش‌ها بیشتر کار hypervisor است؛ شکل مهم است.
+SAY (FA): دو اجرای cyclictest روی دو CPU، بیکار و با stress-ng روی همان CPUها. اول ردیف Max را بخوانید. این یک VM مشترک روی Hyper-V است، پس جهش‌ها بیشتر کار hypervisor است؛ شکل مهم است.
 SAY (EN): Two cyclictest runs, idle and loaded. Read Max first; on a shared VM the spikes are mostly the hypervisor.
 KEY POINT: بیشینه را زیر بار و همراه با طول اجرا گزارش کنید.
 EXAMPLE: sudo bash run-cyclictest.sh 60 2,3
@@ -167,14 +167,14 @@ TIME: 120
 
 <!-- 08 CONCEPT_DIAGRAM: inversion -->
 <section>
-  <span class="eyebrow in-f">۰۷ · وارونگی اولویت</span>
-  <h2 class="in">وراثت اولویت نمی‌گذارد M از L جلو بزند</h2>
+  <span class="eyebrow in-f">۰۷ · priority inversion</span>
+  <h2 class="in">priority inheritance نمی‌گذارد M از L جلو بزند</h2>
   <div class="diagram short in-p d1" style="margin-top:-16px"><img src="assets/inversion-timeline.svg" alt="دو خط زمانی روی یک CPU. بدون پروتکل، H منتظر می‌ماند تا M ‏۸۰۰ میلی‌ثانیه اجرا شود و L تمام کند. با PTHREAD_PRIO_INHERIT، ‏L به اولویت ۳۰ می‌رسد، H بعد از باقی کار L قفل را می‌گیرد و M بعد از آن اجرا می‌شود."></div>
   <aside class="notes">
-SAY (FA): ① بدون پروتکل، M صاحب قفل یعنی L را کنار می‌زند، پس H منتظر M هم می‌ماند. ② با inheritance، ‏L تا unlock با اولویت H اجرا می‌شود؛ ‏H فقط منتظر باقی بخش بحرانی L است و M بعد از آن اجرا می‌شود.
+SAY (FA): ① بدون پروتکل، M صاحب قفل یعنی L را preempt می‌کند، پس H منتظر M هم می‌ماند. ② با inheritance، ‏L تا unlock با اولویت H اجرا می‌شود؛ ‏H فقط منتظر باقی بخش بحرانی L است و M بعد از آن اجرا می‌شود.
 SAY (EN): ① Without a protocol M preempts L. ② With inheritance L runs at H's priority until unlock.
-KEY POINT: PI وارونگی را محدود می‌کند؛ انتظار برای L را حذف نمی‌کند.
-EXAMPLE: Mars Pathfinder ۱۹۹۷: semaphoreِ select() در VxWorks بدون PI ← resetهای تکراری.
+KEY POINT: PI inversion را محدود می‌کند؛ انتظار برای L را حذف نمی‌کند.
+EXAMPLE: Mars Pathfinder ۱۹۹۷: semaphore select() در VxWorks بدون PI ← resetهای تکراری.
 PITFALL: mutexهای پیش‌فرض pthread، ‏PI ندارند.
 ASK: چرا برای دیدن مشکل سه اولویت لازم است؟
 TIME: 120
@@ -197,7 +197,7 @@ TIME: 120
     </div>
   </div>
   <aside class="notes">
-SAY (FA): از task_blocks_on_rt_mutex. یک mutexِ PI در pthread از راه futex_lock_pi به اینجا می‌رسد. اولویت مؤثر صاحب قفل رأس درخت pi_waiters آن می‌شود؛ هنگام unlock همین تابع بدون منتظر اولویت را برمی‌گرداند.
+SAY (FA): از task_blocks_on_rt_mutex. یک mutex PI در pthread از راه futex_lock_pi به اینجا می‌رسد. اولویت مؤثر صاحب قفل رأس درخت pi_waiters آن می‌شود؛ هنگام unlock همین تابع بدون منتظر اولویت را برمی‌گرداند.
 SAY (EN): From task_blocks_on_rt_mutex; reached from futex_lock_pi; de-boost on unlock.
 KEY POINT: وراثت تراگذر = rt_mutex_adjust_prio_chain() (خط ۶۷۸) که deadlock را هم تشخیص می‌دهد.
 EXAMPLE: tracepoint ‏sched:sched_pi_setprio در rt_mutex_setprio() (core.c خط ۷۴۰۷) فعال می‌شود.
@@ -217,7 +217,7 @@ TIME: 120
   <aside class="notes">
 SAY (FA): همان برنامه و همان CPU؛ فقط پروتکل mutex فرق دارد. بدون آن، H منتظر ۸۰۰ میلی‌ثانیهٔ M می‌ماند؛ با PTHREAD_PRIO_INHERIT فقط منتظر باقی کار L است و M آخر از همه تمام می‌شود.
 SAY (EN): Same program, same CPU; only the mutex protocol differs.
-KEY POINT: بستن به یک CPU (taskset) وارونگی را تکرارپذیر می‌کند.
+KEY POINT: بستن به یک CPU (taskset) inversion را تکرارپذیر می‌کند.
 EXAMPLE: sudo taskset -c 7 ./inversion inherit
 PITFALL: روی ماشین چندهسته‌ای بیکار، L جای دیگری اجرا می‌شود و چیزی نمی‌بینید.
 TIME: 90
@@ -233,7 +233,7 @@ TIME: 90
       <li><code>spin_lock()</code>: می‌چرخد، preemption خاموش</li>
       <li>handlerهای IRQ در context وقفهٔ سخت</li>
       <li>softirq با bottom half خاموش</li>
-      <li>جابه‌جایی در زمان اجرا: ‏<bdi dir="ltr">none / voluntary / full / lazy</bdi></li>
+      <li>تغییر مدل در زمان اجرا: ‏<bdi dir="ltr">none / voluntary / full / lazy</bdi></li>
     </ul></div>
     <div class="in d2"><h3><bdi dir="ltr">PREEMPT_RT</bdi></h3><ul>
       <li><code>spin_lock()</code> = <code>rt_mutex</code>: می‌خوابد، PI</li>
@@ -242,7 +242,7 @@ TIME: 90
       <li>فقط زمان compile · در <code>uname -v</code> دیده می‌شود</li>
     </ul></div>
   </div>
-  <p class="takeaway in d3">فقط <code>raw_spinlock_t</code> هنوز می‌چرخد: زمان‌بند، هستهٔ IRQ و timer.</p>
+  <p class="takeaway in d3">فقط <code>raw_spinlock_t</code> هنوز می‌چرخد: زمان‌بند، IRQ core و timer.</p>
   <aside class="notes">
 SAY (FA): ‏kernel/locking/spinlock_rt.c تابع spin_lock را به شکل یک rt_mutex همراه با migrate_disable() پیاده می‌کند؛ ‏include/linux/interrupt.h زیر PREEMPT_RT مقدار force_irqthreads() را ثابتِ true می‌کند. VM ما PREEMPT_DYNAMIC است، پس عددهای RT در این ماژول UNVERIFIED‌اند؛ گونهٔ ‎--rt‎ را با آزمایش ۰۳ از 00-setup بسازید.
 SAY (EN): spin_lock is an rt_mutex on RT; force_irqthreads() is true. Our VM is PREEMPT_DYNAMIC: RT numbers are UNVERIFIED.
@@ -257,9 +257,9 @@ TIME: 120
 <section>
   <span class="eyebrow in-f">۰۷ · Sandboxing</span>
   <h2 class="in">seccomp دربارهٔ عدد قضاوت می‌کند، Landlock دربارهٔ شیء</h2>
-  <div class="diagram short in-p d1" style="margin-top:-16px"><img src="assets/sandbox-path.svg" alt="فراخوانی openat() از یک پردازهٔ sandboxشده: اول فیلترهای seccomp در ورود syscall می‌توانند پیش از اجرا رد کنند؛ اگر مجاز باشد جستجوی مسیر فایل را پیدا می‌کند؛ بعد hookِ LSM یعنی security_file_open تابع hook_file_open در Landlock را صدا می‌زند که می‌تواند EACCES برگرداند."></div>
+  <div class="diagram short in-p d1" style="margin-top:-16px"><img src="assets/sandbox-path.svg" alt="فراخوانی openat() از یک process sandboxشده: اول فیلترهای seccomp در ورود syscall می‌توانند پیش از اجرا رد کنند؛ اگر مجاز باشد جستجوی مسیر فایل را پیدا می‌کند؛ بعد hook LSM یعنی security_file_open تابع hook_file_open در Landlock را صدا می‌زند که می‌تواند EACCES برگرداند."></div>
   <aside class="notes">
-SAY (FA): ① ‏seccomp در syscall_trace_enter روی شماره و آرگومان‌های خام و پیش از هر کاری اجرا می‌شود. ② اگر مجاز باشد، کرنل مسیر را resolve می‌کند. ③ ‏hookِ LSMِ Landlock فایل resolveشده را می‌بیند و همهٔ لایه‌های قانون را بررسی می‌کند.
+SAY (FA): ① ‏seccomp در syscall_trace_enter روی شماره و آرگومان‌های خام و پیش از هر کاری اجرا می‌شود. ② اگر مجاز باشد، کرنل مسیر را resolve می‌کند. ③ ‏hook LSM Landlock فایل resolveشده را می‌بیند و همهٔ لایه‌های قانون را بررسی می‌کند.
 SAY (EN): ① seccomp on raw numbers before anything runs. ② path lookup. ③ Landlock's LSM hook on the resolved file.
 KEY POINT: هر دو no_new_privs لازم دارند، روی هم جمع می‌شوند، فقط سخت‌تر می‌کنند و از execve() عبور می‌کنند.
 EXAMPLE: آزمایش‌های ۰۳ و ۰۴.
@@ -284,11 +284,11 @@ TIME: 90
     </div>
   </div>
   <aside class="notes">
-SAY (FA): از __seccomp_filter روی هر syscallِ یک thread فیلترشده صدا زده می‌شود. ‏ACTION_ONLY مقدار را به s32 تبدیل می‌کند، پس KILL_PROCESS (‏0x80000000) کمترین مقدار است. cache بیتی برای syscallهایی که فیلتر همیشه اجازه می‌دهد BPF را رد می‌کند.
+SAY (FA): از __seccomp_filter روی هر syscall یک thread فیلترشده صدا زده می‌شود. ‏ACTION_ONLY مقدار را به s32 تبدیل می‌کند، پس KILL_PROCESS (‏0x80000000) کمترین مقدار است. cache بیتی برای syscallهایی که فیلتر همیشه اجازه می‌دهد BPF را رد می‌کند.
 SAY (EN): Called on every syscall of a filtered thread; ACTION_ONLY casts to s32 so KILL_PROCESS sorts lowest.
 KEY POINT: خط‌های ۴۱۹ تا ۴۲۲ (توضیح) روی اسلاید حذف شده‌اند؛ متن کامل در kernel-walkthrough بخش ۵.۲.
 EXAMPLE: ERRNO(EACCES) ← syscall رد می‌شود و کاربر -1/EACCES می‌بیند.
-PITFALL: فیلتر BPF خام بدون بررسی arch از راه ABIِ i386 دورزدنی است.
+PITFALL: فیلتر BPF خام بدون بررسی arch از راه ABI i386 دورزدنی است.
 TIME: 120
   </aside>
 </section>
@@ -296,7 +296,7 @@ TIME: 120
 <!-- 14 TWO_COLUMN_COMPARE: Linux vs OpenBSD -->
 <section>
   <span class="eyebrow in-f">۰۷ · لینوکس در برابر OpenBSD</span>
-  <h2 class="in">فیلتر انعطاف‌پذیر در برابر قول یک‌خطی</h2>
+  <h2 class="in">فیلتر انعطاف‌پذیر در برابر pledge یک‌خطی</h2>
   <div class="compare">
     <div class="in d1"><h3><bdi dir="ltr">seccomp + Landlock</bdi></h3><ul>
       <li>BPF روی شمارهٔ syscall و آرگومان خام</li>
@@ -305,7 +305,7 @@ TIME: 120
       <li>همیشه در exec به ارث می‌رسد</li>
     </ul></div>
     <div class="in d2"><h3><bdi dir="ltr">pledge + unveil</bdi></h3><ul>
-      <li>بیت‌های قول: <code>pledge("stdio rpath")</code></li>
+      <li>بیت‌های pledge: <code>pledge("stdio rpath")</code></li>
       <li>جدول کرنل <code>pledge_syscalls[]</code></li>
       <li><code>SIGABRT</code> غیرقابل‌گرفتن و core</li>
       <li><code>execpromises</code> جداگانه</li>
@@ -334,7 +334,7 @@ TIME: 90
   </div>
   <p class="takeaway">‏<bdi dir="ltr">Wasted Cores (EuroSys '16)</bdi> ← امروز <code>sched_balance_rq()</code> در fair.c خط ۱۲۰۵۲.</p>
   <aside class="notes">
-SAY (FA): سه گذر Keshav به‌اضافهٔ یک گام مخصوص سیستم‌ها: توابع مقاله را در درخت فعلی پیدا کنید. ‏load balancerِ ۲۰۱۶ هنوز برای هر دامنهٔ زمان‌بندی توازن برقرار می‌کند، با نام‌های تازه.
+SAY (FA): سه گذر Keshav به‌اضافهٔ یک گام مخصوص سیستم‌ها: توابع مقاله را در درخت فعلی پیدا کنید. ‏load balancer ۲۰۱۶ هنوز برای هر دامنهٔ زمان‌بندی توازن برقرار می‌کند، با نام‌های تازه.
 SAY (EN): Keshav's three passes plus a systems step: find the paper's functions in today's tree.
 KEY POINT: داوری = مسئله، بینش، سازوکار، ارزیابی، محدودیت، امروز، نظر نهایی.
 EXAMPLE: ‏OSDI '10: ‏۴۸ هسته، sloppy counter، ‏۳۰۰۲ خط تغییر.
@@ -346,7 +346,7 @@ TIME: 90
 <!-- 16 QUIZ -->
 <section class="layout-quiz">
   <span class="eyebrow">پرسش کوتاه</span>
-  <h2>یک thread با <bdi dir="ltr">SCHED_FIFO 30</bdi> منتظر یک mutexِ پیش‌فرض pthread است که دست یک thread با <bdi dir="ltr">FIFO 10</bdi> است. چه چیزی انتظارش را محدود می‌کند؟</h2>
+  <h2>یک thread با <bdi dir="ltr">SCHED_FIFO 30</bdi> منتظر یک mutex پیش‌فرض pthread است که دست یک thread با <bdi dir="ltr">FIFO 10</bdi> است. چه چیزی انتظارش را محدود می‌کند؟</h2>
   <div class="quiz-options">
     <div><b>A</b> بخش بحرانی thread با FIFO 10</div>
     <div><b>B</b> هیچ چیز: taskهای میانی می‌توانند جلو بزنند</div>
@@ -365,13 +365,13 @@ TIME: 45
 <!-- 17 QUIZ answer -->
 <section>
   <span class="eyebrow">پاسخ: B</span>
-  <h2>بدون پروتکل، وارونگی نامحدود است</h2>
-  <p class="quote">mutexِ پیش‌فرض <bdi dir="ltr">PTHREAD_PRIO_NONE</bdi> است: هر task با FIFO بین ۱۱ و ۲۹ می‌تواند صاحب قفل را کنار بزند، در حالی که منتظرِ FIFO 30 مسدود مانده.</p>
+  <h2>بدون پروتکل، inversion نامحدود است</h2>
+  <p class="quote">mutex پیش‌فرض <bdi dir="ltr">PTHREAD_PRIO_NONE</bdi> است: هر task با FIFO بین ۱۱ و ۲۹ می‌تواند صاحب قفل را preempt کند، در حالی که منتظرِ FIFO 30 مسدود مانده.</p>
   <p class="source">با <bdi dir="ltr">PTHREAD_PRIO_INHERIT → futex_lock_pi() → rt_mutex</bdi> گزینهٔ A درست می‌شود (آزمایش ۰۲)</p>
   <aside class="notes">
 SAY (FA): با PTHREAD_PRIO_INHERIT صاحب قفل با اولویت ۳۰ اجرا می‌شود و انتظار به بخش بحرانی آن محدود است: این گزینهٔ A است. ‏C غلط است: pthread_mutex_lock مهلت زمانی ندارد. ‏D بی‌ربط است.
 SAY (EN): With PTHREAD_PRIO_INHERIT the wait is bounded by the critical section (answer A). C and D are wrong.
-KEY POINT: وارونگی محدود عادی است؛ نامحدودش باگ است.
+KEY POINT: inversion محدود عادی است؛ نامحدودش باگ است.
 EXAMPLE: inversion.c با none و inherit.
 TIME: 60
   </aside>
@@ -383,8 +383,8 @@ TIME: 60
   <h2 class="in">جمع‌بندی</h2>
   <ul class="summary">
     <li class="in d1"><span class="callout-num">1</span>real-time یعنی بدترین حالت: بیشینهٔ latency را زیر بار اندازه بگیرید؛ کرنل RT آن را محدود می‌کند</li>
-    <li class="in d2"><span class="callout-num">2</span>قفل پروتکل می‌خواهد: PI وارونگی را محدود می‌کند؛ ‏<bdi dir="ltr">SCHED_DEADLINE</bdi> بودجه‌ها را جدا می‌کند</li>
-    <li class="in d3"><span class="callout-num">3</span>sandbox فقط سخت‌تر می‌شود: seccomp روی عدد، Landlock روی شیء، pledge روی قول</li>
+    <li class="in d2"><span class="callout-num">2</span>قفل پروتکل می‌خواهد: PI inversion را محدود می‌کند؛ ‏<bdi dir="ltr">SCHED_DEADLINE</bdi> بودجه‌ها را جدا می‌کند</li>
+    <li class="in d3"><span class="callout-num">3</span>sandbox فقط سخت‌تر می‌شود: seccomp روی عدد، Landlock روی شیء، pledge روی pledge</li>
   </ul>
   <p class="next in d4">برنامهٔ مطالعه و برگهٔ خلاصه (پایان درس)</p>
   <aside class="notes">

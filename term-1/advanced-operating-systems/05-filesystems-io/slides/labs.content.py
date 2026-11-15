@@ -110,7 +110,7 @@ LABS = [
         title={"en": "Page-cache hit vs miss", "fa": "hit و miss در page cache"},
         goal={
             "en": "Measure a cold and a warm read of the same file, evicting only that file.",
-            "fa": "خواندن سرد و گرم یک فایل را اندازه بگیرید و فقط همان فایل را از cache بیرون کنید.",
+            "fa": "خواندن سرد و گرم یک فایل را اندازه بگیرید و فقط همان فایل را از cache evict کنید.",
         },
         where={"en": "Lab VM or any Linux box", "fa": "VM آزمایشگاه یا هر لینوکسی"},
         setup_cards=[
@@ -126,7 +126,7 @@ LABS = [
             ),
             (
                 "r-kernel",
-                {"en": "Eviction", "fa": "بیرون‌کردن"},
+                {"en": "Eviction", "fa": "evict کردن"},
                 {"en": "posix_fadvise(POSIX_FADV_DONTNEED)", "fa": "posix_fadvise(POSIX_FADV_DONTNEED)"},
             ),
             (
@@ -173,7 +173,7 @@ LABS = [
         pitfalls=[
             (
                 {"en": "drop_caches on a shared VM", "fa": "drop_caches روی VM مشترک"},
-                {"en": "evict one file with fadvise", "fa": "فقط یک فایل را با fadvise بیرون کنید"},
+                {"en": "evict one file with fadvise", "fa": "فقط یک فایل را با fadvise evict کنید"},
             ),
             (
                 {"en": "evict does nothing", "fa": "evict اثری ندارد"},
@@ -396,7 +396,7 @@ LABS = [
             (
                 "r-user",
                 {"en": "copy_uring.c", "fa": "copy_uring.c"},
-                {"en": "8 linked READ->WRITE pairs per enter", "fa": "۸ جفت READ->WRITE پیوندخورده در هر enter"},
+                {"en": "8 linked READ->WRITE pairs per enter", "fa": "۸ جفت READ->WRITE linked در هر enter"},
             ),
             (
                 "r-kernel",
@@ -449,7 +449,7 @@ LABS = [
             ),
             (
                 {"en": "write failed: res=-125", "fa": "write failed: res=-125"},
-                {"en": "-ECANCELED: linked read was short", "fa": "-ECANCELED: read پیوندخورده کوتاه بود"},
+                {"en": "-ECANCELED: linked read was short", "fa": "-ECANCELED: read linked کوتاه بود"},
             ),
             (
                 {"en": "io_uring_setup: EPERM", "fa": "io_uring_setup: EPERM"},
@@ -458,7 +458,7 @@ LABS = [
         ],
         ext={
             "en": "Add IORING_SETUP_SQPOLL and registered buffers (io_uring_register_buffers + read_fixed/write_fixed). How many io_uring_enter calls remain, and what does the iou-sqp thread cost in CPU?",
-            "fa": "IORING_SETUP_SQPOLL و بافرهای ثبت‌شده (io_uring_register_buffers + read_fixed/write_fixed) را اضافه کنید. چند io_uring_enter باقی می‌ماند و نخ iou-sqp چقدر CPU مصرف می‌کند؟",
+            "fa": "IORING_SETUP_SQPOLL و بافرهای ثبت‌شده (io_uring_register_buffers + read_fixed/write_fixed) را اضافه کنید. چند io_uring_enter باقی می‌ماند و thread iou-sqp چقدر CPU مصرف می‌کند؟",
         },
         captured=CAP,
     ),

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>آزمایش 02.6 · goroutine در برابر نخ سیستم‌عامل</title>
+  <title>آزمایش 02.6 · goroutine در برابر thread سیستم‌عامل</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
   <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
@@ -16,8 +16,8 @@
 <section class="layout-section" data-transition="slide">
   <div class="numeral in-f">02.6</div>
   <span class="eyebrow in-f">آزمایش 02.6 · هدف</span>
-  <h2 class="in"><bdi dir="ltr">goroutine</bdi> در برابر نخ سیستم‌عامل</h2>
-  <p class="why in d1">نشان دهید کرنل فقط نخ‌های سیستم‌عامل را می‌بیند و <bdi dir="ltr">Go goroutine</bdi>ها را روی تعداد کمی از آن‌ها سوار می‌کند، مگر هنگام <bdi dir="ltr">syscall</bdi>های مسدودکننده.</p>
+  <h2 class="in"><bdi dir="ltr">goroutine</bdi> در برابر <bdi dir="ltr">thread</bdi> سیستم‌عامل</h2>
+  <p class="why in d1">نشان دهید کرنل فقط <bdi dir="ltr">thread</bdi>‌های سیستم‌عامل را می‌بیند و <bdi dir="ltr">Go goroutine</bdi>ها را روی تعداد کمی از آن‌ها سوار می‌کند، مگر هنگام <bdi dir="ltr">syscall</bdi>های <bdi dir="ltr">blocking.</bdi></p>
   <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (aos-lab)</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 02.6 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>۱۰٬۰۰۰ <bdi dir="ltr">goroutine</bdi> در خواب</b><br><span class="caption">فقط چند نخ سیستم‌عامل</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">syscall</bdi> مسدودکننده نخ مصرف می‌کند</b><br><span class="caption"><bdi dir="ltr">P</bdi> به یک <bdi dir="ltr">M</bdi> جدید داده می‌شود</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">pthread</bdi>ها <bdi dir="ltr">task</bdi> هستند</b><br><span class="caption">۱۰٬۰۰۱ <bdi dir="ltr">task</bdi>، هر کدام حدود ۳۲۰ میکروثانیه روی این <bdi dir="ltr">VM</bdi></span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>۱۰٬۰۰۰ <bdi dir="ltr">goroutine</bdi> در خواب</b><br><span class="caption">فقط چند <bdi dir="ltr">thread</bdi> سیستم‌عامل</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">syscall blocking thread</bdi> مصرف می‌کند</b><br><span class="caption"><bdi dir="ltr">P</bdi> به یک <bdi dir="ltr">M</bdi> جدید داده می‌شود</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">pthread</bdi>ها <bdi dir="ltr">task</bdi> هستند</b><br><span class="caption">۱۰٬۰۰۱ <bdi dir="ltr">task</bdi>، هر کدام حدود ۳۲۰ میکروثانیه روی این <bdi dir="ltr">VM</bdi></span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 02.6 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger">حالت <bdi dir="ltr">syscall:</bdi> نخ کم</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">os.File.Read</bdi> از <bdi dir="ltr">netpoller</bdi> استفاده می‌کند</span></div><div class="pit in d2"><span class="tag r-danger">pthread_create: EAGAIN</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">ulimit -u</bdi> یا <bdi dir="ltr">pids.max</bdi> در <bdi dir="ltr">cgroup</bdi></span></div><div class="pit in d3"><span class="tag r-danger">go: command not found</span><span class="arrow-s">←</span><span class="tag r-ok">sudo apt install golang-go</span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">حالت <bdi dir="ltr">syscall: thread</bdi> کم</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">os.File.Read</bdi> از <bdi dir="ltr">netpoller</bdi> استفاده می‌کند</span></div><div class="pit in d2"><span class="tag r-danger">pthread_create: EAGAIN</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">ulimit -u</bdi> یا <bdi dir="ltr">pids.max</bdi> در <bdi dir="ltr">cgroup</bdi></span></div><div class="pit in d3"><span class="tag r-danger">go: command not found</span><span class="arrow-s">←</span><span class="tag r-ok">sudo apt install golang-go</span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
@@ -93,7 +93,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 02.6 · تمرین تکمیلی</span>
   <h2 class="in">تمرین تکمیلی</h2>
-  <p class="highlight in d1" style="font-size:38px">کاری کنید حالت <bdi dir="ltr">syscall</bdi> نخی نسازد<bdi dir="ltr">: pipe</bdi> را <bdi dir="ltr">non-blocking</bdi> و از طریق <bdi dir="ltr">os.NewFile (netpoller)</bdi> بخوانید و <bdi dir="ltr">fd</bdi> مربوط به <bdi dir="ltr">epoll</bdi> را در <bdi dir="ltr">/proc/&lt;pid&gt;/fd</bdi> پیدا کنید.</p>
+  <p class="highlight in d1" style="font-size:38px">کاری کنید <bdi dir="ltr">syscall</bdi> هیچ <bdi dir="ltr">thread</bdi> جدیدی نسازد<bdi dir="ltr">: pipe</bdi> را <bdi dir="ltr">non-blocking</bdi> و از طریق <bdi dir="ltr">os.NewFile (netpoller)</bdi> بخوانید و <bdi dir="ltr">fd</bdi> مربوط به <bdi dir="ltr">epoll</bdi> را در <bdi dir="ltr">/proc/&lt;pid&gt;/fd</bdi> پیدا کنید.</p>
   <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
   <aside class="notes">
 SAY (EN): Give the task, not the solution.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ process‌ها و thread‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

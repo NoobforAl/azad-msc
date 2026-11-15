@@ -75,7 +75,7 @@ TIME: 20
   <aside class="notes">
 SAY (FA): سرور برای تماشای یک کرنل سالم است. هر چیزی که کرنل را تغییر دهد یا ممکن است آن را از کار بیندازد به VM می‌رود، و قبل از هر کدام snapshot می‌گیریم. ① سرور، ② VM، ③ snapshot.
 SAY (EN): The server is for watching a healthy kernel. Anything that changes or can crash the kernel goes into the VM, and we snapshot before each such lab.
-KEY POINT: سطح کرنل = فقط VM. خود VM یک پردازه روی میزبان است و هر vCPU یک نخ.
+KEY POINT: سطح کرنل = فقط VM. خود VM یک process روی میزبان است و هر vCPU یک thread.
 EXAMPLE: ps -o pid,nlwp,cmd -C qemu-system-x86_64
 PITFALL: WSL2 جایگزین VM نیست (کرنل مایکروسافت، ماژول محدود).
 ASK: چرا از کار افتادن VM ارزان‌تر از از کار افتادن سرور است؟
@@ -277,7 +277,7 @@ TIME: 30
   <h2 class="in">برای مطالعهٔ بیشتر، منتخب از فهرست‌های <bdi dir="ltr">awesome-os</bdi></h2>
   <ul class="refs">
     <li class="in d1"><span class="pill">مستندات</span> <a href="https://www.kernel.org/doc/html/latest/"><b>The Linux Kernel documentation</b></a><span class="why">مستندات رسمی کرنل: راهنمای مدیریت، <bdi dir="ltr">API</bdi>های هسته و یادداشت‌های هر <bdi dir="ltr">subsystem</bdi>.</span><span class="url ltr">kernel.org/doc/html/latest</span></li>
-    <li class="in d2"><span class="pill">ابزار</span> <a href="https://github.com/arighi/virtme-ng"><b>virtme-ng</b></a><span class="why">ساخت و اجرای کرنل درون یک <bdi dir="ltr">snapshot</bdi> مجازی از سیستم فعلی (نیاز به میزبان <bdi dir="ltr">Linux)</bdi>.</span><span class="url ltr">github.com/arighi/virtme-ng</span></li>
+    <li class="in d2"><span class="pill">ابزار</span> <a href="https://github.com/arighi/virtme-ng"><b>virtme-ng</b></a><span class="why">ساخت و اجرای کرنل درون یک <bdi dir="ltr">snapshot</bdi> مجازی از سیستم فعلی (نیاز به میزبان <bdi dir="ltr">Linux</bdi>).</span><span class="url ltr">github.com/arighi/virtme-ng</span></li>
     <li class="in d3"><span class="pill">دوره</span> <a href="https://training.linuxfoundation.org/training/a-beginners-guide-to-linux-kernel-development-lfd103/"><b>A Beginner&#x27;s Guide to Linux Kernel Development (LFD103)</b></a><span class="why">دورهٔ <bdi dir="ltr">Linux Foundation</bdi> برای شروع توسعهٔ کرنل.</span><span class="url ltr">training.linuxfoundation.org/training/a-beginners-guide-to-linux</span></li>
     <li class="in d4"><span class="pill">مستندات</span> <a href="https://www.kernel.org/doc/html/latest/admin-guide/bug-hunting.html"><b>Bug hunting (kernel docs)</b></a><span class="why">راهنمای مدیریت کرنل دربارهٔ پیدا کردن باگ.</span><span class="url ltr">kernel.org/doc/html/latest/admin-guide/bug-hunting.html</span></li>
     <li class="in d5"><span class="pill">مستندات</span> <a href="https://www.kernel.org/doc/html/latest/admin-guide/bug-bisect.html"><b>Bisecting a regression (kernel docs)</b></a><span class="why">پیدا کردن دقیق <bdi dir="ltr">commit</bdi>ی که چیزی را خراب کرده.</span><span class="url ltr">kernel.org/doc/html/latest/admin-guide/bug-bisect.html</span></li>

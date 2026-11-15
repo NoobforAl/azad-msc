@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>آزمایش 07.4 · یک sandboxِ بدون امتیاز با Landlock</title>
+  <title>آزمایش 07.4 · یک sandbox unprivileged با Landlock</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
   <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
@@ -16,9 +16,9 @@
 <section class="layout-section" data-transition="slide">
   <div class="numeral in-f">07.4</div>
   <span class="eyebrow in-f">آزمایش 07.4 · هدف</span>
-  <h2 class="in">یک <bdi dir="ltr">sandbox</bdi>ِ بدون امتیاز با <bdi dir="ltr">Landlock</bdi></h2>
+  <h2 class="in">یک <bdi dir="ltr">sandbox unprivileged</bdi> با <bdi dir="ltr">Landlock</bdi></h2>
   <p class="why in d1">خواندن و اجرا همه‌جا، نوشتن فقط در یک پوشه؛ بدون <bdi dir="ltr">root</bdi>، و ببینید کرنل کجا نه می‌گوید.</p>
-  <div class="pills in d2"><span class="pill">محل اجرا: VM یا هر لینوکس با LSMِ landlock</span></div>
+  <div class="pills in d2"><span class="pill">محل اجرا: VM یا هر لینوکس با LSM landlock</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
 SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 07.4 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger">restrict_self: Operation not permitted</span><span class="arrow-s">←</span><span class="tag r-ok">prctl(PR_SET_NO_NEW_PRIVS) first</span></div><div class="pit in d2"><span class="tag r-danger">create_ruleset: Invalid argument</span><span class="arrow-s">←</span><span class="tag r-ok">حق‌هایی را که <bdi dir="ltr">ABI</bdi>ِ فعلی نمی‌شناسد حذف کنید</span></div><div class="pit in d3"><span class="tag r-danger">نوشتن جایی هنوز کار می‌کند</span><span class="arrow-s">←</span><span class="tag r-ok">حق‌های مدیریت‌نشده مجاز می‌مانند</span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">restrict_self: Operation not permitted</span><span class="arrow-s">←</span><span class="tag r-ok">prctl(PR_SET_NO_NEW_PRIVS) first</span></div><div class="pit in d2"><span class="tag r-danger">create_ruleset: Invalid argument</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">access right</bdi>‌هایی را که <bdi dir="ltr">ABI</bdi> فعلی نمی‌شناسد حذف کنید</span></div><div class="pit in d3"><span class="tag r-danger">نوشتن جایی هنوز کار می‌کند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">access right</bdi>‌های <bdi dir="ltr">handle</bdi>‌نشده مجاز می‌مانند</span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.

@@ -17,7 +17,7 @@
   <div class="numeral in-f">02.4</div>
   <span class="eyebrow in-f">آزمایش 02.4 · هدف</span>
   <h2 class="in"><bdi dir="ltr">perf sched</bdi> و <bdi dir="ltr">bpftrace</bdi> روی <bdi dir="ltr">sched_switch</bdi></h2>
-  <p class="why in d1">تأخیر زمان‌بندی را با <bdi dir="ltr">perf sched</bdi> بخوانید و هر <bdi dir="ltr">context switch</bdi> را با <bdi dir="ltr">bpftrace</bdi> به داوطلبانه و غیرداوطلبانه تقسیم کنید.</p>
+  <p class="why in d1">تأخیر زمان‌بندی را با <bdi dir="ltr">perf sched</bdi> بخوانید و هر <bdi dir="ltr">context switch</bdi> را با <bdi dir="ltr">bpftrace</bdi> به <bdi dir="ltr">voluntary</bdi> و <bdi dir="ltr">involuntary</bdi> تقسیم کنید.</p>
   <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (root، فقط ردیابی)</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 02.4 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">pingpong</bdi> فقط ۰٫۰۱۴ <bdi dir="ltr">ms</bdi> منتظر می‌ماند</b><br><span class="caption">با <bdi dir="ltr">lag</bdi> ≥ <bdi dir="ltr">0</bdi> بیدار می‌شود و <bdi dir="ltr">hog</bdi>ها را کنار می‌زند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">hog</bdi>های <bdi dir="ltr">sh:</bdi> فقط غیرداوطلبانه</b><br><span class="caption"><bdi dir="ltr">prev_state == 0</bdi> ← <bdi dir="ltr">preempt</bdi> شده</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">pingpong:</bdi> داوطلبانه</b><br><span class="caption">در هر رفت‌وبرگشت در <bdi dir="ltr">read()</bdi> مسدود می‌شود</span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">pingpong</bdi> فقط ۰٫۰۱۴ <bdi dir="ltr">ms</bdi> منتظر می‌ماند</b><br><span class="caption">با <bdi dir="ltr">lag</bdi> ≥ <bdi dir="ltr">0</bdi> بیدار می‌شود و <bdi dir="ltr">hog</bdi>ها را <bdi dir="ltr">preempt</bdi> می‌کند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">hog</bdi>های <bdi dir="ltr">sh:</bdi> فقط <bdi dir="ltr">involuntary</bdi></b><br><span class="caption"><bdi dir="ltr">prev_state == 0</bdi> ← <bdi dir="ltr">preempt</bdi> شده</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>pingpong: voluntary</b><br><span class="caption">در هر رفت‌وبرگشت در <bdi dir="ltr">read()</bdi> مسدود می‌شود</span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ process‌ها و thread‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

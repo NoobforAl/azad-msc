@@ -76,13 +76,13 @@ LABS = [
         title={"en": "Lamport and vector clocks", "fa": "ساعت‌های Lamport و برداری"},
         goal={
             "en": "Stamp every event of three real processes with Lamport and vector clocks, and prove that only vectors detect concurrency.",
-            "fa": "هر رویداد سه پردازهٔ واقعی را با ساعت Lamport و برداری مهر بزنید و نشان دهید فقط بردارها همروندی را تشخیص می‌دهند.",
+            "fa": "هر رویداد سه process واقعی را با ساعت Lamport و برداری مهر بزنید و نشان دهید فقط بردارها concurrency را تشخیص می‌دهند.",
         },
         where={"en": "aos-lab · Go · UDP 9600-9602", "fa": "aos-lab · Go · UDP 9600-9602"},
         setup_cards=[
             (
                 "r-user",
-                {"en": "Three processes", "fa": "سه پردازه"},
+                {"en": "Three processes", "fa": "سه process"},
                 {"en": "P0, P1, P2 on localhost UDP", "fa": "P0 و P1 و P2 روی UDP محلی"},
             ),
             ("r-data", {"en": "Clock rules", "fa": "قواعد ساعت"}, same("tick: L++ · merge: max(L,Lm)+1")),
@@ -117,8 +117,8 @@ LABS = [
                 },
             ),
             (
-                {"en": "Ties in L across processes", "fa": "مقدار L برابر در پردازه‌های مختلف"},
-                {"en": "total order breaks ties by process id", "fa": "ترتیب کامل تساوی را با شمارهٔ پردازه می‌شکند"},
+                {"en": "Ties in L across processes", "fa": "مقدار L برابر در process‌های مختلف"},
+                {"en": "total order breaks ties by process id", "fa": "ترتیب کامل تساوی را با شمارهٔ process می‌شکند"},
             ),
             (
                 {"en": "L(a) < L(b) yet a ∥ b", "fa": "L(a) < L(b) ولی a ∥ b"},
@@ -186,7 +186,7 @@ LABS = [
         captured=CAP02,
         observe=[
             (
-                {"en": "A: gave up, yet executions=20", "fa": "A: کلاینت تسلیم شد ولی executions=20"},
+                {"en": "A: gave up, yet executions=20", "fa": "A: کلاینت timeout شد ولی executions=20"},
                 {"en": "a timeout means unknown, not failed", "fa": "timeout یعنی نامعلوم، نه ناموفق"},
             ),
             (
@@ -271,7 +271,7 @@ LABS = [
         pitfalls=[
             (same("pivot_root: Invalid argument"), same("mount --bind rootfs rootfs; mount --make-rprivate /")),
             (
-                {"en": "ps shows host processes", "fa": "ps پردازه‌های میزبان را نشان می‌دهد"},
+                {"en": "ps shows host processes", "fa": "ps process‌های میزبان را نشان می‌دهد"},
                 {"en": "mount /proc after pivot_root", "fa": "/proc را بعد از pivot_root سوار کنید"},
             ),
             ({"en": "hog swaps instead of dying", "fa": "hog به‌جای مردن swap می‌کند"}, same("echo 0 > memory.swap.max")),

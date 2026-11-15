@@ -17,7 +17,7 @@
   <div class="numeral in-f">03.3</div>
   <span class="eyebrow in-f">آزمایش 03.3 · هدف</span>
   <h2 class="in"><bdi dir="ltr">Readers-Writers</bdi> و گرسنگی نویسنده</h2>
-  <p class="why in d1">نشان دهید <bdi dir="ltr">rwlock</bdi> پیش‌فرض <bdi dir="ltr">glibc</bdi> اجازه می‌دهد خواننده‌های هم‌پوشان نویسنده را گرسنه نگه دارند و گونهٔ ترجیح‌دهندهٔ نویسنده درستش می‌کند.</p>
+  <p class="why in d1">نشان دهید <bdi dir="ltr">rwlock</bdi> پیش‌فرض <bdi dir="ltr">glibc</bdi> اجازه می‌دهد خواننده‌های هم‌پوشان نویسنده را گرسنه نگه دارند و گونهٔ <bdi dir="ltr">writer-preference</bdi> درستش می‌کند.</p>
   <div class="pills in d2"><span class="pill">محل اجرا: VM با نام aos-lab (فضای کاربر)</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 03.3 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>ترجیح خواننده: نویسنده کل اجرا منتظر می‌ماند</b><br><span class="caption">خوانندهٔ تازه پذیرفته می‌شود در حالی که نویسنده منتظر است</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>ترجیح نویسنده: هزاران نوشتن</b><br><span class="caption">خواننده‌ها پشت نویسندهٔ منتظر صف می‌کشند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>گرسنگی <bdi dir="ltr">deadlock</bdi> نیست</b><br><span class="caption">خواننده‌ها پیش می‌روند؛ فقط نویسنده نه</span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">reader-preference:</bdi> نویسنده کل اجرا منتظر می‌ماند</b><br><span class="caption">خوانندهٔ تازه پذیرفته می‌شود در حالی که نویسنده منتظر است</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">writer-preference:</bdi> هزاران نوشتن</b><br><span class="caption">خواننده‌ها پشت نویسندهٔ منتظر صف می‌کشند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>گرسنگی <bdi dir="ltr">deadlock</bdi> نیست</b><br><span class="caption">خواننده‌ها پیش می‌روند؛ فقط نویسنده نه</span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 03.3 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">PREFER_WRITER_NP</bdi> اثری ندارد</span><span class="arrow-s">←</span><span class="tag r-ok">use PREFER_WRITER_NONRECURSIVE_NP</span></div><div class="pit in d2"><span class="tag r-danger">گرسنگی دیده نمی‌شود</span><span class="arrow-s">←</span><span class="tag r-ok">خواننده‌ها باید هم‌پوشان باشند: دست‌کم ۲ و بدون فاصله</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">deadlock</bdi> با ترجیح نویسنده</span><span class="arrow-s">←</span><span class="tag r-ok">قفل خواندن بازگشتی وقتی نویسنده منتظر است</span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">PREFER_WRITER_NP</bdi> اثری ندارد</span><span class="arrow-s">←</span><span class="tag r-ok">use PREFER_WRITER_NONRECURSIVE_NP</span></div><div class="pit in d2"><span class="tag r-danger">گرسنگی دیده نمی‌شود</span><span class="arrow-s">←</span><span class="tag r-ok">خواننده‌ها باید هم‌پوشان باشند: دست‌کم ۲ و بدون فاصله</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">deadlock</bdi> با <bdi dir="ltr">writer-preference</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">قفل خواندن بازگشتی وقتی نویسنده منتظر است</span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ هم‌روندی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ concurrency" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

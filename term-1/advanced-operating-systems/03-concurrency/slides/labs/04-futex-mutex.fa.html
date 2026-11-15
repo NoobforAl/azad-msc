@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 03.4 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>۱ نخ: صفر فراخوانی <bdi dir="ltr">futex</bdi></b><br><span class="caption">همهٔ گرفتن و آزادکردن‌ها در فضای کاربر ماند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>خطاهای <bdi dir="ltr">WAIT</bdi> همان <bdi dir="ltr">EAGAIN</bdi> است</b><br><span class="caption">مقدار پیش از بررسی کرنل عوض شده بود</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">op 0</bdi> یعنی <bdi dir="ltr">WAIT</bdi> و <bdi dir="ltr">op 1</bdi> یعنی <bdi dir="ltr">WAKE</bdi></b><br><span class="caption mono">op &amp; 127 strips FUTEX_PRIVATE_FLAG</span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>۱ <bdi dir="ltr">thread:</bdi> صفر فراخوانی <bdi dir="ltr">futex</bdi></b><br><span class="caption">همهٔ گرفتن و آزادکردن‌ها در فضای کاربر ماند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>خطاهای <bdi dir="ltr">WAIT</bdi> همان <bdi dir="ltr">EAGAIN</bdi> است</b><br><span class="caption">مقدار پیش از بررسی کرنل عوض شده بود</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">op 0</bdi> یعنی <bdi dir="ltr">WAIT</bdi> و <bdi dir="ltr">op 1</bdi> یعنی <bdi dir="ltr">WAKE</bdi></b><br><span class="caption mono">op &amp; 127 strips FUTEX_PRIVATE_FLAG</span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 03.4 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger">با رقابت گیر می‌کند</span><span class="arrow-s">←</span><span class="tag r-ok">آزادکردن باید وقتی مقدار قبلی ۲ بود بیدار کند</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">strace</bdi> نتیجه را تغییر می‌دهد</span><span class="arrow-s">←</span><span class="tag r-ok">ردیابی نخ‌ها را کند می‌کند؛ با شمارنده‌های خود برنامه مقایسه کنید</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">WAKE</bdi> بیشتر از <bdi dir="ltr">WAIT</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">حالت ۲ چسبنده است: طبیعی است</span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">با رقابت گیر می‌کند</span><span class="arrow-s">←</span><span class="tag r-ok">آزادکردن باید وقتی مقدار قبلی ۲ بود بیدار کند</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">strace</bdi> نتیجه را تغییر می‌دهد</span><span class="arrow-s">←</span><span class="tag r-ok">ردیابی <bdi dir="ltr">thread</bdi>‌ها را کند می‌کند؛ با شمارنده‌های خود برنامه مقایسه کنید</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">WAKE</bdi> بیشتر از <bdi dir="ltr">WAIT</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">حالت ۲ چسبنده است: طبیعی است</span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ هم‌روندی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ concurrency" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

@@ -18,7 +18,7 @@ LABS = [
         title={"en": "Count page faults", "fa": "شمردن page faultها"},
         goal={
             "en": "Count the faults it costs to touch every page of a mapping, and explain each count: demand paging, zero page, readahead, THP.",
-            "fa": "تعداد faultهایی را که لمس هر صفحهٔ یک mapping هزینه دارد بشمارید و هر عدد را با demand paging، zero page، readahead و THP توضیح دهید.",
+            "fa": "تعداد faultهایی را که touch هر صفحهٔ یک mapping هزینه دارد بشمارید و هر عدد را با demand paging، zero page، readahead و THP توضیح دهید.",
         },
         where={"en": "aos-lab VM · user space", "fa": "VM آزمایشگاه · فضای کاربر"},
         setup_cards=[
@@ -196,7 +196,7 @@ LABS = [
         ],
         ext={
             "en": "Use (*ctr)++ with 4 × 10 000 000 on anon-shared and explain the loss; then share a counter between two unrelated processes with memfd_create or shm_open.",
-            "fa": "در anon-shared با ۴ × ۱۰٬۰۰۰٬۰۰۰ از (*ctr)++ استفاده کنید و کم شدن عدد را توضیح دهید؛ بعد بین دو پردازهٔ بی‌ربط با memfd_create یا shm_open یک شمارنده شریک کنید.",
+            "fa": "در anon-shared با ۴ × ۱۰٬۰۰۰٬۰۰۰ از (*ctr)++ استفاده کنید و کم شدن عدد را توضیح دهید؛ بعد بین دو process بی‌ربط با memfd_create یا shm_open یک شمارنده شریک کنید.",
         },
         captured=CAP,
     ),
@@ -253,7 +253,7 @@ LABS = [
         ],
         ext={
             "en": "Add hugetlbfs (MAP_HUGETLB, nr_hugepages=256 then restore 0) and 1 GiB pages if pdpe1gb exists; plot all curves and explain each knee.",
-            "fa": "حالت hugetlbfs (MAP_HUGETLB با nr_hugepages=256 و بعد برگرداندن به ۰) و اگر pdpe1gb هست صفحهٔ ۱ گیگابایتی را اضافه کنید؛ همهٔ منحنی‌ها را رسم و هر زانو را توضیح دهید.",
+            "fa": "حالت hugetlbfs (MAP_HUGETLB با nr_hugepages=256 و بعد برگرداندن به ۰) و اگر pdpe1gb هست صفحهٔ ۱ گیگابایتی را اضافه کنید؛ همهٔ منحنی‌ها را رسم و هر knee را توضیح دهید.",
         },
         captured=CAP,
     ),
@@ -270,7 +270,7 @@ LABS = [
             ("r-user", {"en": "Program", "fa": "برنامه"}, same("mkfiles.c create|delete DIR N")),
             ("r-kernel", {"en": "Caches", "fa": "cacheها"}, same("dentry · ext4_inode_cache")),
             ("r-data", {"en": "Views", "fa": "نماها"}, same("/proc/slabinfo · slabtop -o -s c")),
-            ("r-hardware", {"en": "Accounting", "fa": "حسابداری"}, same("SReclaimable vs SUnreclaim")),
+            ("r-hardware", {"en": "Accounting", "fa": "accounting"}, same("SReclaimable vs SUnreclaim")),
         ],
         steps=[
             "$ gcc -Wall -Wextra -O2 -o mkfiles mkfiles.c",

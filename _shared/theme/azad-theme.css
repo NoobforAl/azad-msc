@@ -76,6 +76,10 @@ body { margin:0; background:var(--bg); }
 .reveal[dir="rtl"], [dir="rtl"] .reveal, .reveal:lang(fa) {
   font-family:var(--font-fa); font-size:36px; line-height:1.55;
 }
+/* reveal.js ships `.reveal.rtl .slides, .reveal.rtl .slides h1..h6 { font-family: sans-serif }`, which silently replaced
+   Vazirmatn with the system fallback (Tahoma/Arial) on every Persian slide. Same selectors, loaded later: ours wins. */
+.reveal.rtl .slides, .reveal.rtl .slides h1, .reveal.rtl .slides h2, .reveal.rtl .slides h3,
+.reveal.rtl .slides h4, .reveal.rtl .slides h5, .reveal.rtl .slides h6 { font-family:var(--font-fa); }
 .reveal .slides { text-align:start; }
 .reveal .slides section {
   box-sizing:border-box; width:1920px; height:1080px;

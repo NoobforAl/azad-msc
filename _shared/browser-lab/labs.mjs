@@ -96,7 +96,7 @@ export const LABS = [
         fa: "یک process پس‌زمینه بسازید که فقط می‌خوابد." },
       { cmd: "grep -E 'Name|State|PPid|Threads' /proc/$!/status", expect: "State:\\s+S \\(sleeping\\)",
         en: "The kernel's view of that process: sleeping, with your shell as its parent.",
-        fa: "دید کرنل از آن process: در حال خواب، با parent برابر shell شما." },
+        fa: "دید کرنل از آن process: در حال خواب، و parent آن همان shell شماست." },
       { cmd: "ps | head -8", expect: "PID",
         en: "All processes. Look for the sleep.",
         fa: "همهٔ processها. sleep را پیدا کنید." },
@@ -113,7 +113,7 @@ export const LABS = [
     },
     answer: {
       en: "fork duplicates the calling process: the copy gets a new pid and keeps the original as its parent (PPid). exec then replaces the copy's program, which is how sh -c runs a new command.",
-      fa: "fork فرایند فراخوان را کپی می‌کند: کپی یک pid جدید می‌گیرد و فرایند اصلی parent آن (PPid) می‌ماند. سپس exec برنامهٔ کپی را عوض می‌کند و به همین شکل sh -c دستور جدید را اجرا می‌کند.",
+      fa: "fork process فراخواننده را کپی می‌کند: کپی یک pid جدید می‌گیرد و process اصلی parent آن (PPid) می‌ماند. سپس exec برنامهٔ کپی را عوض می‌کند و به همین شکل sh -c دستور جدید را اجرا می‌کند.",
     },
     source: [
       { path: "kernel/fork.c", en: "kernel_clone: what fork and clone call", fa: "kernel_clone: چیزی که fork و clone صدا می‌زنند" },
@@ -136,7 +136,7 @@ export const LABS = [
       { cmd: "nice -n 19 sh -c 'while :; do :; done' & p1=$!; sh -c 'while :; do :; done' & p2=$!; sleep 10; top -b -n 1 | head -12; kill $p1 $p2",
         expect: "sh -c while", timeout: 60000,
         en: "Two busy loops, one with nice 19 (polite) and one normal. Wait 10 seconds, then read their CPU use from top.",
-        fa: "دو حلقهٔ مشغول، یکی با nice 19 (مؤدب) و یکی عادی. ۱۰ ثانیه صبر کنید و مصرف CPU آن‌ها را در top بخوانید." },
+        fa: "دو busy loop، یکی با nice 19 (مؤدب) و یکی عادی. ۱۰ ثانیه صبر کنید و مصرف CPU آن‌ها را در top بخوانید." },
     ],
     ask: {
       en: "Which loop got more CPU in top, and by how much? What does that say about nice?",
@@ -191,7 +191,7 @@ export const LABS = [
     title: { en: "Signals", fa: "Signalها" },
     intro: {
       en: "Signals are the kernel's way to interrupt a process. Catch one, then freeze and thaw another.",
-      fa: "Signalها راه کرنل برای قطع‌کردن یک process هستند. یکی را بگیرید، سپس process دیگری را یخ بزنید و آب کنید.",
+      fa: "Signalها راه کرنل برای قطع‌کردن یک process هستند. یکی را بگیرید، سپس process دیگری را متوقف کنید و ادامه دهید.",
     },
     steps: [
       { cmd: "trap 'echo \"caught SIGUSR1 in pid $$\"' USR1; kill -USR1 $$", expect: "caught SIGUSR1 in pid \\d+",
@@ -200,7 +200,7 @@ export const LABS = [
       { cmd: "sleep 100 & p=$!; kill -STOP $p; sleep 1; grep State /proc/$p/status; kill -CONT $p; sleep 1; grep State /proc/$p/status; kill $p",
         expect: "State:\\s+T \\(stopped\\)[\\s\\S]*State:\\s+S \\(sleeping\\)",
         en: "Freeze a process with SIGSTOP (state T), thaw it with SIGCONT (state S), then end it.",
-        fa: "یک process را با SIGSTOP یخ بزنید (حالت T)، با SIGCONT آب کنید (حالت S) و سپس تمامش کنید." },
+        fa: "یک process را با SIGSTOP متوقف کنید (حالت T)، با SIGCONT ادامه دهید (حالت S) و سپس تمامش کنید." },
     ],
     ask: {
       en: "Can the sleeping process ignore SIGSTOP? Try: sleep 100 & kill -KILL $!",
@@ -226,7 +226,7 @@ export const LABS = [
         fa: "حافظهٔ فیزیکی: کل، استفاده‌شده، آزاد. این ماشین حدود ۱۰۰ مگابایت دارد." },
       { cmd: "grep -E 'MemTotal|MemFree|Slab|Shmem' /proc/meminfo", expect: "MemTotal",
         en: "A few more counters from the kernel's memory accounting.",
-        fa: "چند شمارندهٔ دیگر از حسابداری حافظهٔ کرنل." },
+        fa: "چند شمارندهٔ دیگر از accounting حافظهٔ کرنل." },
       { cmd: "cat /proc/self/maps", expect: "\\[stack\\]",
         en: "The address space of the cat command itself: program, libraries, heap, stack.",
         fa: "فضای آدرس خودِ دستور cat: برنامه، کتابخانه‌ها، heap و stack." },
@@ -333,7 +333,7 @@ export const LABS = [
       { cmd: "echo 0 > /tmp/n; for p in 1 2 3 4; do (i=0; while [ $i -lt 40 ]; do flock /tmp/n.lock sh -c 'v=$(cat /tmp/n); usleep 2000; echo $((v+1)) > /tmp/n'; i=$((i+1)); done) & done; wait; echo \"with flock: $(cat /tmp/n)\"",
         expect: "with flock: 160", timeout: 90000,
         en: "The same work, but the read-modify-write is inside flock. The result must be exactly 160.",
-        fa: "همین کار، ولی خواندن-تغییر-نوشتن داخل flock است. نتیجه باید دقیقاً ۱۶۰ باشد." },
+        fa: "همین کار، ولی read-modify-write داخل flock است. نتیجه باید دقیقاً ۱۶۰ باشد." },
     ],
     ask: {
       en: "Why was the first result less than 160? Which updates were lost?",

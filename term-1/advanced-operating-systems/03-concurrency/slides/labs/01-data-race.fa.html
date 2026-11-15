@@ -17,7 +17,7 @@
   <div class="numeral in-f">03.1</div>
   <span class="eyebrow in-f">آزمایش 03.1 · هدف</span>
   <h2 class="in"><bdi dir="ltr">Data race</bdi> ← <bdi dir="ltr">TSan</bdi> ← <bdi dir="ltr">mutex</bdi> ← <bdi dir="ltr">atomic</bdi></h2>
-  <p class="why in d1">ببینید <bdi dir="ltr">count++</bdi> روی چهار نخ به‌روزرسانی گم می‌کند، بگذارید <bdi dir="ltr">ThreadSanitizer race</bdi> را نام ببرد، دو بار درستش کنید و هزینهٔ هر راه را بسنجید.</p>
+  <p class="why in d1">ببینید <bdi dir="ltr">count++</bdi> روی چهار <bdi dir="ltr">thread</bdi> به‌روزرسانی گم می‌کند، بگذارید <bdi dir="ltr">ThreadSanitizer race</bdi> را نام ببرد، دو بار درستش کنید و هزینهٔ هر راه را بسنجید.</p>
   <div class="pills in d2"><span class="pill">محل اجرا: VM با نام aos-lab (فضای کاربر)</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 03.1 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger">حالت <bdi dir="ltr">race</bdi> درست به نظر می‌آید</span><span class="arrow-s">←</span><span class="tag r-ok">دست‌کم ۱ میلیون تکرار و ۴ نخ</span></div><div class="pit in d2"><span class="tag r-danger">TSan: unexpected memory mapping</span><span class="arrow-s">←</span><span class="tag r-ok">setarch x86_64 -R ./race-tsan ...</span></div><div class="pit in d3"><span class="tag r-danger">cycles &lt;not supported&gt;</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">PMU</bdi> در مهمان نیست: رویدادهای نرم‌افزاری</span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">حالت <bdi dir="ltr">race</bdi> درست به نظر می‌آید</span><span class="arrow-s">←</span><span class="tag r-ok">دست‌کم ۱ میلیون تکرار و ۴ <bdi dir="ltr">thread</bdi></span></div><div class="pit in d2"><span class="tag r-danger">TSan: unexpected memory mapping</span><span class="arrow-s">←</span><span class="tag r-ok">setarch x86_64 -R ./race-tsan ...</span></div><div class="pit in d3"><span class="tag r-danger">cycles &lt;not supported&gt;</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">PMU</bdi> در مهمان نیست: رویدادهای نرم‌افزاری</span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
@@ -93,7 +93,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 03.1 · تمرین تکمیلی</span>
   <h2 class="in">تمرین تکمیلی</h2>
-  <p class="highlight in d1" style="font-size:38px">اشتراک را حذف کنید: شمارندهٔ جدا برای هر نخ، یک بار فشرده در یک آرایه و یک بار هر کدام در ۶۴ بایت جدا. هر دو را بسنجید و فاصله را با <bdi dir="ltr">cache coherence</bdi> توضیح دهید.</p>
+  <p class="highlight in d1" style="font-size:38px">اشتراک را حذف کنید: شمارندهٔ جدا برای هر <bdi dir="ltr">thread</bdi>، یک بار فشرده در یک آرایه و یک بار هر کدام در ۶۴ بایت جدا. هر دو را بسنجید و فاصله را با <bdi dir="ltr">cache coherence</bdi> توضیح دهید.</p>
   <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
   <aside class="notes">
 SAY (EN): Give the task, not the solution.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ هم‌روندی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ concurrency" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

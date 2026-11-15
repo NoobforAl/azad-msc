@@ -17,7 +17,7 @@
   <div class="numeral in-f">02.3</div>
   <span class="eyebrow in-f">آزمایش 02.3 · هدف</span>
   <h2 class="in">هزینهٔ <bdi dir="ltr">context switch: ping-pong</bdi> با <bdi dir="ltr">pipe</bdi></h2>
-  <p class="why in d1">رفت‌وبرگشت مسدودکننده را وقتی هر دو <bdi dir="ltr">task</bdi> روی یک <bdi dir="ltr">CPU</bdi> یا روی دو <bdi dir="ltr">CPU</bdi> هستند اندازه بگیرید و توضیح دهید چرا اینجا دو <bdi dir="ltr">CPU</bdi> کندتر است.</p>
+  <p class="why in d1">رفت‌وبرگشت <bdi dir="ltr">blocking</bdi> را وقتی هر دو <bdi dir="ltr">task</bdi> روی یک <bdi dir="ltr">CPU</bdi> یا روی دو <bdi dir="ltr">CPU</bdi> هستند اندازه بگیرید و توضیح دهید چرا اینجا دو <bdi dir="ltr">CPU</bdi> کندتر است.</p>
   <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه (aos-lab)</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
@@ -30,7 +30,7 @@ TIME: 30
 <section>
   <span class="eyebrow in-f">آزمایش 02.3 · آماده‌سازی</span>
   <h2 class="in">آماده‌سازی</h2>
-  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>دو پردازه</h3><p>یک بایت رفت و برگشت، ۲۰۰ هزار بار</p></div><div class="c-6 card edge r-kernel in d2"><h3>مسیر کرنل</h3><p>انتظار <bdi dir="ltr">pipe</bdi> ← <bdi dir="ltr">__schedule</bdi> ← <bdi dir="ltr">wake_up</bdi></p></div><div class="c-6 card edge r-hardware in d3"><h3>جای‌گذاری</h3><p><bdi dir="ltr">same: CPU 0</bdi> · <bdi dir="ltr">split: CPU 0</bdi> و <bdi dir="ltr">1</bdi></p></div><div class="c-6 card edge r-data in d4"><h3>آمار</h3><p>۵ اجرا، میانه (<bdi dir="ltr">VM</bdi> مشترک)</p></div></div>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>دو <bdi dir="ltr">process</bdi></h3><p>یک بایت رفت و برگشت، ۲۰۰ هزار بار</p></div><div class="c-6 card edge r-kernel in d2"><h3>مسیر کرنل</h3><p>انتظار <bdi dir="ltr">pipe</bdi> ← <bdi dir="ltr">__schedule</bdi> ← <bdi dir="ltr">wake_up</bdi></p></div><div class="c-6 card edge r-hardware in d3"><h3>جای‌گذاری</h3><p><bdi dir="ltr">same: CPU 0</bdi> · <bdi dir="ltr">split: CPU 0</bdi> و <bdi dir="ltr">1</bdi></p></div><div class="c-6 card edge r-data in d4"><h3>آمار</h3><p>۵ اجرا، میانه (<bdi dir="ltr">VM</bdi> مشترک)</p></div></div>
   <aside class="notes">
 SAY (EN): Walk through what must be true before the first command.
 SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 02.3 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">same:</bdi> ۴۳٪ غیرداوطلبانه</b><br><span class="caption"><bdi dir="ltr">task</bdi> بیدارشده نویسنده را پیش از <bdi dir="ltr">read()</bdi> کنار می‌زند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">split</bdi> حدود ۷۰ برابر کندتر است</b><br><span class="caption">بیدار کردن <bdi dir="ltr">vCPU</bdi> دیگر با <bdi dir="ltr">IPI</bdi> و <bdi dir="ltr">hypervisor</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">free</bdi> ≈ <bdi dir="ltr">same</bdi></b><br><span class="caption"><bdi dir="ltr">wake-affine</bdi> و <bdi dir="ltr">WF_SYNC</bdi> از سمت <bdi dir="ltr">pipe</bdi></span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">same:</bdi> ۴۳٪ <bdi dir="ltr">involuntary</bdi></b><br><span class="caption"><bdi dir="ltr">task</bdi> بیدارشده نویسنده را پیش از <bdi dir="ltr">read() preempt</bdi> می‌کند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">split</bdi> حدود ۷۰ برابر کندتر است</b><br><span class="caption">بیدار کردن <bdi dir="ltr">vCPU</bdi> دیگر با <bdi dir="ltr">IPI</bdi> و <bdi dir="ltr">hypervisor</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">free</bdi> ≈ <bdi dir="ltr">same</bdi></b><br><span class="caption"><bdi dir="ltr">wake-affine</bdi> و <bdi dir="ltr">WF_SYNC</bdi> از سمت <bdi dir="ltr">pipe</bdi></span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ پردازه‌ها و نخ‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۲ process‌ها و thread‌ها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

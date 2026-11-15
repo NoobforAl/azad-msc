@@ -17,7 +17,7 @@
   <div class="numeral in-f">06.1</div>
   <span class="eyebrow in-f">آزمایش 06.1 · هدف</span>
   <h2 class="in">ساعت‌های <bdi dir="ltr">Lamport</bdi> و برداری</h2>
-  <p class="why in d1">هر رویداد سه پردازهٔ واقعی را با ساعت <bdi dir="ltr">Lamport</bdi> و برداری مهر بزنید و نشان دهید فقط بردارها همروندی را تشخیص می‌دهند.</p>
+  <p class="why in d1">هر رویداد سه <bdi dir="ltr">process</bdi> واقعی را با ساعت <bdi dir="ltr">Lamport</bdi> و برداری مهر بزنید و نشان دهید فقط بردارها <bdi dir="ltr">concurrency</bdi> را تشخیص می‌دهند.</p>
   <div class="pills in d2"><span class="pill">محل اجرا: aos-lab · Go · UDP 9600-9602</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
@@ -30,7 +30,7 @@ TIME: 30
 <section>
   <span class="eyebrow in-f">آزمایش 06.1 · آماده‌سازی</span>
   <h2 class="in">آماده‌سازی</h2>
-  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>سه پردازه</h3><p><bdi dir="ltr">P0</bdi> و <bdi dir="ltr">P1</bdi> و <bdi dir="ltr">P2</bdi> روی <bdi dir="ltr">UDP</bdi> محلی</p></div><div class="c-6 card edge r-data in d2"><h3>قواعد ساعت</h3><p class="ltr-mono"><code>tick: L++ · merge: max(L,Lm)+1</code></p></div><div class="c-6 card edge r-kernel in d3"><h3>لاگ</h3><p>یک خط <bdi dir="ltr">JSON</bdi> برای هر رویداد، زیر <bdi dir="ltr">mutex</bdi></p></div><div class="c-6 card edge r-hardware in d4"><h3>تحلیل‌گر</h3><p>شرط ساعت، ترتیب کامل، جفت‌های همروند</p></div></div>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>سه <bdi dir="ltr">process</bdi></h3><p><bdi dir="ltr">P0</bdi> و <bdi dir="ltr">P1</bdi> و <bdi dir="ltr">P2</bdi> روی <bdi dir="ltr">UDP</bdi> محلی</p></div><div class="c-6 card edge r-data in d2"><h3>قواعد ساعت</h3><p class="ltr-mono"><code>tick: L++ · merge: max(L,Lm)+1</code></p></div><div class="c-6 card edge r-kernel in d3"><h3>لاگ</h3><p>یک خط <bdi dir="ltr">JSON</bdi> برای هر رویداد، زیر <bdi dir="ltr">mutex</bdi></p></div><div class="c-6 card edge r-hardware in d4"><h3>تحلیل‌گر</h3><p>شرط ساعت، ترتیب کامل، جفت‌های همروند</p></div></div>
   <aside class="notes">
 SAY (EN): Walk through what must be true before the first command.
 SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 06.1 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">lamport n/n</bdi> و <bdi dir="ltr">vector n/n</bdi></b><br><span class="caption"><bdi dir="ltr">merge()</bdi> هر دریافت را از ارسالش بزرگ‌تر می‌کند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>مقدار <bdi dir="ltr">L</bdi> برابر در پردازه‌های مختلف</b><br><span class="caption">ترتیب کامل تساوی را با شمارهٔ پردازه می‌شکند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">L(a) &lt; L(b)</bdi> ولی <bdi dir="ltr">a</bdi> ∥ <bdi dir="ltr">b</bdi></b><br><span class="caption">مرتب‌کردن لاگ با زمان <bdi dir="ltr">Lamport</bdi> ترتیب علّی نیست</span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">lamport n/n</bdi> و <bdi dir="ltr">vector n/n</bdi></b><br><span class="caption"><bdi dir="ltr">merge()</bdi> هر دریافت را از ارسالش بزرگ‌تر می‌کند</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>مقدار <bdi dir="ltr">L</bdi> برابر در <bdi dir="ltr">process</bdi>‌های مختلف</b><br><span class="caption">ترتیب کامل تساوی را با شمارهٔ <bdi dir="ltr">process</bdi> می‌شکند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">L(a) &lt; L(b)</bdi> ولی <bdi dir="ltr">a</bdi> ∥ <bdi dir="ltr">b</bdi></b><br><span class="caption">مرتب‌کردن لاگ با زمان <bdi dir="ltr">Lamport</bdi> ترتیب علّی نیست</span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.

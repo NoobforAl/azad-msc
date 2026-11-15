@@ -68,7 +68,7 @@ TIME: 60
 <section>
   <span class="eyebrow in-f">آزمایش 03.2 · به چه دقت کنید</span>
   <h2 class="in">به چه دقت کنید</h2>
-  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">checksum</bdi> یکسان در هر سه</b><br><span class="caption mono">sum=500000500000 OK</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>ظرفیت ۱ یعنی پینگ‌پنگ</b><br><span class="caption">هر آیتم یک جفت خواب و بیدار لازم دارد</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">Go</bdi> گوروتین را <bdi dir="ltr">park</bdi> می‌کند، نه نخ را</b><br><span class="caption"><bdi dir="ltr">scheduler</bdi> خود <bdi dir="ltr">runtime</bdi> انتظار را انجام می‌دهد (ماژول ۰۲)</span></div></li></ul>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b><bdi dir="ltr">checksum</bdi> یکسان در هر سه</b><br><span class="caption mono">sum=500000500000 OK</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>ظرفیت ۱ یعنی پینگ‌پنگ</b><br><span class="caption">هر آیتم یک جفت خواب و بیدار لازم دارد</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">Go goroutine</bdi> را <bdi dir="ltr">park</bdi> می‌کند، نه <bdi dir="ltr">thread</bdi> را</b><br><span class="caption"><bdi dir="ltr">scheduler</bdi> خود <bdi dir="ltr">runtime</bdi> انتظار را انجام می‌دهد (ماژول ۰۲)</span></div></li></ul>
   <aside class="notes">
 SAY (EN): Each observation previews a later module.
 SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
@@ -107,6 +107,6 @@ TIME: 30
 </div>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
-<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ هم‌روندی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="سیستم‌عامل پیشرفته · ۰۳ concurrency" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
 </body>
 </html>

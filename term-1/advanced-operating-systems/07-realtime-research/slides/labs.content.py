@@ -96,10 +96,10 @@ LABS = [
     dict(
         slug="02-priority-inversion",
         num="07.2",
-        title={"en": "Priority inversion and PTHREAD_PRIO_INHERIT", "fa": "وارونگی اولویت و PTHREAD_PRIO_INHERIT"},
+        title={"en": "Priority inversion and PTHREAD_PRIO_INHERIT", "fa": "priority inversion و PTHREAD_PRIO_INHERIT"},
         goal={
             "en": "Make unbounded priority inversion happen on demand, then remove it with one mutex attribute.",
-            "fa": "وارونگی نامحدود اولویت را هر وقت خواستید ایجاد کنید، بعد با یک ویژگی mutex حذفش کنید.",
+            "fa": "unbounded priority inversion را هر وقت خواستید ایجاد کنید، بعد با یک ویژگی mutex حذفش کنید.",
         },
         where={"en": "VM only — 1 s of RT busy-loop", "fa": "فقط VM — ۱ ثانیه حلقهٔ پرکار RT"},
         setup_cards=[
@@ -159,7 +159,7 @@ LABS = [
         ],
         pitfalls=[
             (
-                {"en": "no inversion visible", "fa": "وارونگی دیده نمی‌شود"},
+                {"en": "no inversion visible", "fa": "inversion دیده نمی‌شود"},
                 {"en": "pin all threads: taskset -c N", "fa": "همهٔ threadها را ببندید: taskset -c N"},
             ),
             (
@@ -187,7 +187,7 @@ LABS = [
             "en": "Confine a program with a seccomp filter and see errno, kill and allow from user space.",
             "fa": "یک برنامه را با فیلتر seccomp محدود کنید و errno و kill و allow را از فضای کاربر ببینید.",
         },
-        where={"en": "VM or any Linux (unprivileged)", "fa": "VM یا هر لینوکسی (بدون امتیاز)"},
+        where={"en": "VM or any Linux (unprivileged)", "fa": "VM یا هر لینوکسی (unprivileged)"},
         setup_cards=[
             ("r-user", {"en": "Library", "fa": "کتابخانه"}, c("libseccomp-dev · -lseccomp")),
             ("r-kernel", {"en": "Precondition", "fa": "پیش‌شرط"}, c("prctl(PR_SET_NO_NEW_PRIVS, 1)")),
@@ -230,7 +230,7 @@ LABS = [
             ),
             (
                 {"en": "Arch check comes first", "fa": "بررسی arch اول می‌آید"},
-                {"en": "libseccomp guards the i386 ABI bypass", "fa": "libseccomp جلوی دور زدن با ABIِ i386 را می‌گیرد"},
+                {"en": "libseccomp guards the i386 ABI bypass", "fa": "libseccomp جلوی دور زدن با ABI i386 را می‌گیرد"},
             ),
         ],
         pitfalls=[
@@ -255,12 +255,12 @@ LABS = [
     dict(
         slug="04-landlock",
         num="07.4",
-        title={"en": "An unprivileged Landlock sandbox", "fa": "یک sandboxِ بدون امتیاز با Landlock"},
+        title={"en": "An unprivileged Landlock sandbox", "fa": "یک sandbox unprivileged با Landlock"},
         goal={
             "en": "Read and execute everywhere, write only in one directory — no root, and see where the kernel says no.",
             "fa": "خواندن و اجرا همه‌جا، نوشتن فقط در یک پوشه؛ بدون root، و ببینید کرنل کجا نه می‌گوید.",
         },
-        where={"en": "VM or any Linux with landlock LSM", "fa": "VM یا هر لینوکس با LSMِ landlock"},
+        where={"en": "VM or any Linux with landlock LSM", "fa": "VM یا هر لینوکس با LSM landlock"},
         setup_cards=[
             ("r-kernel", {"en": "LSM active", "fa": "LSM فعال"}, c("cat /sys/kernel/security/lsm | grep landlock")),
             ("r-kernel", {"en": "ABI", "fa": "ABI"}, c("landlock_abi_version = 7 (v6.18.63)")),
@@ -311,11 +311,14 @@ LABS = [
             ),
             (
                 {"en": "create_ruleset: Invalid argument", "fa": "create_ruleset: Invalid argument"},
-                {"en": "drop rights the running ABI doesn't know", "fa": "حق‌هایی را که ABIِ فعلی نمی‌شناسد حذف کنید"},
+                {
+                    "en": "drop rights the running ABI doesn't know",
+                    "fa": "access right‌هایی را که ABI فعلی نمی‌شناسد حذف کنید",
+                },
             ),
             (
                 {"en": "writes still work somewhere", "fa": "نوشتن جایی هنوز کار می‌کند"},
-                {"en": "unhandled rights stay allowed", "fa": "حق‌های مدیریت‌نشده مجاز می‌مانند"},
+                {"en": "unhandled rights stay allowed", "fa": "access right‌های handle‌نشده مجاز می‌مانند"},
             ),
         ],
         ext={
@@ -329,9 +332,9 @@ LABS = [
         title={"en": "Read two OS papers, write two reviews", "fa": "خواندن دو مقالهٔ سیستم‌عامل و نوشتن دو داوری"},
         goal={
             "en": "Three-pass reading and a one-page review that maps each paper onto Linux v6.18.63.",
-            "fa": "خواندن سه‌گذره و یک داوری یک‌صفحه‌ای که هر مقاله را روی Linux v6.18.63 نگاشت کند.",
+            "fa": "خواندن three-pass و یک داوری یک‌صفحه‌ای که هر مقاله را روی Linux v6.18.63 نگاشت کند.",
         },
-        where={"en": "Laptop + repo source checkout", "fa": "لپ‌تاپ + checkoutِ سورس مخزن"},
+        where={"en": "Laptop + repo source checkout", "fa": "لپ‌تاپ + checkout سورس مخزن"},
         setup_cards=[
             (
                 "r-data",
@@ -372,11 +375,11 @@ LABS = [
         ],
         captured={
             "en": "the repo checkout (Linux v6.18.63), 2026-11-15",
-            "fa": "checkoutِ مخزن (Linux v6.18.63)، ۲۰۲۶-۱۱-۱۵",
+            "fa": "checkout مخزن (Linux v6.18.63)، ۲۰۲۶-۱۱-۱۵",
         },
         observe=[
             (
-                {"en": "Paper B's balancer still exists", "fa": "load balancerِ مقالهٔ B هنوز هست"},
+                {"en": "Paper B's balancer still exists", "fa": "load balancer مقالهٔ B هنوز هست"},
                 {
                     "en": "renamed; EEVDF replaced CFS's pick, not balancing",
                     "fa": "نامش عوض شده؛ EEVDF انتخاب CFS را عوض کرد، نه توازن را",

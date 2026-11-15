@@ -17,7 +17,7 @@
   <div class="numeral in-f">05.2</div>
   <span class="eyebrow in-f">آزمایش 05.2 · هدف</span>
   <h2 class="in"><bdi dir="ltr">hit</bdi> و <bdi dir="ltr">miss</bdi> در <bdi dir="ltr">page cache</bdi></h2>
-  <p class="why in d1">خواندن سرد و گرم یک فایل را اندازه بگیرید و فقط همان فایل را از <bdi dir="ltr">cache</bdi> بیرون کنید.</p>
+  <p class="why in d1">خواندن سرد و گرم یک فایل را اندازه بگیرید و فقط همان فایل را از <bdi dir="ltr">cache evict</bdi> کنید.</p>
   <div class="pills in d2"><span class="pill">محل اجرا: VM آزمایشگاه یا هر لینوکسی</span></div>
   <aside class="notes">
 SAY (EN): State the goal in one sentence and where the lab runs.
@@ -30,7 +30,7 @@ TIME: 30
 <section>
   <span class="eyebrow in-f">آزمایش 05.2 · آماده‌سازی</span>
   <h2 class="in">آماده‌سازی</h2>
-  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>pcache.c</h3><p class="ltr-mono"><code>resident · evict · read</code></p></div><div class="c-6 card edge r-data in d2"><h3>حضور در <bdi dir="ltr">cache</bdi></h3><p><bdi dir="ltr">mmap + mincore</bdi> و مقایسه با <bdi dir="ltr">fincore</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3>بیرون‌کردن</h3><p class="ltr-mono"><code>posix_fadvise(POSIX_FADV_DONTNEED)</code></p></div><div class="c-6 card edge r-kernel in d4"><h3>tracepoint</h3><p class="ltr-mono"><code>filemap:mm_filemap_add_to_page_cache</code></p></div></div>
+  <div class="grid tight"><div class="c-6 card edge r-user in d1"><h3>pcache.c</h3><p class="ltr-mono"><code>resident · evict · read</code></p></div><div class="c-6 card edge r-data in d2"><h3>حضور در <bdi dir="ltr">cache</bdi></h3><p><bdi dir="ltr">mmap + mincore</bdi> و مقایسه با <bdi dir="ltr">fincore</bdi></p></div><div class="c-6 card edge r-kernel in d3"><h3><bdi dir="ltr">evict</bdi> کردن</h3><p class="ltr-mono"><code>posix_fadvise(POSIX_FADV_DONTNEED)</code></p></div><div class="c-6 card edge r-kernel in d4"><h3>tracepoint</h3><p class="ltr-mono"><code>filemap:mm_filemap_add_to_page_cache</code></p></div></div>
   <aside class="notes">
 SAY (EN): Walk through what must be true before the first command.
 SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
@@ -81,7 +81,7 @@ TIME: 90
 <section>
   <span class="eyebrow in-f">آزمایش 05.2 · اشتباه‌های رایج</span>
   <h2 class="in">اشتباه‌های رایج</h2>
-  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">drop_caches</bdi> روی <bdi dir="ltr">VM</bdi> مشترک</span><span class="arrow-s">←</span><span class="tag r-ok">فقط یک فایل را با <bdi dir="ltr">fadvise</bdi> بیرون کنید</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">evict</bdi> اثری ندارد</span><span class="arrow-s">←</span><span class="tag r-ok">صفحه‌های <bdi dir="ltr">dirty</bdi> یا <bdi dir="ltr">mmap</bdi>‌شده: اول <bdi dir="ltr">fdatasync</bdi></span></div><div class="pit in d3"><span class="tag r-danger">حالت سرد مشکوکانه سریع است</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">cache</bdi> دیسک سمت میزبان در <bdi dir="ltr">hypervisor</bdi></span></div></div>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">drop_caches</bdi> روی <bdi dir="ltr">VM</bdi> مشترک</span><span class="arrow-s">←</span><span class="tag r-ok">فقط یک فایل را با <bdi dir="ltr">fadvise evict</bdi> کنید</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">evict</bdi> اثری ندارد</span><span class="arrow-s">←</span><span class="tag r-ok">صفحه‌های <bdi dir="ltr">dirty</bdi> یا <bdi dir="ltr">mmap</bdi>‌شده: اول <bdi dir="ltr">fdatasync</bdi></span></div><div class="pit in d3"><span class="tag r-danger">حالت سرد مشکوکانه سریع است</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">cache</bdi> دیسک سمت میزبان در <bdi dir="ltr">hypervisor</bdi></span></div></div>
   <aside class="notes">
 SAY (EN): Symptom on the left, fix on the right; the README has the full table.
 SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.

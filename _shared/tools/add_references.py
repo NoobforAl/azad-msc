@@ -62,7 +62,11 @@ def entries(data, module):
     return out
 
 
-LATIN = re.compile(r"[A-Za-z][A-Za-z0-9’'\-\.\+/ ()]*[A-Za-z0-9)]|[A-Za-z]")
+# One English term, a call such as read(fd, buf), or words like "page cache" -- but never across a parenthesis that belongs to the
+# Persian sentence, so "روی aos-lab (Linux 6.18.63)" gives two separate runs.
+_TOKEN = r"(?:['’][0-9]{2}|[/~]?[A-Za-z0-9_][A-Za-z0-9_.+#:%@=/~-]*(?:\([A-Za-z0-9_*&.,:+/ \-\[\]]*\))*)"
+_PAREN = r"\([A-Za-z0-9_*&.,:+/ \-\[\]]*\)"  # an all-English parenthetical that follows an English term
+LATIN = re.compile(_TOKEN + "(?: " + _TOKEN + "| " + _PAREN + ")*")
 
 
 def esc(text, lang):
@@ -72,9 +76,13 @@ def esc(text, lang):
         return html.escape(text)
     out, last = [], 0
     for m in LATIN.finditer(text):
+        tail = re.search(r"[.,:;=]+$", m.group(0))
+        run = m.group(0)[: -len(tail.group(0))] if tail else m.group(0)
+        if not re.search(r"[A-Za-z0-9]", run):
+            continue
         out.append(html.escape(text[last : m.start()]))
-        out.append('<bdi dir="ltr">' + html.escape(m.group(0)) + "</bdi>")
-        last = m.end()
+        out.append('<bdi dir="ltr">' + html.escape(run) + "</bdi>")
+        last = m.start() + len(run)
     out.append(html.escape(text[last:]))
     return "".join(out)
 

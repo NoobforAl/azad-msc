@@ -24,7 +24,7 @@
     <span><b>نیم‌سال</b>[نیم‌سال]</span><span><b>تاریخ</b>[تاریخ شمسی]</span>
   </div>
   <aside class="notes">
-SAY (FA): این ماژول یک system call را در سورس واقعی v6.18.63 دنبال می‌کند: سازوکار CPU، کد ورود، توزیع‌کننده و مسیر برگشت. در راه با interrupt، exception و context switch هم آشنا می‌شویم.
+SAY (FA): این ماژول یک system call را در سورس واقعی v6.18.63 دنبال می‌کند: سازوکار CPU، کد ورود، dispatcher و مسیر برگشت. در راه با interrupt، exception و context switch هم آشنا می‌شویم.
 SAY (EN): This module follows one system call through the real v6.18.63 source, then meets interrupts, exceptions and the context switch.
 KEY POINT: همهٔ درس‌های بعدی روی همین مرز بنا شده‌اند.
 EXAMPLE: —
@@ -75,9 +75,9 @@ TIME: 20
 <section>
   <span class="eyebrow in-f">۰۱ · طراحی کرنل</span>
   <h2 class="in">کرنل monolithic تابع صدا می‌زند، microkernel پیام می‌فرستد</h2>
-  <div class="diagram in-p d1"><img src="assets/kernel-types.svg" alt="چپ: کرنل monolithic؛ برنامه با یک syscall وارد یک فضای آدرس کرنل می‌شود که در آن VFS تابع ext4 و ext4 درایور را صدا می‌زند. راست: microkernel؛ برنامه، سرور فایل‌سیستم و درایور پردازه‌های کاربرند و از طریق یک کرنل کوچک با IPC حرف می‌زنند."></div>
+  <div class="diagram in-p d1"><img src="assets/kernel-types.svg" alt="چپ: کرنل monolithic؛ برنامه با یک syscall وارد یک فضای آدرس کرنل می‌شود که در آن VFS تابع ext4 و ext4 درایور را صدا می‌زند. راست: microkernel؛ برنامه، سرور فایل‌سیستم و درایور process‌های کاربرند و از طریق یک کرنل کوچک با IPC حرف می‌زنند."></div>
   <aside class="notes">
-SAY (FA): پرسش طراحی این است که چه چیزی در ring 0 اجرا می‌شود و اجزا چطور با هم حرف می‌زنند. لینوکس و OpenBSD همه‌چیز را در یک فضای آدرس با فراخوانی تابع دارند؛ seL4 و QNX یک کرنل کوچک دارند و فایل‌سیستم و درایور را به‌صورت پردازه اجرا می‌کنند. ماژول‌های .ko لینوکس هم در ring 0 اجرا می‌شوند: ماژولار یعنی microkernel نیست.
+SAY (FA): پرسش طراحی این است که چه چیزی در ring 0 اجرا می‌شود و اجزا چطور با هم حرف می‌زنند. لینوکس و OpenBSD همه‌چیز را در یک فضای آدرس با فراخوانی تابع دارند؛ seL4 و QNX یک کرنل کوچک دارند و فایل‌سیستم و درایور را به‌صورت process اجرا می‌کنند. ماژول‌های .ko لینوکس هم در ring 0 اجرا می‌شوند: ماژولار یعنی microkernel نیست.
 SAY (EN): Linux and OpenBSD call functions in one address space; seL4 and QNX send IPC between user-space servers.
 KEY POINT: هزینه = تعداد عبورها؛ فایده = جداسازی.
 EXAMPLE: fs/read_write.c L569: file->f_op->read(...) یک فراخوانی تابع ساده به ext4 است.
@@ -137,12 +137,12 @@ TIME: 90
     <div class="step fragment"><span class="callout-num">2</span><div>CPU</div><code>RIP=LSTAR</code></div>
     <div class="step fragment"><span class="callout-num">3</span><div>ورود اسمبلی</div><code>pt_regs</code></div>
     <div class="step fragment"><span class="callout-num">4</span><div>ورود C</div><code>do_syscall_64</code></div>
-    <div class="step fragment"><span class="callout-num">5</span><div>توزیع</div><code>x64_sys_call</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>dispatch</div><code>x64_sys_call</code></div>
     <div class="step fragment"><span class="callout-num">6</span><div>VFS</div><code>vfs_read</code></div>
   </div>
   <p class="takeaway">در برگشت: signal، شاید <bdi dir="ltr">schedule()</bdi>، و بعد <bdi dir="ltr">sysretq</bdi>.</p>
   <aside class="notes">
-SAY (FA): wrapper شماره و آرگومان‌ها را در رجیسترها می‌گذارد. CPU به آدرسی که کرنل در MSR_LSTAR گذاشته می‌پرد. کد اسمبلی pt_regs را می‌سازد. do_syscall_64 کارهای ورود را انجام می‌دهد و با یک switch توزیع می‌کند. بعد VFS خواندن واقعی را انجام می‌دهد.
+SAY (FA): wrapper شماره و آرگومان‌ها را در رجیسترها می‌گذارد. CPU به آدرسی که کرنل در MSR_LSTAR گذاشته می‌پرد. کد اسمبلی pt_regs را می‌سازد. do_syscall_64 کارهای ورود را انجام می‌دهد و با یک switch dispatch می‌کند. بعد VFS خواندن واقعی را انجام می‌دهد.
 SAY (EN): Registers, MSR jump, pt_regs, entry work, switch dispatch, VFS.
 KEY POINT: آرگومان‌ها در rdi rsi rdx r10 r8 r9؛ نتیجه در rax؛ خطا به شکل -errno.
 EXAMPLE: خط strace: read(3, "aos-lab\n", 131072) = 8.
@@ -172,7 +172,7 @@ SAY (FA): دستور syscall به rsp دست نمی‌زند، پس کرنل ر�
 SAY (EN): syscall leaves rsp alone, so the kernel swaps GS, parks rsp, switches CR3 and stack, then builds pt_regs.
 KEY POINT: عملوندهای بلند PER_CPU_VAR با "..." کوتاه شده‌اند؛ متن کامل در kernel-walkthrough.fa.md بخش ۲.
 EXAMPLE: bash _shared/sources/cite.sh linux arch/x86/entry/entry_64.S L87 35
-PITFALL: push روی پشتهٔ کاربر به نخ‌های دیگر کاربر اجازه می‌داد دادهٔ کرنل را بخوانند.
+PITFALL: push روی پشتهٔ کاربر به thread‌های دیگر کاربر اجازه می‌داد دادهٔ کرنل را بخوانند.
 TIME: 120
   </aside>
 </section>
@@ -180,7 +180,7 @@ TIME: 120
 <!-- 09 CODE_WALKTHROUGH: dispatch -->
 <section>
   <span class="eyebrow in-f">۰۱ · سورس واقعی</span>
-  <h2 class="in">توزیع با یک switch است، نه جدول اشاره‌گر</h2>
+  <h2 class="in">dispatch با یک switch است، نه جدول اشاره‌گر</h2>
   <div class="grid">
     <div class="c-7 code-card in d1">
       <div class="file-chip"><span>linux/arch/x86/entry/syscall_64.c</span><span>v6.18.63 · L34-100</span></div>
@@ -294,7 +294,7 @@ TIME: 60
   <div class="compare">
     <div class="in d1"><h3><bdi dir="ltr">Linux v6.18.63</bdi></h3><ul>
       <li><bdi dir="ltr"><code>read</code> = 0</bdi> (جدول جدا برای هر معماری)</li>
-      <li>توزیع با <bdi dir="ltr"><code>switch</code></bdi></li>
+      <li>dispatch با <bdi dir="ltr"><code>switch</code></bdi></li>
       <li>خطا: <bdi dir="ltr"><code>-errno</code></bdi> در <bdi dir="ltr">rax</bdi></li>
       <li>از هر آدرسی می‌شود <bdi dir="ltr"><code>syscall</code></bdi> زد</li>
       <li>قفل سراسری کرنل ندارد</li>
@@ -363,7 +363,7 @@ TIME: 60
     <li class="in d2"><span class="callout-num">2</span>هر ورود <bdi dir="ltr">pt_regs</bdi> می‌سازد؛ هر خروج ممکن است زمان‌بندی کند</li>
     <li class="in d3"><span class="callout-num">3</span>context switch یعنی <bdi dir="ltr">rsp</bdi> جدید و شاید <bdi dir="ltr">CR3</bdi> جدید</li>
   </ul>
-  <p class="next in d4">ماژول ۰۲ · پردازه‌ها و نخ‌ها</p>
+  <p class="next in d4">ماژول ۰۲ · process‌ها و thread‌ها</p>
   <aside class="notes">
 SAY (FA): حالا می‌توانید هر ورود به کرنل را در سورس واقعی دنبال و هزینه‌اش را اندازه بگیرید. در ادامه سراغ خود taskها می‌رویم: task_struct، fork، exec و زمان‌بندی که context_switch در خدمت آن است.
 SAY (EN): Next: task_struct, fork, exec and the scheduler that context_switch serves.
@@ -380,7 +380,7 @@ TIME: 30
   <span class="eyebrow in-f">ادامهٔ مطالعه</span>
   <h2 class="in">برای مطالعهٔ بیشتر، منتخب از فهرست‌های <bdi dir="ltr">awesome-os</bdi></h2>
   <ul class="refs">
-    <li class="in d1"><span class="pill">کتاب</span> <a href="https://0xax.gitbooks.io/linux-insides/content/"><b>linux-insides</b></a><span class="why">مرور کتاب‌گونهٔ درون <bdi dir="ltr">Linux</bdi>: <bdi dir="ltr">boot</bdi>، <bdi dir="ltr">interrupt</bdi>، <bdi dir="ltr">system call</bdi> و حافظه.</span><span class="url ltr">0xax.gitbooks.io/linux-insides/content</span></li>
+    <li class="in d1"><span class="pill">کتاب</span> <a href="https://0xax.gitbooks.io/linux-insides/content/"><b>linux-insides</b></a><span class="why">مرور کتاب‌گونهٔ درون <bdi dir="ltr">Linux: boot</bdi>، <bdi dir="ltr">interrupt</bdi>، <bdi dir="ltr">system call</bdi> و حافظه.</span><span class="url ltr">0xax.gitbooks.io/linux-insides/content</span></li>
     <li class="in d2"><span class="pill">مستندات</span> <a href="https://makelinux.github.io/kernel/map/"><b>Interactive map of Linux kernel</b></a><span class="why">یک نمودار کلیک‌پذیر از <bdi dir="ltr">subsystem</bdi>های کرنل و ارتباط آن‌ها.</span><span class="url ltr">makelinux.github.io/kernel/map</span></li>
     <li class="in d3"><span class="pill">مستندات</span> <a href="https://gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html"><b>Linux system calls table</b></a><span class="why">شمارهٔ <bdi dir="ltr">system call</bdi>ها برای همهٔ معماری‌ها، کنار هم.</span><span class="url ltr">gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html</span></li>
     <li class="in d4"><span class="pill">کتاب</span> <a href="https://pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf"><b>xv6: a simple, Unix-like teaching operating system</b></a><span class="why">فصل‌های «<bdi dir="ltr">Operating system organization</bdi>» و «<bdi dir="ltr">Traps and device drivers</bdi>».</span><span class="url ltr">pdos.csail.mit.edu/6.828/2019/xv6/book-riscv-rev0.pdf</span></li>

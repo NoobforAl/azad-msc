@@ -112,7 +112,7 @@ LABS = [
             ),
             (
                 "r-hardware",
-                {"en": "Clobbers", "fa": "رجیسترهای ازبین‌رفته"},
+                {"en": "Clobbers", "fa": "رجیسترهای clobbered"},
                 {"en": "rcx = RIP, r11 = RFLAGS", "fa": "rcx = RIP، r11 = RFLAGS"},
             ),
             (

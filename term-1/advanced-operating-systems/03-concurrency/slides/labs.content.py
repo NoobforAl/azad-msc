@@ -1,5 +1,5 @@
 # Lab-deck content for 03-concurrency. Render: python _shared/tools/labdeck.py <this file>
-COURSE = {"en": "Advanced OS · 03 Concurrency", "fa": "سیستم‌عامل پیشرفته · ۰۳ هم‌روندی"}
+COURSE = {"en": "Advanced OS · 03 Concurrency", "fa": "سیستم‌عامل پیشرفته · ۰۳ concurrency"}
 CAP = {
     "en": "aos-lab (VirtualBox, Ubuntu 24.04, Linux 6.18.63), 2026-11-15; shared 8-vCPU guest, timings are noisy",
     "fa": "aos-lab (VirtualBox، Ubuntu 24.04، Linux 6.18.63)، 2026-11-15؛ مهمان مشترک ۸ vCPU، زمان‌ها نویز دارند",
@@ -17,7 +17,7 @@ LABS = [
         title={"en": "Data race → TSan → mutex → atomic", "fa": "Data race ← TSan ← mutex ← atomic"},
         goal={
             "en": "Watch count++ lose updates on four threads, let ThreadSanitizer name the race, fix it twice and measure each fix.",
-            "fa": "ببینید count++ روی چهار نخ به‌روزرسانی گم می‌کند، بگذارید ThreadSanitizer race را نام ببرد، دو بار درستش کنید و هزینهٔ هر راه را بسنجید.",
+            "fa": "ببینید count++ روی چهار thread به‌روزرسانی گم می‌کند، بگذارید ThreadSanitizer race را نام ببرد، دو بار درستش کنید و هزینهٔ هر راه را بسنجید.",
         },
         where={"en": "aos-lab VM (user space)", "fa": "VM با نام aos-lab (فضای کاربر)"},
         setup_cards=[
@@ -69,7 +69,7 @@ LABS = [
         pitfalls=[
             (
                 {"en": "race mode looks correct", "fa": "حالت race درست به نظر می‌آید"},
-                {"en": "use ≥1M iterations and 4 threads", "fa": "دست‌کم ۱ میلیون تکرار و ۴ نخ"},
+                {"en": "use ≥1M iterations and 4 threads", "fa": "دست‌کم ۱ میلیون تکرار و ۴ thread"},
             ),
             (
                 {"en": "TSan: unexpected memory mapping", "fa": "TSan: unexpected memory mapping"},
@@ -82,7 +82,7 @@ LABS = [
         ],
         ext={
             "en": "Remove sharing: per-thread counters, packed in one array vs. padded to 64 bytes each. Measure both and explain the gap with cache coherence.",
-            "fa": "اشتراک را حذف کنید: شمارندهٔ جدا برای هر نخ، یک بار فشرده در یک آرایه و یک بار هر کدام در ۶۴ بایت جدا. هر دو را بسنجید و فاصله را با cache coherence توضیح دهید.",
+            "fa": "اشتراک را حذف کنید: شمارندهٔ جدا برای هر thread، یک بار فشرده در یک آرایه و یک بار هر کدام در ۶۴ بایت جدا. هر دو را بسنجید و فاصله را با cache coherence توضیح دهید.",
         },
         captured=CAP,
     ),
@@ -130,7 +130,7 @@ LABS = [
                 {"en": "every item forces a sleep/wake pair", "fa": "هر آیتم یک جفت خواب و بیدار لازم دارد"},
             ),
             (
-                {"en": "Go parks goroutines, not threads", "fa": "Go گوروتین را park می‌کند، نه نخ را"},
+                {"en": "Go parks goroutines, not threads", "fa": "Go goroutine را park می‌کند، نه thread را"},
                 {
                     "en": "the runtime scheduler does the waiting (M02)",
                     "fa": "scheduler خود runtime انتظار را انجام می‌دهد (ماژول ۰۲)",
@@ -169,7 +169,7 @@ LABS = [
         title={"en": "Readers-Writers and writer starvation", "fa": "Readers-Writers و گرسنگی نویسنده"},
         goal={
             "en": "Show that glibc's default rwlock lets overlapping readers starve a writer, and that the writer-preferring kind fixes it.",
-            "fa": "نشان دهید rwlock پیش‌فرض glibc اجازه می‌دهد خواننده‌های هم‌پوشان نویسنده را گرسنه نگه دارند و گونهٔ ترجیح‌دهندهٔ نویسنده درستش می‌کند.",
+            "fa": "نشان دهید rwlock پیش‌فرض glibc اجازه می‌دهد خواننده‌های هم‌پوشان نویسنده را گرسنه نگه دارند و گونهٔ writer-preference درستش می‌کند.",
         },
         where={"en": "aos-lab VM (user space)", "fa": "VM با نام aos-lab (فضای کاربر)"},
         setup_cards=[
@@ -192,7 +192,7 @@ LABS = [
             (
                 {
                     "en": "Reader preference: writer waits the whole run",
-                    "fa": "ترجیح خواننده: نویسنده کل اجرا منتظر می‌ماند",
+                    "fa": "reader-preference: نویسنده کل اجرا منتظر می‌ماند",
                 },
                 {
                     "en": "a new reader is admitted while a writer waits",
@@ -200,7 +200,7 @@ LABS = [
                 },
             ),
             (
-                {"en": "Writer preference: thousands of writes", "fa": "ترجیح نویسنده: هزاران نوشتن"},
+                {"en": "Writer preference: thousands of writes", "fa": "writer-preference: هزاران نوشتن"},
                 {"en": "readers queue behind a waiting writer", "fa": "خواننده‌ها پشت نویسندهٔ منتظر صف می‌کشند"},
             ),
             (
@@ -221,7 +221,7 @@ LABS = [
                 },
             ),
             (
-                {"en": "writer-pref deadlock", "fa": "deadlock با ترجیح نویسنده"},
+                {"en": "writer-pref deadlock", "fa": "deadlock با writer-preference"},
                 {"en": "recursive read lock while a writer waits", "fa": "قفل خواندن بازگشتی وقتی نویسنده منتظر است"},
             ),
         ],
@@ -269,7 +269,7 @@ LABS = [
         ],
         observe=[
             (
-                {"en": "1 thread: zero futex calls", "fa": "۱ نخ: صفر فراخوانی futex"},
+                {"en": "1 thread: zero futex calls", "fa": "۱ thread: صفر فراخوانی futex"},
                 {"en": "every lock/unlock stayed in user space", "fa": "همهٔ گرفتن و آزادکردن‌ها در فضای کاربر ماند"},
             ),
             (
@@ -290,7 +290,7 @@ LABS = [
                 {"en": "strace changes the result", "fa": "strace نتیجه را تغییر می‌دهد"},
                 {
                     "en": "tracing slows threads; compare with the program's own counters",
-                    "fa": "ردیابی نخ‌ها را کند می‌کند؛ با شمارنده‌های خود برنامه مقایسه کنید",
+                    "fa": "ردیابی thread‌ها را کند می‌کند؛ با شمارنده‌های خود برنامه مقایسه کنید",
                 },
             ),
             (
@@ -372,7 +372,7 @@ LABS = [
                 {"en": "relaxed shows 0", "fa": "relaxed صفر نشان می‌دهد"},
                 {
                     "en": "both threads on one CPU: check nproc / pinning",
-                    "fa": "هر دو نخ روی یک CPU: nproc و pinning را بررسی کنید",
+                    "fa": "هر دو thread روی یک CPU: nproc و pinning را بررسی کنید",
                 },
             ),
             (
@@ -444,7 +444,7 @@ LABS = [
         ],
         observe=[
             (
-                {"en": "Both threads sleep in futex_wait", "fa": "هر دو نخ در futex_wait خوابیده‌اند"},
+                {"en": "Both threads sleep in futex_wait", "fa": "هر دو thread در futex_wait خوابیده‌اند"},
                 {"en": "state S, 0% CPU: a deadlock does not spin", "fa": "وضعیت S و ۰٪ CPU: deadlock نمی‌چرخد"},
             ),
             (
