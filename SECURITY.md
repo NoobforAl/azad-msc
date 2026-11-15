@@ -33,6 +33,8 @@ commits (Settings > Emails > "Keep my email addresses private").
 - The lab VM scripts disable SSH host-key checking and give the VM user passwordless `sudo`. That is intended only for
   the **throw-away local VM** reachable on `127.0.0.1` with key-only SSH. Do not copy those settings to a real server.
 - `export_deck.py` keeps the browser sandbox on unless you pass `--no-sandbox`.
+- `qemu_vm.py` starts QEMU with **no** control/monitor port (an unauthenticated local control socket would let any local
+  program drive the VM) and shuts the VM down over SSH instead.
 
 ## Reporting a problem
 

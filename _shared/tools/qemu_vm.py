@@ -21,7 +21,6 @@ import http.server
 import os
 import platform
 import shutil
-import socket
 import socketserver
 import subprocess
 import sys
@@ -121,7 +120,6 @@ class Vm:
         self.pidf = os.path.join(self.dir, "qemu.pid")
         self.serial = os.path.join(self.dir, "serial.log")
         self.log = os.path.join(self.dir, "qemu.log")
-        self.qmp = a.port + 1000  # QMP (control) port, bound to 127.0.0.1 only
 
     # --- process helpers
     def pid(self):
@@ -201,9 +199,7 @@ class Vm:
             "none",
             "-serial",
             f"file:{self.serial}",
-            "-qmp",
-            f"tcp:127.0.0.1:{self.qmp},server,nowait",
-        ]
+        ]  # no QMP/monitor port on purpose: an unauthenticated local control socket would let any local program drive the VM
         if seed_port:  # cloud-init NoCloud over HTTP: the guest reaches the host's loopback as 10.0.2.2
             cmd += ["-smbios", f"type=1,serial=ds=nocloud;s=http://10.0.2.2:{seed_port}/"]
         return cmd
@@ -236,13 +232,12 @@ class Vm:
         die("could not start QEMU")
 
     def powerdown(self, wait=120):
+        # Ask the guest to shut down over SSH (key-only, bound to 127.0.0.1), so QEMU needs no control port at all.
         try:
-            with socket.create_connection(("127.0.0.1", self.qmp), timeout=5) as s:
-                s.recv(4096)
-                s.sendall(b'{"execute":"qmp_capabilities"}\n')
-                s.recv(4096)
-                s.sendall(b'{"execute":"system_powerdown"}\n')
-        except OSError:
+            subprocess.call(
+                self.ssh_args() + ["sudo poweroff"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30
+            )
+        except (OSError, subprocess.SubprocessError):
             pass
         end = time.time() + wait
         while time.time() < end and self.alive():
