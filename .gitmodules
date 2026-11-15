@@ -1,0 +1,9 @@
+[submodule "_shared/sources/linux"]
+	path = _shared/sources/linux
+	url = https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
+	shallow = true
+	ignore = dirty
+[submodule "_shared/sources/openbsd"]
+	path = _shared/sources/openbsd
+	url = https://github.com/openbsd/src.git
+	shallow = true
