@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # No submodules: the Linux and OpenBSD sources (about 1 GB) are not part of the site.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: false
           persist-credentials: false
