@@ -21,6 +21,7 @@ that did not fit is cut from the sprint and goes back to the backlog with its pr
 --overrun is the share by which real effort exceeds the estimates (0.3 means every item takes 30% more). The
 plans are made with the estimates; the execution uses the real effort.
 """
+
 import argparse
 import csv
 import sys
@@ -58,7 +59,9 @@ def load(path: str) -> List[Item]:
         ]
 
 
-def waterfall(items: List[Item], capacity_per_week: float, overrun: float) -> Tuple[List[Tuple[str, float, float]], float]:
+def waterfall(
+    items: List[Item], capacity_per_week: float, overrun: float
+) -> Tuple[List[Tuple[str, float, float]], float]:
     """Return ([(phase, start week, end week)], end week of the whole project). All items finish together."""
     total_real = sum(i.estimate for i in items) * (1.0 + overrun)
     weeks_total = total_real / capacity_per_week
@@ -108,8 +111,12 @@ def summary(
     for week in [sprint_weeks * k for k in range(1, sprints + 1)]:
         wf = total_value if phases_end <= week + 1e-9 else 0.0
         tb = sum(i.value for i in items if i.delivered_week is not None and i.delivered_week <= week + 1e-9)
-        rows.append(("value delivered by week {:g}".format(week), ["{:.0%}".format(wf / total_value),
-                                                                  "{:.0%}".format(tb / total_value)]))
+        rows.append(
+            (
+                "value delivered by week {:g}".format(week),
+                ["{:.0%}".format(wf / total_value), "{:.0%}".format(tb / total_value)],
+            )
+        )
     return rows
 
 
@@ -129,10 +136,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     per_sprint = per_week * args.timebox_weeks
     estimate_total = sum(i.estimate for i in items)
 
-    print("Backlog {}: {} items, {:.0f} developer-days estimated, {} value points".format(
-        args.backlog, len(items), estimate_total, sum(i.value for i in items)))
-    print("Team: {} developers, focus {:.0%} = {:.1f} developer-days per week. Deadline: week {:g}.".format(
-        args.devs, args.focus, per_week, args.deadline_weeks))
+    print(
+        "Backlog {}: {} items, {:.0f} developer-days estimated, {} value points".format(
+            args.backlog, len(items), estimate_total, sum(i.value for i in items)
+        )
+    )
+    print(
+        "Team: {} developers, focus {:.0%} = {:.1f} developer-days per week. Deadline: week {:g}.".format(
+            args.devs, args.focus, per_week, args.deadline_weeks
+        )
+    )
     print("Real effort = estimate x {:.2f}  (overrun {:.0%})".format(1.0 + args.overrun, args.overrun))
     print()
 
@@ -140,18 +153,30 @@ def main(argv: Optional[List[str]] = None) -> int:
     print("WATERFALL  (phase shares: Schach 8e ch. 1 Fig. 1.4, 132 HP projects, used as an assumption)")
     for name, start, end in phases:
         print("  {:<20} week {:>5.1f} -> {:>5.1f}".format(name, start, end))
-    verdict = "meets the deadline" if wf_end <= args.deadline_weeks + 1e-9 else "MISSES the deadline by {:.1f} weeks".format(
-        wf_end - args.deadline_weeks)
+    verdict = (
+        "meets the deadline"
+        if wf_end <= args.deadline_weeks + 1e-9
+        else "MISSES the deadline by {:.1f} weeks".format(wf_end - args.deadline_weeks)
+    )
     print("  everything is delivered at week {:.1f} ({}); nothing is delivered earlier".format(wf_end, verdict))
     print()
 
     log = timeboxed(items, per_sprint, sprints, args.timebox_weeks, args.overrun)
-    print("TIMEBOXED  ({} sprints of {:g} weeks, capacity {:.1f} developer-days per sprint, plans use the estimates)".format(
-        sprints, args.timebox_weeks, per_sprint))
+    print(
+        "TIMEBOXED  ({} sprints of {:g} weeks, capacity {:.1f} developer-days per sprint, plans use the estimates)".format(
+            sprints, args.timebox_weeks, per_sprint
+        )
+    )
     for rec in log:
-        print("  sprint {} (week {:g}): committed {:.1f} d  delivered {}  cut {}".format(
-            rec.number, rec.number * args.timebox_weeks, rec.planned_load,
-            ", ".join(rec.delivered) or "-", ", ".join(rec.cut) or "-"))
+        print(
+            "  sprint {} (week {:g}): committed {:.1f} d  delivered {}  cut {}".format(
+                rec.number,
+                rec.number * args.timebox_weeks,
+                rec.planned_load,
+                ", ".join(rec.delivered) or "-",
+                ", ".join(rec.cut) or "-",
+            )
+        )
     left = [i for i in items if i.delivered_week is None]
     print("  not delivered at the deadline: {}".format(", ".join(i.id for i in left) or "-"))
     print()
@@ -163,8 +188,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     delivered = [i for i in items if i.delivered_week is not None]
     wf_items = len(items) if wf_end <= args.deadline_weeks + 1e-9 else 0
     first_tb = "{:g}".format(min(i.delivered_week for i in delivered if i.delivered_week)) if delivered else "-"
-    print("  {:<30} {:>10} {:>10}".format("items delivered at the deadline", "{}/{}".format(wf_items, len(items)),
-                                         "{}/{}".format(len(delivered), len(items))))
+    print(
+        "  {:<30} {:>10} {:>10}".format(
+            "items delivered at the deadline",
+            "{}/{}".format(wf_items, len(items)),
+            "{}/{}".format(len(delivered), len(items)),
+        )
+    )
     print("  {:<30} {:>10} {:>10}".format("first delivery (week)", "{:.1f}".format(wf_end), first_tb))
     return 0
 

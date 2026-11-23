@@ -10,6 +10,7 @@ Gates (each prints PASS / FAIL / SKIP, all gates run even after a failure, exit 
     tests     go test ./... and python -m unittest discover
     coverage  total statement coverage of the Go code >= --min-coverage   (go test -coverprofile + go tool cover -func)
 """
+
 import argparse
 import os
 import re

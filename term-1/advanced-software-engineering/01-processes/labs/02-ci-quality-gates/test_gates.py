@@ -1,4 +1,5 @@
 """Unit tests for the pure parts of gates.py. Run: python -m unittest test_gates -v"""
+
 import unittest
 
 import gates

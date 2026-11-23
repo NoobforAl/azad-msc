@@ -21,7 +21,11 @@ LABS = [
                 {"en": "Scratch repo", "fa": "مخزن آزمایشی"},
                 {"en": "seed_repo.sh: 32 commits, 11 tags", "fa": "seed_repo.sh: ‏۳۲ commit و ۱۱ tag"},
             ),
-            ("r-service", {"en": "Script", "fa": "اسکریپت"}, {"en": "dora.py (stdlib only)", "fa": "dora.py (فقط کتابخانهٔ استاندارد)"}),
+            (
+                "r-service",
+                {"en": "Script", "fa": "اسکریپت"},
+                {"en": "dora.py (stdlib only)", "fa": "dora.py (فقط کتابخانهٔ استاندارد)"},
+            ),
             (
                 "r-infra",
                 {"en": "Convention", "fa": "قرارداد"},
@@ -125,7 +129,10 @@ LABS = [
             (
                 "r-service",
                 {"en": "Runner", "fa": "اجراکننده"},
-                {"en": "tools/gates.py, exit code = failed gates", "fa": "tools/gates.py؛ کد خروج = تعداد دروازه‌های شکست‌خورده"},
+                {
+                    "en": "tools/gates.py, exit code = failed gates",
+                    "fa": "tools/gates.py؛ کد خروج = تعداد دروازه‌های شکست‌خورده",
+                },
             ),
             (
                 "r-infra",
@@ -234,7 +241,10 @@ LABS = [
             (
                 "r-store",
                 {"en": "Data", "fa": "داده"},
-                {"en": "cost shares: Schach 8e ch. 1, Figs. 1.3 and 1.4", "fa": "سهم هزینه‌ها: Schach 8e ch. 1، شکل‌های ۱٫۳ و ۱٫۴"},
+                {
+                    "en": "cost shares: Schach 8e ch. 1, Figs. 1.3 and 1.4",
+                    "fa": "سهم هزینه‌ها: Schach 8e ch. 1، شکل‌های ۱٫۳ و ۱٫۴",
+                },
             ),
             (
                 "r-service",
@@ -337,12 +347,18 @@ LABS = [
             (
                 "r-store",
                 {"en": "Repo", "fa": "مخزن"},
-                {"en": "m0 + 11 scripted commits, tags v1.0 and v1.1", "fa": "m0 + ‏۱۱ commit اسکریپتی، tagهای v1.0 و v1.1"},
+                {
+                    "en": "m0 + 11 scripted commits, tags v1.0 and v1.1",
+                    "fa": "m0 + ‏۱۱ commit اسکریپتی، tagهای v1.0 و v1.1",
+                },
             ),
             (
                 "r-service",
                 {"en": "Oracle", "fa": "oracle"},
-                {"en": "bisect-test.sh: 0 good · 1 bad · 125 skip", "fa": "bisect-test.sh: ‏۰ سالم · ۱ خراب · ۱۲۵ رد کن"},
+                {
+                    "en": "bisect-test.sh: 0 good · 1 bad · 125 skip",
+                    "fa": "bisect-test.sh: ‏۰ سالم · ۱ خراب · ۱۲۵ رد کن",
+                },
             ),
             (
                 "r-infra",
@@ -400,13 +416,19 @@ LABS = [
             ),
             (
                 {"en": "Two versions at once", "fa": "دو نسخه همزمان"},
-                {"en": "v1.0 passes, v1.1 fails; no checkout, no stash", "fa": "v1.0 سالم و v1.1 خراب؛ بدون checkout و stash"},
+                {
+                    "en": "v1.0 passes, v1.1 fails; no checkout, no stash",
+                    "fa": "v1.0 سالم و v1.1 خراب؛ بدون checkout و stash",
+                },
             ),
         ],
         pitfalls=[
             (
                 {"en": "bisect names an innocent commit", "fa": "bisect یک commit بی‌گناه را نشان می‌دهد"},
-                {"en": "oracle returned 1 on build failure: use 125", "fa": "oracle در شکست build عدد ۱ داده؛ از ۱۲۵ استفاده کنید"},
+                {
+                    "en": "oracle returned 1 on build failure: use 125",
+                    "fa": "oracle در شکست build عدد ۱ داده؛ از ۱۲۵ استفاده کنید",
+                },
             ),
             (
                 {"en": "go test passes on a bad commit", "fa": "go test روی commit خراب سبز است"},
@@ -448,7 +470,10 @@ LABS = [
             (
                 "r-service",
                 {"en": "Simulation", "fa": "شبیه‌سازی"},
-                {"en": "3 developers: round-robin vs WIP limit 3", "fa": "سه توسعه‌دهنده: round-robin در برابر سقف WIP برابر ۳"},
+                {
+                    "en": "3 developers: round-robin vs WIP limit 3",
+                    "fa": "سه توسعه‌دهنده: round-robin در برابر سقف WIP برابر ۳",
+                },
             ),
             (
                 "r-infra",
@@ -542,7 +567,10 @@ LABS = [
             (
                 "r-store",
                 {"en": "Backlog", "fa": "backlog"},
-                {"en": "12 items, 100 dev-days, 68 value points (invented)", "fa": "۱۲ مورد، ۱۰۰ نفر-روز، ۶۸ امتیاز ارزش (ساختگی)"},
+                {
+                    "en": "12 items, 100 dev-days, 68 value points (invented)",
+                    "fa": "۱۲ مورد، ۱۰۰ نفر-روز، ۶۸ امتیاز ارزش (ساختگی)",
+                },
             ),
             (
                 "r-service",
@@ -552,7 +580,10 @@ LABS = [
             (
                 "r-infra",
                 {"en": "Timebox", "fa": "timebox"},
-                {"en": "3-week sprints, cut scope when it does not fit", "fa": "اسپرینت سه‌هفته‌ای؛ هرچه جا نشود حذف می‌شود"},
+                {
+                    "en": "3-week sprints, cut scope when it does not fit",
+                    "fa": "اسپرینت سه‌هفته‌ای؛ هرچه جا نشود حذف می‌شود",
+                },
             ),
             (
                 "r-client",
@@ -638,7 +669,10 @@ LABS = [
             (
                 "r-store",
                 {"en": "Source", "fa": "منبع"},
-                {"en": "linux/Documentation/process/submitting-patches.rst · v6.18.63", "fa": "linux/Documentation/process/submitting-patches.rst · v6.18.63"},
+                {
+                    "en": "linux/Documentation/process/submitting-patches.rst · v6.18.63",
+                    "fa": "linux/Documentation/process/submitting-patches.rst · v6.18.63",
+                },
             ),
             (
                 "r-service",
@@ -695,7 +729,10 @@ LABS = [
             ),
             (
                 {"en": "A hook fails at the cheapest moment", "fa": "hook در ارزان‌ترین لحظه خطا می‌دهد"},
-                {"en": "seconds now vs a review round-trip later", "fa": "چند ثانیه همین حالا در برابر یک دور رفت‌وبرگشت review بعدتر"},
+                {
+                    "en": "seconds now vs a review round-trip later",
+                    "fa": "چند ثانیه همین حالا در برابر یک دور رفت‌وبرگشت review بعدتر",
+                },
             ),
             (
                 {"en": "Every number is a choice", "fa": "هر عدد یک انتخاب است"},
@@ -708,7 +745,10 @@ LABS = [
         pitfalls=[
             (
                 {"en": "hook does nothing", "fa": "hook هیچ کاری نمی‌کند"},
-                {"en": "chmod +x; name must be commit-msg; use Git Bash", "fa": "chmod +x؛ نام باید commit-msg باشد؛ از Git Bash استفاده کنید"},
+                {
+                    "en": "chmod +x; name must be commit-msg; use Git Bash",
+                    "fa": "chmod +x؛ نام باید commit-msg باشد؛ از Git Bash استفاده کنید",
+                },
             ),
             (
                 {"en": "python: command not found in the hook", "fa": "خطای python: command not found در hook"},
@@ -720,7 +760,10 @@ LABS = [
             ),
             (
                 {"en": "copying kernel sentences", "fa": "کپی کردن جمله‌های کرنل"},
-                {"en": "quote a few lines with source; adapt the rest", "fa": "چند خط را با ذکر منبع نقل کنید و بقیه را بازنویسی کنید"},
+                {
+                    "en": "quote a few lines with source; adapt the rest",
+                    "fa": "چند خط را با ذکر منبع نقل کنید و بقیه را بازنویسی کنید",
+                },
             ),
         ],
         ext={

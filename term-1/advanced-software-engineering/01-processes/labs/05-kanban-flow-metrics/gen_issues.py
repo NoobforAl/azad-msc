@@ -12,6 +12,7 @@ The simulation (all numbers are assumptions of this lab, not data from any real 
     - with --wip-limit N an issue is started only when fewer than N issues are in progress (oldest first)
 The random numbers come from a small linear congruential generator, so the output is the same on every machine.
 """
+
 import argparse
 import sys
 from dataclasses import dataclass
@@ -20,8 +21,18 @@ from typing import List, Optional
 
 EFFORTS = [1, 1, 2, 2, 2, 3, 3, 4, 5, 8]  # developer-days; mean 3.1
 VERBS = ["Add", "Fix", "Improve", "Export", "Validate", "Document"]
-NOUNS = ["waitlist", "prerequisite check", "capacity report", "CSV import", "audit log", "course search",
-         "student profile", "grade export", "email notice", "schedule view"]
+NOUNS = [
+    "waitlist",
+    "prerequisite check",
+    "capacity report",
+    "CSV import",
+    "audit log",
+    "course search",
+    "student profile",
+    "grade export",
+    "email notice",
+    "schedule view",
+]
 START = date(2026, 3, 2)  # a Monday
 CAPACITY = 3
 
@@ -30,11 +41,11 @@ class Lcg:
     """x -> (1103515245 x + 12345) mod 2^31. Not good randomness, but identical on every platform."""
 
     def __init__(self, seed: int) -> None:
-        self.state = seed % (2 ** 31)
+        self.state = seed % (2**31)
 
     def random(self) -> float:
-        self.state = (1103515245 * self.state + 12345) % (2 ** 31)
-        return self.state / float(2 ** 31)
+        self.state = (1103515245 * self.state + 12345) % (2**31)
+        return self.state / float(2**31)
 
 
 @dataclass
@@ -95,7 +106,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--wip-limit", default="none", help="'none' (default) or a whole number")
     parser.add_argument("--weeks", type=int, default=12, help="weeks to simulate (default 12)")
     parser.add_argument("--seed", type=int, default=2026, help="seed of the random generator (default 2026)")
-    parser.add_argument("--arrival", type=float, default=0.85, help="chance of a new issue per working day (default 0.85)")
+    parser.add_argument(
+        "--arrival", type=float, default=0.85, help="chance of a new issue per working day (default 0.85)"
+    )
     args = parser.parse_args(argv)
     limit = None if args.wip_limit == "none" else int(args.wip_limit)
     sys.stdout.write(to_csv(simulate(args.weeks, args.seed, args.arrival, limit)))

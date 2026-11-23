@@ -15,6 +15,7 @@ phase j costs MULTIPLIERS[j] units to fix (1 unit = fixing it in the requirement
 a constant factor r per phase. That shape (steeply rising cost, Schach 8e, ch. 1 §1.4, Figure 1.5) is the book's
 point; the numbers r, the fault mix and the detection rates are made up for this lab. Change them and see.
 """
+
 import argparse
 import random
 import sys
@@ -42,7 +43,7 @@ ERAS = [
 
 
 def multipliers_from_r(r: float) -> List[float]:
-    return [r ** k for k in range(len(PHASES))]
+    return [r**k for k in range(len(PHASES))]
 
 
 def economics(saving: float = 10.0) -> List[Tuple[str, float, float]]:
@@ -94,39 +95,60 @@ def simulate(
 def print_economics() -> None:
     print("PART 1  The 10% arithmetic with the cost shares of Schach 8e, ch. 1, sec. 1.3.2 (Figures 1.3, 1.4)")
     print()
-    print("{:<42} {:>5} {:>7} {:>6} {:>12} {:>10}".format("era", "dev %", "maint %", "code %", "-10% coding", "-10% maint"))
+    print(
+        "{:<42} {:>5} {:>7} {:>6} {:>12} {:>10}".format(
+            "era", "dev %", "maint %", "code %", "-10% coding", "-10% maint"
+        )
+    )
     for (label, development, maintenance, coding), (_, save_coding, save_maint) in zip(ERAS, economics()):
-        print("{:<42} {:>5.0f} {:>7.0f} {:>6.0f} {:>11.2f}% {:>9.2f}%".format(
-            label, development, maintenance, coding, save_coding, save_maint))
+        print(
+            "{:<42} {:>5.0f} {:>7.0f} {:>6.0f} {:>11.2f}% {:>9.2f}%".format(
+                label, development, maintenance, coding, save_coding, save_maint
+            )
+        )
     print("  code % = share of development cost spent on coding + unit testing; savings are % of TOTAL life-cycle cost")
     print("  The 1992-1998 row is the book's 0.85% vs 7.5% (34% of 25% = 8.5% of the total, a tenth of that is 0.85%).")
-    print("  Faults: if 60-70% of all faults are requirements/analysis/design faults (ch. 1, sec. 1.4), a 10% reduction of")
+    print(
+        "  Faults: if 60-70% of all faults are requirements/analysis/design faults (ch. 1, sec. 1.4), a 10% reduction of"
+    )
     print("  those removes 6-7% of all faults ({:.1f}% to {:.1f}%).".format(0.10 * 60, 0.10 * 70))
 
 
 def print_simulation(faults: int, seed: int, multipliers: Sequence[float]) -> None:
     print("PART 2  Simulation: {} faults, seed {}   (ILLUSTRATIVE ASSUMPTIONS, not data)".format(faults, seed))
     print("  introduced in: " + ", ".join("{} {:.0%}".format(k, v) for k, v in INTRODUCED.items()))
-    print("  cost to fix when found in phase (1 unit = requirements): " + ", ".join(
-        "{} {:g}".format(p, round(m, 1)) for p, m in zip(PHASES, multipliers)))
+    print(
+        "  cost to fix when found in phase (1 unit = requirements): "
+        + ", ".join("{} {:g}".format(p, round(m, 1)) for p, m in zip(PHASES, multipliers))
+    )
     totals: Dict[str, float] = {}
     for scenario, detection in DETECTION.items():
         found, cost = simulate(detection, multipliers, faults, seed)
         _, exp_cost = expected_cost(detection, multipliers, faults)
         print()
-        print("  scenario: {}   detection rate per phase: {}".format(
-            scenario, " ".join("{:.0%}".format(d) for d in detection[:-1]) + " (maintenance: all that is left)"))
+        print(
+            "  scenario: {}   detection rate per phase: {}".format(
+                scenario, " ".join("{:.0%}".format(d) for d in detection[:-1]) + " (maintenance: all that is left)"
+            )
+        )
         print("  {:<15} {:>7} {:>9} {:>11}".format("found in", "faults", "cost", "expected"))
         for j, phase in enumerate(PHASES):
             print("  {:<15} {:>7d} {:>9.0f} {:>11.0f}".format(phase, found[j], cost[j], exp_cost[j]))
         total, exp_total = sum(cost), sum(exp_cost)
         totals[scenario] = total
         print("  {:<15} {:>7d} {:>9.0f} {:>11.0f}".format("total", sum(found), total, exp_total))
-        print("  cost per fault {:.1f} units; maintenance share of the cost {:.0%}; faults found by users {:.0%}".format(
-            total / faults, cost[-1] / total, found[-1] / faults))
+        print(
+            "  cost per fault {:.1f} units; maintenance share of the cost {:.0%}; faults found by users {:.0%}".format(
+                total / faults, cost[-1] / total, found[-1] / faults
+            )
+        )
     names = list(DETECTION)
     print()
-    print("  inspections cut the total cost to {:.0%} of the test-only process".format(totals[names[1]] / totals[names[0]]))
+    print(
+        "  inspections cut the total cost to {:.0%} of the test-only process".format(
+            totals[names[1]] / totals[names[0]]
+        )
+    )
 
 
 def parse_multipliers(text: str) -> List[float]:

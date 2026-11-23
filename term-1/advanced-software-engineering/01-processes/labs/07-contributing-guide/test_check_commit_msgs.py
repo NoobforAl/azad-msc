@@ -1,4 +1,5 @@
 """Unit tests for check_commit_msgs.check_message. Run: python -m unittest test_check_commit_msgs -v"""
+
 import unittest
 from typing import List
 

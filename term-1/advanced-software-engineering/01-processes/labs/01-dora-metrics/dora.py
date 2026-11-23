@@ -9,6 +9,7 @@ What the script treats as what (read the limits in the lab README before trustin
     failed deployment     a tag named by a "Fixes-release: <tag>" trailer in some later commit
     restored              the first tag that contains such a fixing commit
 """
+
 import argparse
 import json
 import os
@@ -128,18 +129,28 @@ def print_report(m: Dict[str, Any]) -> None:
     print("(deployment = tag matching the glob, commit time = {})".format(m["commit_time"]))
     print()
     print("Deployment frequency")
-    print("  deployments            {}  ({} to {}, {} days)".format(
-        m["deployments"], m["first_deployment"], m["last_deployment"], m["span_days"]))
-    print("  per week               {}  (in {} different weeks)".format(
-        m["deployments_per_week"], m["weeks_with_a_deployment"]))
-    print("Lead time for changes  ({} released commits, commit -> first tag containing it)".format(
-        m["lead_time_commits"]))
+    print(
+        "  deployments            {}  ({} to {}, {} days)".format(
+            m["deployments"], m["first_deployment"], m["last_deployment"], m["span_days"]
+        )
+    )
+    print(
+        "  per week               {}  (in {} different weeks)".format(
+            m["deployments_per_week"], m["weeks_with_a_deployment"]
+        )
+    )
+    print(
+        "Lead time for changes  ({} released commits, commit -> first tag containing it)".format(m["lead_time_commits"])
+    )
     print("  median                 {}".format(fmt_hours(m["lead_time_median_h"])))
     print("  mean                   {}".format(fmt_hours(m["lead_time_mean_h"])))
     print("  90th percentile        {}".format(fmt_hours(m["lead_time_p90_h"])))
     print("Change failure rate")
-    print("  failed deployments     {} of {}  {}".format(
-        len(m["failed_deployments"]), m["deployments"], ", ".join(m["failed_deployments"])))
+    print(
+        "  failed deployments     {} of {}  {}".format(
+            len(m["failed_deployments"]), m["deployments"], ", ".join(m["failed_deployments"])
+        )
+    )
     print("  rate                   {:.0%}".format(m["change_failure_rate"]))
     print("Time to restore service")
     for tag, hours in zip(m["failed_deployments"], m["time_to_restore_h"]):
@@ -147,8 +158,11 @@ def print_report(m: Dict[str, Any]) -> None:
     if m["time_to_restore_median_h"] is not None:
         print("  median                 {}".format(fmt_hours(m["time_to_restore_median_h"])))
     print("Not measured")
-    print("  {} of {} commits are not in any release yet (they have no lead time)".format(
-        m["commits_unreleased"], m["commits_total"]))
+    print(
+        "  {} of {} commits are not in any release yet (they have no lead time)".format(
+            m["commits_unreleased"], m["commits_total"]
+        )
+    )
 
 
 def main(argv: Optional[List[str]] = None) -> int:

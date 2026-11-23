@@ -15,6 +15,7 @@ Rules (the numbers are the project's choice, adapted from Linux Documentation/pr
     T2  one Signed-off-by: line has the name and the e-mail address of the commit's author
 The script exits with the number of commits that have a violation (0 = all good), at most 255.
 """
+
 import argparse
 import re
 import subprocess
@@ -62,13 +63,16 @@ def check_message(message: str, author_name: str, author_email: str) -> List[Vio
     if not signers:
         found.append(Violation("T1", "no Signed-off-by: line (git commit -s adds it)"))
     elif not any(n.strip() == author_name and e.strip().lower() == author_email.lower() for n, e in signers):
-        found.append(Violation("T2", "no Signed-off-by: line matches the author {} <{}>".format(author_name, author_email)))
+        found.append(
+            Violation("T2", "no Signed-off-by: line matches the author {} <{}>".format(author_name, author_email))
+        )
     return found
 
 
 def git(repo: str, *args: str) -> str:
-    result = subprocess.run(["git", "-C", repo] + list(args), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            universal_newlines=True)
+    result = subprocess.run(
+        ["git", "-C", repo] + list(args), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
+    )
     if result.returncode != 0:
         raise SystemExit("git {} failed: {}".format(" ".join(args), result.stderr.strip()))
     return result.stdout
