@@ -1,0 +1,8 @@
+# Lint settings for the project's Python (analytics service). Same rules as the course repository's ruff.toml,
+# so `make lint` behaves the same when you copy project/ into your own repository.
+line-length = 120
+target-version = "py38"
+
+[lint]
+select = ["E", "F", "W", "B"]
+ignore = ["E501"]

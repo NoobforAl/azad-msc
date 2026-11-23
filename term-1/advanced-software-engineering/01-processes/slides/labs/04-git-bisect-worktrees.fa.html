@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 01.4 · git bisect و git worktree روی یک regression کاشته‌شده</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.4</div>
+  <span class="eyebrow in-f">آزمایش 01.4 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">git bisect</bdi> و <bdi dir="ltr">git worktree</bdi> روی یک <bdi dir="ltr">regression</bdi> کاشته‌شده</h2>
+  <p class="why in d1">با <bdi dir="ltr">git bisect run</bdi> و یک تست، <bdi dir="ltr">commit</bdi>ی را که پروژه را خراب کرد پیدا کنید؛ سپس با <bdi dir="ltr">git worktree</bdi> دو <bdi dir="ltr">release</bdi> را کنار هم تست کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: Git، Go و Bash</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Find the commit that broke the project with git bisect run and a test, then test two releases side by side with git worktree.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-store in d1"><h3>مخزن</h3><p><bdi dir="ltr">m0 +</bdi> ‏۱۱ <bdi dir="ltr">commit</bdi> اسکریپتی، <bdi dir="ltr">tag</bdi>های <bdi dir="ltr">v1.0</bdi> و <bdi dir="ltr">v1.1</bdi></p></div><div class="c-6 card edge r-service in d2"><h3>oracle</h3><p><bdi dir="ltr">bisect-test.sh:</bdi> ‏۰ سالم · ۱ خراب · ۱۲۵ رد کن</p></div><div class="c-6 card edge r-infra in d3"><h3><bdi dir="ltr">worktree</bdi>ها</h3><p>دو <bdi dir="ltr">release</bdi> کنار هم با یک <bdi dir="ltr">.git</bdi></p></div><div class="c-6 card edge r-client in d4"><h3>نتیجه</h3><p>اولین <bdi dir="ltr">commit</bdi> خراب، رفع با <bdi dir="ltr">git revert</bdi></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 04-git-bisect-worktrees</div><pre><code><span class="ln"><span class="p">$</span> bash seed_regression.sh &quot;$SCRATCH/repo&quot; &amp;&amp; cd &quot;$SCRATCH/repo&quot;</span><span class="ln"><span class="p">$</span> go test ./...                      # fails on HEAD</span><span class="ln"><span class="p">$</span> git bisect start HEAD v1.0</span><span class="ln"><span class="p">$</span> git bisect run bash &quot;$LAB/bisect-test.sh&quot;</span><span class="ln"><span class="p">$</span> git bisect reset</span><span class="ln"><span class="p">$</span> git worktree add ../rel-v1.0 v1.0</span><span class="ln"><span class="p">$</span> git worktree add ../rel-v1.1 v1.1</span><span class="ln"><span class="p">$</span> (cd ../rel-v1.0 &amp;&amp; go test ./internal/catalog -run TestListIsSortedByID -count=1) &amp;</span><span class="ln"><span class="p">$</span> (cd ../rel-v1.1 &amp;&amp; go test ./internal/catalog -run TestListIsSortedByID -count=1); wait</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">bisect-test: build fails, skipping this commit</span><span class="ln">Bisecting: 2 revisions left to test after this (roughly 2 steps)</span><span class="ln">[e18cd1c242c78e1d816522936d134dbbc3bcb332] catalog: finish GetByTitle</span><span class="ln hl">f10c4bbc648959059cec1c25bc709ed01e35b123 is the first &#x27;bad&#x27; commit</span><span class="ln">    catalog: show newest course IDs first</span><span class="ln">bisect found first &#x27;bad&#x27; commit</span><span class="ln"><span class="p">$</span> git worktree list</span><span class="ln">/tmp/ase-lab04/rel-v1.0 32472f0 (detached HEAD)</span><span class="ln">/tmp/ase-lab04/rel-v1.1 67a61f9 (detached HEAD)</span><span class="ln">[v1.0] ok  	example.com/registration/internal/catalog	0.261s</span><span class="ln hl">[v1.1] --- FAIL: TestListIsSortedByID (0.00s)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">Windows 11</bdi>، <bdi dir="ltr">Git Bash</bdi>، <bdi dir="ltr">Python 3.12</bdi>، <bdi dir="ltr">Go</bdi>، ۱۴۰۵/۰۹/۰۲.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>شش کاندیدا، چهار <bdi dir="ltr">checkout</bdi></b><br><span class="caption">یکی رد شد (<bdi dir="ltr">build</bdi> نمی‌شود) و سه تا قضاوت شد</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>کد خروج ۱۲۵ یعنی رد کن</b><br><span class="caption">وگرنه <bdi dir="ltr">commit</bdi> نیمه‌کاره به‌عنوان مقصر معرفی می‌شود</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>دو تست شکست می‌خورد، یک علت</b><br><span class="caption"><bdi dir="ltr">oracle</bdi> باید نشانه‌ای را بسنجد که دنبالش هستید</span></div></li><li class="in d4"><span class="callout-num">4</span><div><b>دو نسخه همزمان</b><br><span class="caption"><bdi dir="ltr">v1.0</bdi> سالم و <bdi dir="ltr">v1.1</bdi> خراب؛ بدون <bdi dir="ltr">checkout</bdi> و <bdi dir="ltr">stash</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">bisect</bdi> یک <bdi dir="ltr">commit</bdi> بی‌گناه را نشان می‌دهد</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">oracle</bdi> در شکست <bdi dir="ltr">build</bdi> عدد ۱ داده؛ از ۱۲۵ استفاده کنید</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">go test</bdi> روی <bdi dir="ltr">commit</bdi> خراب سبز است</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">cache</bdi> تست؛ <bdi dir="ltr">-count=1</bdi> را اضافه کنید</span></div><div class="pit in d3"><span class="tag r-danger">&#x27;<bdi dir="ltr">../rel-v1.0</bdi>&#x27; از قبل وجود دارد</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">git worktree remove</bdi> یا <bdi dir="ltr">prune</bdi></span></div><div class="pit in d4"><span class="tag r-danger">بعد از <bdi dir="ltr">bisect</bdi>، <bdi dir="ltr">HEAD</bdi> جداشده است</span><span class="arrow-s">←</span><span class="tag r-ok">git bisect reset</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.4 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">یک <bdi dir="ltr">oracle</bdi> سرتاسری با <bdi dir="ltr">Python</bdi> بنویسید<bdi dir="ltr">: API</bdi> را روی یک پورت آزاد اجرا کنید، <bdi dir="ltr">GET /courses</bdi> بزنید، بررسی کنید اولین درس <bdi dir="ltr">SE101</bdi> باشد و ۰، ۱ یا ۱۲۵ برگردانید. تأیید کنید <bdi dir="ltr">bisect</bdi> همان <bdi dir="ltr">commit</bdi> را پیدا می‌کند.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="مهندسی نرم‌افزار پیشرفته · ۰۱ فرایندها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

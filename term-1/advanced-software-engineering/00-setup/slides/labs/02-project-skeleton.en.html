@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 00.2 · The project skeleton and CI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">00.2</div>
+  <span class="eyebrow in-f">Lab 00.2 · Goal</span>
+  <h2 class="in">The project skeleton and CI</h2>
+  <p class="why in d1">Copy project/ into your own repository, get make check green, run the API, tag m0, and add CI.</p>
+  <div class="pills in d2"><span class="pill">Runs on: Your machine, outside the course repo</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Copy project/ into your own repository, get make check green, run the API, tag m0, and add CI.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.2 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-service in d1"><h3>Go service</h3><p class="ltr-mono"><code>cmd/registration-api · internal/catalog</code></p></div><div class="c-6 card edge r-service in d2"><h3>Python analytics</h3><p class="ltr-mono"><code>analytics/enrollment_stats.py</code></p></div><div class="c-6 card edge r-infra in d3"><h3>Build and ship</h3><p class="ltr-mono"><code>Makefile · Dockerfile · CI workflow</code></p></div><div class="c-6 card edge r-store in d4"><h3>Your history</h3><p>git init, commit, tag m0</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.2 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 02-project-skeleton</div><pre><code><span class="ln"><span class="p">$</span> cp -r $SRC/project ~/ase-work/registration</span><span class="ln"><span class="p">$</span> cd ~/ase-work/registration</span><span class="ln"><span class="p">$</span> printf &#x27;__pycache__/\nbin/\n&#x27; &gt; .gitignore</span><span class="ln"><span class="p">$</span> cp $SRC/00-setup/labs/02-project-skeleton/ruff.toml .</span><span class="ln"><span class="p">$</span> make check</span><span class="ln"><span class="p">$</span> git init -b main &amp;&amp; git add . &amp;&amp; git commit -m m0</span><span class="ln"><span class="p">$</span> git tag m0</span><span class="ln"><span class="p">$</span> make run</span><span class="ln"><span class="p">$</span> curl -s localhost:8080/courses</span><span class="ln"><span class="p">$</span> cp .../project-ci.yml .github/workflows/</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.2 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> make check</span><span class="ln">go vet ./...</span><span class="ln">ruff check analytics</span><span class="ln hl">All checks passed!</span><span class="ln">go test ./...</span><span class="ln">ok  	example.com/registration/cmd/registration-api	0.521s</span><span class="ln">ok  	example.com/registration/internal/catalog	0.298s</span><span class="ln">...</span><span class="ln">Ran 4 tests in 0.000s</span><span class="ln hl">OK</span><span class="ln"><span class="p">$</span> curl -s localhost:8080/healthz</span><span class="ln">{&quot;status&quot;:&quot;ok&quot;}</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on Windows 11 + Git Bash, Go 1.27.4, ruff 0.17.6, 2026-11-23.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.2 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>GET /nope is 404, POST /courses is 405</b><br><span class="caption">Go 1.22 ServeMux patterns know methods</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>go test says (cached) the second time</b><br><span class="caption">tests rerun only when inputs change</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>CI calls make lint and make test</b><br><span class="caption">the Makefile is the one place to look</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.2 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">make lint: UP035, RUF100 (9 errors)</span><span class="arrow-s">→</span><span class="tag r-ok">copy ruff.toml into the project</span></div><div class="pit in d2"><span class="tag r-danger">address already in use</span><span class="arrow-s">→</span><span class="tag r-ok">ADDR=:8081 make run</span></div><div class="pit in d3"><span class="tag r-danger">Author identity unknown</span><span class="arrow-s">→</span><span class="tag r-ok">git config user.name / user.email</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.2 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Add a make fmt-check gate (gofmt and ruff format) and call it from CI. Run make fmt first, then prove the gate fails when a file is badly formatted.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced SE · 00 Setup" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

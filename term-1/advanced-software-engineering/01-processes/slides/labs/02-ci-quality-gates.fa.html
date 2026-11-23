@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 01.2 · دروازه‌های کیفیت در CI: همان بررسی‌ها روی لپ‌تاپ و در CI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.2</div>
+  <span class="eyebrow in-f">آزمایش 01.2 · هدف</span>
+  <h2 class="in">دروازه‌های کیفیت در <bdi dir="ltr">CI:</bdi> همان بررسی‌ها روی لپ‌تاپ و در <bdi dir="ltr">CI</bdi></h2>
+  <p class="why in d1"><bdi dir="ltr">gofmt</bdi>، <bdi dir="ltr">go vet</bdi>، <bdi dir="ltr">ruff</bdi>، تست‌ها و آستانهٔ <bdi dir="ltr">coverage</bdi> را با یک اسکریپت اجرا کنید، در <bdi dir="ltr">GitHub Actions</bdi> هم، و هر دروازه را عمداً شکست بدهید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: Go، Python، ruff و Git</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Run gofmt, go vet, ruff, tests and a coverage threshold with one script, also in GitHub Actions, and make each gate fail on purpose.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-client in d1"><h3>دروازه‌ها</h3><p class="ltr-mono"><code>gofmt · vet · ruff · tests · coverage</code></p></div><div class="c-6 card edge r-service in d2"><h3>اجراکننده</h3><p><bdi dir="ltr">tools/gates.py</bdi>؛ کد خروج = تعداد دروازه‌های شکست‌خورده</p></div><div class="c-6 card edge r-infra in d3"><h3>CI</h3><p><bdi dir="ltr">GitHub Actions</bdi> همان اسکریپت را اجرا می‌کند</p></div><div class="c-6 card edge r-store in d4"><h3>نقطهٔ شروع</h3><p>کپی آزمایشی <bdi dir="ltr">m0</bdi> ‏<bdi dir="ltr">(prepare-m0.sh)</bdi></p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 02-ci-quality-gates</div><pre><code><span class="ln"><span class="p">$</span> bash ../prepare-m0.sh &quot;$SCRATCH&quot; &amp;&amp; cd &quot;$SCRATCH&quot;</span><span class="ln"><span class="p">$</span> mkdir tools &amp;&amp; cp &quot;$LAB/gates.py&quot; tools/</span><span class="ln"><span class="p">$</span> python tools/gates.py</span><span class="ln"><span class="p">$</span> printf &#x27;\nvar   unformatted=1\n&#x27; &gt;&gt; internal/catalog/catalog.go</span><span class="ln"><span class="p">$</span> python tools/gates.py --only gofmt,vet</span><span class="ln"><span class="p">$</span> git checkout internal/catalog/catalog.go</span><span class="ln"><span class="dim"># then break lint, tests, coverage the same way (README)</span></span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> python tools/gates.py</span><span class="ln">gofmt     PASS  all Go files formatted</span><span class="ln">vet       PASS  go vet ./... is clean</span><span class="ln">ruff      PASS  All checks passed!</span><span class="ln">tests     PASS  go test and unittest pass</span><span class="ln">coverage  PASS  total 72.4% of statements (minimum 70.0%)</span><span class="ln">0 of 5 gates failed</span><span class="ln"><span class="p">$</span> python tools/gates.py --only gofmt,vet</span><span class="ln hl">gofmt     FAIL  needs gofmt: internal\catalog\catalog.go</span><span class="ln">vet       PASS  go vet ./... is clean</span><span class="ln"><span class="p">$</span> python tools/gates.py --only coverage</span><span class="ln hl">coverage  FAIL  total 61.8% of statements (minimum 70.0%)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">Windows 11</bdi>، <bdi dir="ltr">Git Bash</bdi>، <bdi dir="ltr">Python 3.12</bdi>، <bdi dir="ltr">Go</bdi>، ۱۴۰۵/۰۹/۰۲.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>یک خرابی، یک دروازه</b><br><span class="caption"><bdi dir="ltr">vet</bdi> کد فرمت‌نشده را می‌پذیرد و <bdi dir="ltr">gofmt</bdi> کد بدون تست را</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">coverage</bdi> چیزی را گرفت که تست‌ها ندیدند</b><br><span class="caption">از ۷۲٫۴٪ به ۶۱٫۸٪ در حالی که همهٔ تست‌ها سبزند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>محلی <bdi dir="ltr">= CI</bdi></b><br><span class="caption">گام اصلی <bdi dir="ltr">workflow</bdi> همان <bdi dir="ltr">python tools/gates.py</bdi> است</span></div></li><li class="in d4"><span class="callout-num">4</span><div><b>قالب اولیه یک شکاف داشت</b><br><span class="caption"><bdi dir="ltr">make lint test</bdi> کد فرمت‌نشده را می‌پذیرد؛ نه <bdi dir="ltr">gofmt</bdi> دارد نه <bdi dir="ltr">coverage</bdi></span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">ruff: command not found</span><span class="arrow-s">←</span><span class="tag r-ok">pip install ruff</span></div><div class="pit in d2"><span class="tag r-danger">خطای <bdi dir="ltr">ruff</bdi> فقط در کپی آزمایشی</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">ruff.toml</bdi> نیست؛ <bdi dir="ltr">prepare-m0.sh</bdi> آن را کپی می‌کند</span></div><div class="pit in d3"><span class="tag r-danger">محلی سبز، در <bdi dir="ltr">CI</bdi> قرمز</span><span class="arrow-s">←</span><span class="tag r-ok">نسخهٔ <bdi dir="ltr">Go</bdi> و <bdi dir="ltr">Python</bdi> را مقایسه کنید</span></div><div class="pit in d4"><span class="tag r-danger"><bdi dir="ltr">workflow</bdi> هرگز شروع نمی‌شود</span><span class="arrow-s">←</span><span class="tag r-ok">فایل باید در <bdi dir="ltr">.github/workflows/</bdi> باشد</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.2 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">دروازهٔ ششم را اضافه کنید که <bdi dir="ltr">ruff format --check</bdi> را اجرا می‌کند. روی <bdi dir="ltr">m0</bdi> شکست می‌خورد، پس ابتدا فرمت را در یک <bdi dir="ltr">commit</bdi> جدا درست کنید. بعد کنار مجموع، حداقل <bdi dir="ltr">coverage</bdi> هر <bdi dir="ltr">package</bdi> را هم بگذارید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="مهندسی نرم‌افزار پیشرفته · ۰۱ فرایندها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

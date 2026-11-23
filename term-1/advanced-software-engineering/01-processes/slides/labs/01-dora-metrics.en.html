@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 01.1 · DORA metrics from a Git history</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.1</div>
+  <span class="eyebrow in-f">Lab 01.1 · Goal</span>
+  <h2 class="in">DORA metrics from a Git history</h2>
+  <p class="why in d1">Compute deployment frequency, lead time, change failure rate and time to restore from tags and commits, and learn what each number cannot tell you.</p>
+  <div class="pills in d2"><span class="pill">Runs on: any machine with Git and Python</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Compute deployment frequency, lead time, change failure rate and time to restore from tags and commits, and learn what each number cannot tell you.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.1 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-store in d1"><h3>Scratch repo</h3><p>seed_repo.sh: 32 commits, 11 tags</p></div><div class="c-6 card edge r-service in d2"><h3>Script</h3><p>dora.py (stdlib only)</p></div><div class="c-6 card edge r-infra in d3"><h3>Convention</h3><p>deployment = tag v*; Fixes-release: trailer</p></div><div class="c-6 card edge r-client in d4"><h3>Report</h3><p>4 metrics + what is not measured</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.1 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 01-dora-metrics</div><pre><code><span class="ln"><span class="p">$</span> SCRATCH=&quot;${TMPDIR:-/tmp}/ase-lab01&quot;</span><span class="ln"><span class="p">$</span> bash seed_repo.sh &quot;$SCRATCH/dora-demo&quot;</span><span class="ln"><span class="p">$</span> python dora.py --repo &quot;$SCRATCH/dora-demo&quot;</span><span class="ln"><span class="p">$</span> python dora.py --repo &quot;$SCRATCH/dora-demo&quot; --date committer</span><span class="ln"><span class="p">$</span> python dora.py --repo &quot;$SCRATCH/dora-demo&quot; --json &gt; dora.json</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.1 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">Deployment frequency</span><span class="ln hl">  deployments            11  (2026-03-05 10:00 to 2026-04-24 15:00, 50.2 days)</span><span class="ln">  per week               1.53  (in 8 different weeks)</span><span class="ln">Lead time for changes  (30 released commits, commit -&gt; first tag containing it)</span><span class="ln hl">  median                 46.5 h (1 d 22.5 h)</span><span class="ln">  90th percentile        119.0 h (4 d 23.0 h)</span><span class="ln">Change failure rate</span><span class="ln hl">  failed deployments     3 of 11  v0.2.0, v0.4.0, v0.6.0</span><span class="ln">Time to restore service</span><span class="ln">  v0.6.0                 126.0 h (5 d 6.0 h)</span><span class="ln hl">  median                 24.0 h (1 d 0.0 h)</span><span class="ln">Not measured</span><span class="ln">  2 of 32 commits are not in any release yet (they have no lead time)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on Windows 11, Git Bash, Python 3.12, Go, 2026-11-23.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.1 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Restore time includes waiting</b><br><span class="caption">v0.6.0: 126 h, the fix was written only after the weekend</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>The clock you choose matters</b><br><span class="caption">author vs committer date: median 46.5 h vs 45.5 h</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>It measures your convention</b><br><span class="caption">no Fixes-release trailer: failure rate 0%</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.1 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">no tags match &#x27;v*&#x27;</span><span class="arrow-s">→</span><span class="tag r-ok">git fetch --tags</span></div><div class="pit in d2"><span class="tag r-danger">commit IDs differ from the README</span><span class="arrow-s">→</span><span class="tag r-ok">global Git config: signing, autocrlf</span></div><div class="pit in d3"><span class="tag r-danger">unrecognized %(trailers</span><span class="arrow-s">→</span><span class="tag r-ok">Git older than 2.22: upgrade</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.1 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Print the lead time per release, and detect failed deployments from subjects that start with Revert instead of the trailer. Which of the three failures does the revert rule miss?</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced Software Engineering · 01 Processes" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

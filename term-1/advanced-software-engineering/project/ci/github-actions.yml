@@ -1,0 +1,27 @@
+# Template CI workflow for project/. Copy it to <repo-root>/.github/workflows/project-ci.yml in your own fork
+# of the project (module 01, lab 02 builds on it). It is kept here, not under .github/, so the course
+# repository's own pipeline does not run it.
+name: project-ci
+on:
+  push:
+    paths: ["term-1/advanced-software-engineering/project/**"]
+  pull_request:
+    paths: ["term-1/advanced-software-engineering/project/**"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: term-1/advanced-software-engineering/project
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: make lint
+      - run: make test

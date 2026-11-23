@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 01.6 · Timeboxed sprints vs a waterfall plan</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.6</div>
+  <span class="eyebrow in-f">Lab 01.6 · Goal</span>
+  <h2 class="in">Timeboxed sprints vs a waterfall plan</h2>
+  <p class="why in d1">Plan the same backlog as a waterfall project and as 3-week timeboxes, and see what each delivers by the deadline when estimates are wrong.</p>
+  <div class="pills in d2"><span class="pill">Runs on: Python only</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Plan the same backlog as a waterfall project and as 3-week timeboxes, and see what each delivers by the deadline when estimates are wrong.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.6 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-store in d1"><h3>Backlog</h3><p>12 items, 100 dev-days, 68 value points (invented)</p></div><div class="c-6 card edge r-service in d2"><h3>Waterfall</h3><p>4 phases, shares from Schach Fig. 1.4</p></div><div class="c-6 card edge r-infra in d3"><h3>Timebox</h3><p>3-week sprints, cut scope when it does not fit</p></div><div class="c-6 card edge r-client in d4"><h3>Deadline</h3><p>week 9, overrun 0% to 60%</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.6 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 06-timebox-vs-waterfall</div><pre><code><span class="ln"><span class="p">$</span> cat backlog.csv</span><span class="ln"><span class="p">$</span> python plan_compare.py</span><span class="ln"><span class="p">$</span> python plan_compare.py --overrun 0.3</span><span class="ln"><span class="p">$</span> python plan_compare.py --overrun 0.6</span><span class="ln"><span class="p">$</span> for o in 0.08 0.09; do</span><span class="ln">    python plan_compare.py --overrun $o | grep -E &quot;everything|items delivered&quot;; done</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.6 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> python plan_compare.py --overrun 0.3</span><span class="ln hl">  everything is delivered at week 10.8 (MISSES the deadline by 1.8 weeks); nothing is delivered earlier</span><span class="ln">  sprint 1 (week 3): committed 36.0 d  delivered REG-01, REG-02, REG-03  cut REG-04</span><span class="ln">  sprint 3 (week 9): committed 35.6 d  delivered REG-07, REG-08, REG-09, REG-10  cut REG-12</span><span class="ln">  not delivered at the deadline: REG-11, REG-12</span><span class="ln">                                  waterfall  timeboxed</span><span class="ln">  value delivered by week 3              0%        50%</span><span class="ln">  value delivered by week 9              0%        96%</span><span class="ln hl">  items delivered at the deadline       0/12       10/12</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on Windows 11, Git Bash, Python 3.12, Go, 2026-11-23.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.6 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Exact estimates: same result, other timing</b><br><span class="caption">62% of the value by week 3 vs first release at week 8.3</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>30% overrun breaks the waterfall</b><br><span class="caption">week 10.8, nothing at the deadline; timebox: 10 of 12</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>The timebox is not free</b><br><span class="caption">at 8% overrun: waterfall 12/12, timebox 11/12</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.6 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">quoting value percentages as results</span><span class="arrow-s">→</span><span class="tag r-ok">the values are invented: say &#x27;in this model&#x27;</span></div><div class="pit in d2"><span class="tag r-danger">timebox delivers below capacity</span><span class="arrow-s">→</span><span class="tag r-ok">whole items must fit: first-fit rule</span></div><div class="pit in d3"><span class="tag r-danger">ValueError reading backlog.csv</span><span class="arrow-s">→</span><span class="tag r-ok">quote titles that contain commas</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.6 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Add a mid-flight change: an urgent 10-day item arrives in week 4. Compare how each plan absorbs it and say which of your assumptions decides the result.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced Software Engineering · 01 Processes" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

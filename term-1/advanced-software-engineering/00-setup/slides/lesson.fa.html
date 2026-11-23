@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>۰۰ · راه‌اندازی — مهندسی نرم‌افزار پیشرفته</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<div class="reveal course-se">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">پروژهٔ در حال رشد، ابزارها و شیوهٔ ارجاع</h1>
+  <p class="subtitle in d1">مهندسی نرم‌افزار پیشرفته · ۰۰ راه‌اندازی</p>
+  <div class="fields">
+    <span><b>درس</b>[Course name]</span><span><b>ارائه‌دهنده</b>[Presenter]</span>
+    <span><b>استاد</b>[Professor]</span><span><b>دانشکده</b>[Faculty / Branch]</span>
+    <span><b>ترم</b>[Term]</span><span><b>تاریخ</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (FA): پیش از هر نظریه‌ای میز کار را آماده می‌کنیم: یک سیستم کوچک که هر ماژول چیزی در آن عوض می‌کند، ابزارهای ساختنش و قاعدهٔ ارجاع به آنچه می‌خوانیم.
+SAY (EN): Before any theory we set up the bench: one small system that every module will change, the tools to build it, and the rules for citing what we read.
+KEY POINT: همهٔ ماژول‌های بعدی به این راه‌اندازی وابسته‌اند.
+EXAMPLE: —
+PITFALL: فیلدهای صفحهٔ عنوان جای‌نگهدار هستند؛ هرگز از خودتان پرشان نکنید.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">00</div>
+  <span class="eyebrow in-f">ماژول ۰۰</span>
+  <h2 class="in">راه‌اندازی</h2>
+  <p class="why in d1">نظریه وقتی می‌ماند که کدی را عوض کند که مال خودتان است، و ادعا وقتی ارزش دارد که کسی بتواند بررسی‌اش کند.</p>
+  <div class="pills in d2"><span class="pill"><span dir="ltr">Course Registration Platform</span></span><span class="pill">اسکلت <span dir="ltr">m0</span></span><span class="pill">همه‌چیز با ارجاع</span></div>
+  <aside class="notes">
+SAY (FA): این درس رفت‌وبرگشتی میان نظریه و یک پایگاه کد است. این ماژول پایگاه کد و عادت‌ها را می‌سازد: ابزارهای سالم، نمودار به‌صورت متن، و ارجاع‌هایی که بشود بازشان کرد.
+SAY (EN): The course is a loop between theory and one codebase. This module builds the codebase and the habits: tools that work, diagrams as text, and citations you can open.
+KEY POINT: یک پروژه، هشت ماژول، هر ادعا قابل بررسی.
+EXAMPLE: ماژول ۰۲ یک SRS به همین مخزن اضافه می‌کند، نه به یک اسلاید.
+PITFALL: پروژه را اسباب‌بازی دانستن و ردش کردن؛ آزمایش‌های بعدی m0 خودتان را فرض می‌گیرند.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">۰۰ · راه‌اندازی</span>
+  <h2 class="in">پنج گام از پوشهٔ خالی تا ارجاعِ بررسی‌شده</h2>
+  <ol class="agenda">
+    <li class="current in d1">چه می‌سازیم: <span dir="ltr">Course Registration Platform</span></li>
+    <li class="in d2">وضعیت‌های <span dir="ltr">m0 … m8</span> در تاریخچهٔ خودتان</li>
+    <li class="in d3">ابزارها و دروازهٔ کیفیت</li>
+    <li class="in d4">نمودار به‌صورت متن</li>
+    <li class="in d5">ارجاع به کتاب و کد واقعی</li>
+  </ol>
+  <aside class="notes">
+SAY (FA): گام‌های یک تا چهار همان سه آزمایش‌اند؛ گام پنج در هر ماژول به کار می‌آید.
+SAY (EN): Steps one to four are the three labs; step five is used in every module.
+KEY POINT: آزمایش ۰۱ ابزارها، آزمایش ۰۲ اسکلت و CI، آزمایش ۰۳ نمودارها.
+EXAMPLE: —
+PITFALL: —
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 CONCEPT_DIAGRAM -->
+<section>
+  <span class="eyebrow in-f">۰۰ · راه‌اندازی · چه می‌سازیم</span>
+  <h2 class="in">یک سیستم کوچک در هشت ماژول رشد می‌کند</h2>
+  <div class="diagram in-p d1" style="margin-top:-16px"><img src="assets/platform.svg" alt="کلاینت registration-api را صدا می‌زند (Go، در m0 هست)؛ message broker و PostgreSQL و سرویس analytics برای ماژول ۰۴ و بعد از آن برنامه‌ریزی شده‌اند"></div>
+  <p class="takeaway in d2"><span dir="ltr">m0</span> فقط API نوشته‌شده با Go است. جعبه‌های خط‌چین طرح‌اند، نه کد.</p>
+  <aside class="notes">
+SAY (FA): آبی‌سبز کلاینت است، کهربایی سرویس‌ها، بنفش زیرساخت و سبز داده. در m0 فقط API و یک stub پایتونی وجود دارد. هر چیز خط‌چین برای ماژول ۰۴ برنامه‌ریزی شده است؛ نموداری که آن را بدون این توضیح نشان دهد نادرست است.
+SAY (EN): Teal is the client, amber the services, violet the infrastructure, green the data. In m0 only the API and a Python stub exist. Anything dashed is planned for module 04, so a diagram that shows it without saying so would be wrong.
+KEY POINT: نمودار باید بگوید چه چیزی هست و چه چیزی فقط طرح است.
+EXAMPLE: curl localhost:8080/courses دو درس اولیه را از catalog درون حافظه برمی‌گرداند.
+PITFALL: تصویر PlantUML یا Mermaid را سیستمِ مستقرشده دانستن.
+ASK: برای یک مسئول آموزش واقعی اول کدام جعبه را می‌سازید و چرا؟
+TIME: 90
+  </aside>
+</section>
+
+<!-- 05 FLOW_TIMELINE -->
+<section>
+  <span class="eyebrow in-f">۰۰ · راه‌اندازی · وضعیت‌ها</span>
+  <h2 class="in"><span dir="ltr">m0 … m8</span> نام‌هایی در تاریخچهٔ شمایند، نه tag در مخزن درس</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>کپی</div><code>cp -r project</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>مخزن خودتان</div><code>git init -b main</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>دروازه</div><code>make check</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>commit</div><code>git commit</code></div>
+    <div class="step fragment"><span class="callout-num">5</span><div>نام‌گذاری</div><code>git tag m0</code></div>
+  </div>
+  <p class="takeaway">هر ماژول همین‌طور تمام می‌شود: commit، و بعد tag با نام <span dir="ltr">m1</span>، <span dir="ltr">m2</span> و … در مخزن شما.</p>
+  <aside class="notes">
+SAY (FA): مخزن درس پوشهٔ project/ را در آخرین وضعیتش دارد و هیچ Git tag ندارد. آن را بیرون می‌برید، تاریخچهٔ خودتان را می‌سازید و m0 خودتان را tag می‌زنید. اگر آزمایشی بگوید از m3 شروع کن، منظور m3 خودتان است، یا محتوای project/ در همان نقطه.
+SAY (EN): The course repository holds project/ at its latest state and has no Git tags. You copy it out, make your own history, and tag your own m0. If a lab says start from m3, that is your m3, or the content of project/ at that point.
+KEY POINT: وضعیت یعنی محتوای project/ بعد از یک ماژول؛ tag مال شماست.
+EXAMPLE: git diff m0 m1 در مخزن شما نشان می‌دهد ماژول ۰۱ چه چیزی را عوض کرده است.
+PITFALL: کار کردن داخل مخزن درس و از دست دادن تغییرها در به‌روزرسانی بعدی.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 06 BENTO -->
+<section>
+  <span class="eyebrow in-f">۰۰ · راه‌اندازی · ابزارها</span>
+  <h2 class="in">چهار گروه ابزار و یک فرمان برای آزمودنشان</h2>
+  <div class="grid tight">
+    <div class="c-7 card edge r-service in d1"><h3>ساخت و اجرا</h3><p class="ltr">Go ≥ 1.22 · Python ≥ 3.8</p></div>
+    <div class="c-5 card edge r-infra in d2"><h3>تحویل</h3><p class="ltr">Docker · make · CI</p></div>
+    <div class="c-5 card edge r-brand in d3"><h3>کیفیت</h3><p class="ltr">ruff · go vet · git ≥ 2.28</p></div>
+    <div class="c-7 card edge r-client in d4"><h3>نمودارها</h3><p class="ltr">Mermaid · PlantUML · Structurizr</p></div>
+  </div>
+  <p class="takeaway in d5"><code>python check_tools.py</code> همهٔ نسخه‌ها را چاپ می‌کند و اگر لازم‌ها سالم باشند با کد ۰ تمام می‌شود.</p>
+  <aside class="notes">
+SAY (FA): Go و Python سرویس‌ها را اجرا می‌کنند؛ Docker و make و CI آن‌ها را تحویل می‌دهند؛ ruff و go vet دروازهٔ lint هستند؛ سه ابزار نمودار متن را به تصویر تبدیل می‌کنند. آزمایش ۰۱ اسکریپتی می‌دهد که همهٔ این‌ها را بررسی می‌کند.
+SAY (EN): Go and Python run the services; Docker, make and CI ship them; ruff and go vet are the lint gate; the three diagram tools turn text into pictures. Lab 01 gives you a script that checks all of it.
+KEY POINT: Docker و make و Node و Java اختیاری‌اند؛ Go و Python و ruff و git لازم‌اند.
+EXAMPLE: روی ماشین ضبط: go 1.27.4، Python 3.12.14، ruff 0.17.6، git 2.56.1.
+PITFALL: Docker نصب است ولی اجرا نمی‌شود: اسکریپت daemon NOT reachable را گزارش می‌کند.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 07 BUG_AND_FIX -->
+<section>
+  <span class="eyebrow in-f">۰۰ · راه‌اندازی · دروازهٔ کیفیت</span>
+  <h2 class="in">پروژهٔ کپی‌شده قواعد lint خودش را لازم دارد</h2>
+  <div class="bugfix">
+    <div class="bug in d1"><span class="tag">BUG</span>
+<pre class="code ltr" style="text-align:left"><code>$ make lint
+UP035 [*] Import from
+  `collections.abc` instead
+Found 9 errors.
+make: *** [lint] Error 1</code></pre>
+      <p class="caption">بیرون از مخزن درس تنظیماتی نیست.</p>
+    </div>
+    <div class="fix in-p d2"><span class="tag">FIX</span>
+<pre class="code ltr" style="text-align:left"><code>$ cp ruff.toml .
+$ make lint
+ruff check analytics
+All checks passed!</code></pre>
+      <p class="caption">قواعد داخل پروژه می‌مانند.</p>
+    </div>
+  </div>
+  <p class="takeaway in d3" style="margin-top:72px">اگر CI و لپ‌تاپ شما موافق نیستند، همان تفاوت باگ است.</p>
+  <aside class="notes">
+SAY (FA): وقتی project/ را از مخزن درس بیرون می‌برید، ruff.toml مخزن جا می‌ماند و با ruff 0.17.6 تنظیمات پیش‌فرض نه مورد را گزارش می‌کنند. راه‌حل این است که قواعد lint داخل خود پروژه باشد تا هر ماشینی همان جواب را بدهد.
+SAY (EN): Copying project/ out of the course repository leaves the repository's ruff.toml behind, and on ruff 0.17.6 the bare defaults flag nine things. The fix is to keep the lint rules inside the project, so every machine gets the same answer.
+KEY POINT: تنظیمات ابزار را در پروژه بگذارید، نه روی ماشین خودتان.
+EXAMPLE: خروجی واقعی آزمایش ۰۲ (Windows و Git Bash، ۲۰۲۶-۱۱-۲۳).
+PITFALL: درست کردن کد برای راضی کردن تنظیماتی که کسی commit نکرده است.
+TIME: 75
+  </aside>
+</section>
+
+<!-- 08 CONCEPT_DIAGRAM -->
+<section>
+  <span class="eyebrow in-f">۰۰ · راه‌اندازی · نمودار به‌صورت متن</span>
+  <h2 class="in">متن را ویرایش کنید، رندر بگیرید، هر دو را commit کنید</h2>
+  <div class="diagram in-p d1" style="margin-top:-16px"><img src="assets/diagram-pipeline.svg" alt="سه مسیر: فایل mmd با mermaid-cli به svg؛ فایل puml با PlantUML در Docker به svg؛ فایل workspace.dsl با export ابزار Structurizr به فایل‌های Mermaid و بعد mermaid-cli به svgهای c4"></div>
+  <p class="takeaway in d2">یک اسکریپت هر سه را رندر می‌کند: <code>render-diagrams.sh</code></p>
+  <aside class="notes">
+SAY (FA): Mermaid برای ساختار سریع است، PlantUML وقتی دقت UML لازم باشد، و Structurizr یک مدل C4 نگه می‌دارد و viewها را از آن می‌سازد. منبع حقیقت است؛ SVG یک خروجی ساخته‌شده است که commit می‌شود تا pull request تصویر را نشان دهد.
+SAY (EN): Mermaid is for quick structure, PlantUML when UML precision matters, and Structurizr keeps one C4 model and derives the views. The source is the truth; the SVG is a committed build artifact so a pull request shows the picture.
+KEY POINT: منبع نمودار متن است، پس git diff تغییر طراحی را نشان می‌دهد.
+EXAMPLE: آزمایش ۰۳ در اجرای اول حدود ۲۲ ثانیه برای ساختن چهار فایل SVG وقت گرفت (mermaid-cli 12.2.0 و PlantUML 1.2026.10).
+PITFALL: ویرایش دستی SVG، یا استفاده از latest برای Mermaid CLI که خروجی‌ها را جابه‌جا می‌کند.
+TIME: 90
+  </aside>
+</section>
+
+<!-- 09 CODE_WALKTHROUGH: citation -->
+<section>
+  <span class="eyebrow in-f">۰۰ · راه‌اندازی · سورس واقعی</span>
+  <h2 class="in">ارجاع، فایل و تابع و pin را نام می‌برد</h2>
+  <div class="grid">
+    <div class="c-8 code-card in d1">
+      <div class="file-chip"><span>linux/include/linux/kref.h · kref_init()</span><span>v6.18.63 · L29-32</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1"><span class="tok-k">static inline</span> <span class="tok-t">void</span> <span class="tok-f">kref_init</span>(<span class="tok-k">struct</span> <span class="tok-t">kref</span> *kref)</span><span class="ln">{</span><span class="ln fragment hl-on" data-fragment-index="2">	<span class="tok-f">refcount_set</span>(&amp;kref-&gt;refcount, <span class="tok-s">1</span>);</span><span class="ln">}</span></code></pre>
+    </div>
+    <div class="c-4 callouts">
+      <div class="in d2"><span class="callout-num">1</span><span>مسیر و نام تابع در چیپ</span></div>
+      <div class="in d3"><span class="callout-num">2</span><span>شمارندهٔ ارجاع از ۱ شروع می‌شود (ماژول ۰۵)</span></div>
+      <div class="in d4"><span class="callout-num">3</span><span>پین <bdi dir="ltr">v6.18.63</bdi>: خط‌ها جابه‌جا نمی‌شوند</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+SAY (FA): این را با cite.sh از checkout خودمان چاپ کردیم، نه از حافظه. چیپ مسیر، تابع و pin را دارد تا هر کسی همان خط‌ها را باز کند. ارجاع به OpenBSD همین قالب را با commit به نام 8cada8c دارد.
+SAY (EN): Printed with cite.sh from our checkout, not typed from memory. The chip carries the path, the function and the pin, so anyone can open the same lines. OpenBSD citations use the same shape with the commit 8cada8c.
+KEY POINT: حداکثر ۲۵ خط، کپی‌شده از checkout و خط‌به‌خط توضیح داده‌شده.
+EXAMPLE: bash _shared/sources/cite.sh linux include/linux/kref.h kref_init 8
+PITFALL: نقل یک تابع از وبلاگی که برای نسخهٔ دیگری از کرنل نوشته شده. کتاب‌ها با فصل و بخش ارجاع داده می‌شوند، مثلاً Schach 8e, ch. 2 §2.9.
+ASK: چرا pin بخشی از ارجاع است و فقط مسیر کافی نیست؟
+TIME: 90
+  </aside>
+</section>
+
+<!-- 10 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">آزمون کوتاه</span>
+  <h2>آزمایشی می‌گوید «از <span dir="ltr">m3</span> شروع کنید» ولی مخزن درس tag ای به نام <span dir="ltr">m3</span> ندارد. چه می‌کنید؟</h2>
+  <div class="quiz-options">
+    <div><b>A</b> در مخزن درس <code>git checkout m3</code> می‌زنم</div>
+    <div><b>B</b> از m3 خودم یا project/ در همان نقطه استفاده می‌کنم</div>
+    <div><b>C</b> project/ را پاک می‌کنم و از نو شروع می‌کنم</div>
+    <div><b>D</b> صبر می‌کنم تا tag منتشر شود</div>
+  </div>
+  <aside class="notes">
+SAY (FA): ۲۰ ثانیه فکر کنید؛ تاریخچهٔ شما کجا زندگی می‌کند؟
+SAY (EN): Take 20 seconds. Think about where your history lives.
+KEY POINT: پاسخ در اسلاید بعد است.
+EXAMPLE: —
+PITFALL: —
+ASK: چه کسی A را انتخاب کرد؟ git چه می‌گفت؟
+TIME: 45
+  </aside>
+</section>
+
+<!-- 11 QUIZ answer (DEFINITION) -->
+<section>
+  <span class="eyebrow">پاسخ: B</span>
+  <h2>tag مال شماست: وضعیت یعنی محتوای project/ بعد از یک ماژول</h2>
+  <p class="quote">مخزن درس tag ندارد. وضعیت‌های <span dir="ltr">m0 … m8</span> commitهایی‌اند که در کپی خودتان tag می‌زنید.</p>
+  <p class="source ltr">guide.fa.md §2 · 00-setup</p>
+  <aside class="notes">
+SAY (FA): گزینهٔ A شکست می‌خورد چون چیزی برای checkout وجود ندارد. اگر آزمایشی را جا انداخته‌اید، محتوای project/ در مخزن درس در همان نقطه همان وضعیت است؛ مخزن خودتان وقتی commit می‌کنید tag می‌گیرد.
+SAY (EN): Option A fails because there is nothing to check out. If you skipped a lab, the content of project/ in the course repository at that point is the state; your own repository gets the tag when you commit it.
+KEY POINT: tag همان‌جا هست که تاریخچه هست.
+EXAMPLE: git tag در کپی شما بعد از آزمایش ۰۲ عنوان m0 را نشان می‌دهد.
+PITFALL: D منتظر چیزی می‌ماند که هرگز در این مخزن ساخته نمی‌شود.
+TIME: 45
+  </aside>
+</section>
+
+<!-- 12 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">۰۰ · راه‌اندازی</span>
+  <h2 class="in">جمع‌بندی</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>یک پروژه در درس رشد می‌کند؛ <span dir="ltr">m0 … m8</span> شما در مخزن خودتان است</li>
+    <li class="in d2"><span class="callout-num">2</span><span dir="ltr">make check</span> دروازه است؛ تنظیماتش را داخل پروژه نگه دارید</li>
+    <li class="in d3"><span class="callout-num">3</span>نمودار متن است و ارجاع، فایل و تابع و pin را نام می‌برد</li>
+  </ul>
+  <p class="next in d4">ماژول ۰۱ · فرایندها و مدل‌های چرخهٔ عمر نرم‌افزار</p>
+  <aside class="notes">
+SAY (FA): حالا پروژه‌ای دارید که ساخته می‌شود، دروازه‌ای که راست می‌گوید، نمودارهایی که می‌توانید دوباره تولید کنید و راهی برای ارجاع. در ادامه از همهٔ این‌ها برای مطالعهٔ چگونگی ساخته شدن نرم‌افزار استفاده می‌کنیم.
+SAY (EN): You now have a project that builds, a gate that tells the truth, diagrams you can regenerate, and a way to cite. Next we use all of it to study how software gets built.
+KEY POINT: فهرست «کی تمام شده» در guide.fa.md بخش ۸ است.
+EXAMPLE: —
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="مهندسی نرم‌افزار پیشرفته · ۰۰ راه‌اندازی" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 560" font-family="Inter, Vazirmatn, sans-serif" direction="ltr">
+  <!-- DATA_CHART: Schach 8e, ch. 1 §1.3.2, p. 12. Coding + unit testing = 34% of the 25% development share = 8.5% of total cost; maintenance = 75%. -->
+  <!-- Roles: coding = service (amber #B45309), maintenance = infrastructure (violet #6D28D9) -->
+  <!-- axis -->
+  <line x1="150" y1="30" x2="150" y2="440" stroke="#0A1633" stroke-width="4"/>
+  <line x1="150" y1="440" x2="1500" y2="440" stroke="#0A1633" stroke-width="4"/>
+  <!-- gridlines every 2 percentage points; 1 point = 48 px -->
+  <g font-size="26" fill="#0A1633" text-anchor="end">
+    <line x1="140" y1="440" x2="150" y2="440" stroke="#0A1633" stroke-width="4"/><text x="124" y="450">0</text>
+    <line x1="140" y1="344" x2="150" y2="344" stroke="#0A1633" stroke-width="4"/><text x="124" y="354">2</text>
+    <line x1="140" y1="248" x2="150" y2="248" stroke="#0A1633" stroke-width="4"/><text x="124" y="258">4</text>
+    <line x1="140" y1="152" x2="150" y2="152" stroke="#0A1633" stroke-width="4"/><text x="124" y="162">6</text>
+    <line x1="140" y1="56" x2="150" y2="56" stroke="#0A1633" stroke-width="4"/><text x="124" y="66">8</text>
+  </g>
+  <text x="20" y="20" font-size="26" font-weight="700" fill="#0A1633">% of total life-cycle cost saved</text>
+
+  <!-- bar 1: 10% cheaper coding = 0.85 points = 41 px -->
+  <rect x="420" y="399" width="260" height="41" fill="#FDEFD9" stroke="#B45309" stroke-width="4"/>
+  <text x="550" y="385" font-size="40" font-weight="800" fill="#B45309" text-anchor="middle">0.85%</text>
+  <text x="550" y="490" font-size="28" font-weight="700" fill="#0A1633" text-anchor="middle">coding 10% cheaper</text>
+  <text x="550" y="525" font-size="26" fill="#0A1633" text-anchor="middle">8.5% of total cost</text>
+
+  <!-- bar 2: 10% cheaper maintenance = 7.5 points = 360 px -->
+  <rect x="920" y="80" width="260" height="360" fill="#EEE6FB" stroke="#6D28D9" stroke-width="4"/>
+  <text x="1050" y="66" font-size="40" font-weight="800" fill="#6D28D9" text-anchor="middle">7.5%</text>
+  <text x="1050" y="490" font-size="28" font-weight="700" fill="#0A1633" text-anchor="middle">maintenance 10% cheaper</text>
+  <text x="1050" y="525" font-size="26" fill="#0A1633" text-anchor="middle">75% of total cost</text>
+</svg>

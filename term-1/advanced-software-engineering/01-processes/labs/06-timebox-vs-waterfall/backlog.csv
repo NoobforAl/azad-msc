@@ -1,0 +1,13 @@
+id,title,priority,value,estimate_days
+REG-01,Student login,1,13,9
+REG-02,Enroll in a course,1,13,10
+REG-03,Drop a course,2,8,5
+REG-04,Capacity check and waitlist,2,8,12
+REG-05,Prerequisite validation,3,5,8
+REG-06,Admin: manage courses,3,5,10
+REG-07,Timetable clash detection,3,5,10
+REG-08,Email confirmations,4,3,6
+REG-09,Course search and filters,4,3,6
+REG-10,Grade export for the registrar,5,2,7
+REG-11,Mobile layout,5,2,9
+REG-12,Reports for the dean,6,1,8

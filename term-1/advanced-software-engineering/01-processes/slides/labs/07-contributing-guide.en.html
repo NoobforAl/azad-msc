@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 01.7 · CONTRIBUTING.md and a commit-message checker, after Linux</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.7</div>
+  <span class="eyebrow in-f">Lab 01.7 · Goal</span>
+  <h2 class="in">CONTRIBUTING.md and a commit-message checker, after Linux</h2>
+  <p class="why in d1">Write a CONTRIBUTING guide and a review checklist adapted from Linux submitting-patches.rst, and enforce its mechanical rules with a Python checker and a Git hook.</p>
+  <div class="pills in d2"><span class="pill">Runs on: Git, Python, Bash</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Write a CONTRIBUTING guide and a review checklist adapted from Linux submitting-patches.rst, and enforce its mechanical rules with a Python checker and a Git hook.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.7 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-store in d1"><h3>Source</h3><p class="ltr-mono"><code>linux/Documentation/process/submitting-patches.rst · v6.18.63</code></p></div><div class="c-6 card edge r-service in d2"><h3>Checker</h3><p>check_commit_msgs.py: S1-S4, B1-B2, T1-T2</p></div><div class="c-6 card edge r-infra in d3"><h3>Hook</h3><p>commit-msg rejects bad messages</p></div><div class="c-6 card edge r-client in d4"><h3>Guide</h3><p>CONTRIBUTING.md + PR template (your task)</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.7 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 07-contributing-guide</div><pre><code><span class="ln"><span class="p">$</span> bash seed_commits.sh &quot;$SCRATCH&quot; &amp;&amp; cd &quot;$SCRATCH&quot;</span><span class="ln"><span class="p">$</span> mkdir -p tools .github &amp;&amp; cp &quot;$LAB/check_commit_msgs.py&quot; tools/</span><span class="ln"><span class="p">$</span> python tools/check_commit_msgs.py m0..HEAD</span><span class="ln"><span class="dim"># write CONTRIBUTING.md and .github/PULL_REQUEST_TEMPLATE.md</span></span><span class="ln"><span class="p">$</span> cp &quot;$LAB/solution/commit-msg&quot; .git/hooks/commit-msg &amp;&amp; chmod +x .git/hooks/commit-msg</span><span class="ln"><span class="p">$</span> git commit -m &quot;wip stuff&quot;</span><span class="ln"><span class="p">$</span> git commit -s -m &quot;catalog: add a note about ordering&quot;</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.7 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> python tools/check_commit_msgs.py m0..HEAD</span><span class="ln">ok   4dd6d8a catalog: add Count</span><span class="ln">FAIL 7aa6165 Fixed stuff.</span><span class="ln hl">       [S3] subject ends with a period</span><span class="ln">       [T1] no Signed-off-by: line (git commit -s adds it)</span><span class="ln">FAIL 9acf462 docs: explain the API</span><span class="ln hl">       [B1] no blank line between the subject and the body</span><span class="ln">4 of 6 commits violate the rules</span><span class="ln"><span class="p">$</span> git commit -m &quot;wip stuff&quot;</span><span class="ln hl">commit message rejected: [S4] subject does not start with &quot;area: &quot; (example: &quot;catalog: add Count&quot;)</span><span class="ln">commit message rejected: [T1] no Signed-off-by: line (git commit -s adds it)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on Windows 11, Git Bash, Python 3.12, Go, 2026-11-23.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.7 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Four of six commits fail</b><br><span class="caption">style (S3, S4), provenance (T1, T2), tool behaviour (B1)</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>A script checks form, not meaning</b><br><span class="caption">&#x27;add Count&#x27; and &#x27;add stuff&#x27; both pass; review judges why</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>A hook fails at the cheapest moment</b><br><span class="caption">seconds now vs a review round-trip later</span></div></li><li class="in d4"><span class="callout-num">4</span><div><b>Every number is a choice</b><br><span class="caption">Linux says 70-75 characters; the checker says 72</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.7 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">hook does nothing</span><span class="arrow-s">→</span><span class="tag r-ok">chmod +x; name must be commit-msg; use Git Bash</span></div><div class="pit in d2"><span class="tag r-danger">python: command not found in the hook</span><span class="arrow-s">→</span><span class="tag r-ok">edit the last line to python3</span></div><div class="pit in d3"><span class="tag r-danger">T2 fires on a correct-looking sign-off</span><span class="arrow-s">→</span><span class="tag r-ok">name or email differs from git config</span></div><div class="pit in d4"><span class="tag r-danger">copying kernel sentences</span><span class="arrow-s">→</span><span class="tag r-ok">quote a few lines with source; adapt the rest</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.7 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Add rule T3: a Fixes: trailer must name an existing commit by its first 12 characters and quote its real subject. Add unit tests, then run the checker in CI on pull requests.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced Software Engineering · 01 Processes" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

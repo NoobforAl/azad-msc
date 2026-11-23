@@ -1,0 +1,37 @@
+PART 1  The 10% arithmetic with the cost shares of Schach 8e, ch. 1, sec. 1.3.2 (Figures 1.3, 1.4)
+
+era                                        dev % maint % code %  -10% coding -10% maint
+1976-81 projects (Fig. 1.3a, 1.4)             33      67     36        1.19%      6.70%
+1992-98, 132 HP projects (Fig. 1.3b, 1.4)     25      75     34        0.85%      7.50%
+  code % = share of development cost spent on coding + unit testing; savings are % of TOTAL life-cycle cost
+  The 1992-1998 row is the book's 0.85% vs 7.5% (34% of 25% = 8.5% of the total, a tenth of that is 0.85%).
+  Faults: if 60-70% of all faults are requirements/analysis/design faults (ch. 1, sec. 1.4), a 10% reduction of
+  those removes 6-7% of all faults (6.0% to 7.0%).
+
+PART 2  Simulation: 1000 faults, seed 7   (ILLUSTRATIVE ASSUMPTIONS, not data)
+  introduced in: requirements 35%, design 30%, implementation 35%
+  cost to fix when found in phase (1 unit = requirements): requirements 1, design 2.5, implementation 6.2, integration 15.6, acceptance 39.1, maintenance 97.7
+
+  scenario: test only at the end   detection rate per phase: 0% 0% 30% 40% 50% (maintenance: all that is left)
+  found in         faults      cost    expected
+  requirements          0         0           0
+  design                0         0           0
+  implementation      308      1925        1875
+  integration         297      4641        4375
+  acceptance          201      7852        8203
+  maintenance         194     18945       20508
+  total              1000     33362       34961
+  cost per fault 33.4 units; maintenance share of the cost 57%; faults found by users 19%
+
+  scenario: with inspections   detection rate per phase: 40% 40% 30% 40% 50% (maintenance: all that is left)
+  found in         faults      cost    expected
+  requirements        167       167         140
+  design              192       480         510
+  implementation      200      1250        1230
+  integration         191      2984        2870
+  acceptance          140      5469        5381
+  maintenance         110     10742       13453
+  total              1000     21092       23584
+  cost per fault 21.1 units; maintenance share of the cost 51%; faults found by users 11%
+
+  inspections cut the total cost to 63% of the test-only process

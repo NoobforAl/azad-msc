@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Git commit-msg hook: reject a commit whose message breaks the rules of CONTRIBUTING.md.
+# Install in YOUR scratch repository (from its root), with the lab folder in $LAB:
+#   cp "$LAB/solution/commit-msg" .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg
+#   cp "$LAB/check_commit_msgs.py" tools/
+# Git passes the path of the message file as the first argument.
+exec python "$(git rev-parse --show-toplevel)/tools/check_commit_msgs.py" --message-file "$1"

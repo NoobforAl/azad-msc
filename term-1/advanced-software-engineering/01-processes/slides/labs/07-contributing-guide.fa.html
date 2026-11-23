@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 01.7 · CONTRIBUTING.md و بررسی‌کنندهٔ پیام commit، به سبک Linux</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.7</div>
+  <span class="eyebrow in-f">آزمایش 01.7 · هدف</span>
+  <h2 class="in"><bdi dir="ltr">CONTRIBUTING.md</bdi> و بررسی‌کنندهٔ پیام <bdi dir="ltr">commit</bdi>، به سبک <bdi dir="ltr">Linux</bdi></h2>
+  <p class="why in d1">یک راهنمای <bdi dir="ltr">CONTRIBUTING</bdi> و چک‌لیست <bdi dir="ltr">review</bdi> بنویسید که از <bdi dir="ltr">submitting-patches.rst</bdi> در <bdi dir="ltr">Linux</bdi> اقتباس شده، و قاعده‌های مکانیکی آن را با یک <bdi dir="ltr">checker</bdi> پایتونی و یک <bdi dir="ltr">hook</bdi> در <bdi dir="ltr">Git</bdi> اجرا کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: Git، Python و Bash</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Write a CONTRIBUTING guide and a review checklist adapted from Linux submitting-patches.rst, and enforce its mechanical rules with a Python checker and a Git hook.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.7 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-store in d1"><h3>منبع</h3><p class="ltr-mono"><code>linux/Documentation/process/submitting-patches.rst · v6.18.63</code></p></div><div class="c-6 card edge r-service in d2"><h3>checker</h3><p><bdi dir="ltr">check_commit_msgs.py:</bdi> ‏<bdi dir="ltr">S1-S4</bdi>، <bdi dir="ltr">B1-B2</bdi>، <bdi dir="ltr">T1-T2</bdi></p></div><div class="c-6 card edge r-infra in d3"><h3>hook</h3><p><bdi dir="ltr">commit-msg</bdi> پیام‌های بد را رد می‌کند</p></div><div class="c-6 card edge r-client in d4"><h3>راهنما</h3><p><bdi dir="ltr">CONTRIBUTING.md +</bdi> قالب <bdi dir="ltr">PR</bdi> (تکلیف شما)</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.7 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 07-contributing-guide</div><pre><code><span class="ln"><span class="p">$</span> bash seed_commits.sh &quot;$SCRATCH&quot; &amp;&amp; cd &quot;$SCRATCH&quot;</span><span class="ln"><span class="p">$</span> mkdir -p tools .github &amp;&amp; cp &quot;$LAB/check_commit_msgs.py&quot; tools/</span><span class="ln"><span class="p">$</span> python tools/check_commit_msgs.py m0..HEAD</span><span class="ln"><span class="dim"># write CONTRIBUTING.md and .github/PULL_REQUEST_TEMPLATE.md</span></span><span class="ln"><span class="p">$</span> cp &quot;$LAB/solution/commit-msg&quot; .git/hooks/commit-msg &amp;&amp; chmod +x .git/hooks/commit-msg</span><span class="ln"><span class="p">$</span> git commit -m &quot;wip stuff&quot;</span><span class="ln"><span class="p">$</span> git commit -s -m &quot;catalog: add a note about ordering&quot;</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.7 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> python tools/check_commit_msgs.py m0..HEAD</span><span class="ln">ok   4dd6d8a catalog: add Count</span><span class="ln">FAIL 7aa6165 Fixed stuff.</span><span class="ln hl">       [S3] subject ends with a period</span><span class="ln">       [T1] no Signed-off-by: line (git commit -s adds it)</span><span class="ln">FAIL 9acf462 docs: explain the API</span><span class="ln hl">       [B1] no blank line between the subject and the body</span><span class="ln">4 of 6 commits violate the rules</span><span class="ln"><span class="p">$</span> git commit -m &quot;wip stuff&quot;</span><span class="ln hl">commit message rejected: [S4] subject does not start with &quot;area: &quot; (example: &quot;catalog: add Count&quot;)</span><span class="ln">commit message rejected: [T1] no Signed-off-by: line (git commit -s adds it)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">Windows 11</bdi>، <bdi dir="ltr">Git Bash</bdi>، <bdi dir="ltr">Python 3.12</bdi>، <bdi dir="ltr">Go</bdi>، ۱۴۰۵/۰۹/۰۲.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.7 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>چهار <bdi dir="ltr">commit</bdi> از شش‌تا رد می‌شود</b><br><span class="caption">سبک (<bdi dir="ltr">S3</bdi>، <bdi dir="ltr">S4</bdi>)، ردگیری مسئولیت (<bdi dir="ltr">T1</bdi>، <bdi dir="ltr">T2</bdi>)، رفتار ابزار <bdi dir="ltr">(B1)</bdi></span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>اسکریپت شکل را می‌سنجد نه معنا را</b><br><span class="caption">«<bdi dir="ltr">add Count</bdi>» و «<bdi dir="ltr">add stuff</bdi>» هر دو قبول می‌شوند؛ دلیل را <bdi dir="ltr">review</bdi> ارزیابی می‌کند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">hook</bdi> در ارزان‌ترین لحظه خطا می‌دهد</b><br><span class="caption">چند ثانیه همین حالا در برابر یک دور رفت‌وبرگشت <bdi dir="ltr">review</bdi> بعدتر</span></div></li><li class="in d4"><span class="callout-num">4</span><div><b>هر عدد یک انتخاب است</b><br><span class="caption"><bdi dir="ltr">Linux</bdi> می‌گوید ۷۰ تا ۷۵ کاراکتر؛ <bdi dir="ltr">checker</bdi> عدد ۷۲ را برگزیده</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.7 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger"><bdi dir="ltr">hook</bdi> هیچ کاری نمی‌کند</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">chmod +x</bdi>؛ نام باید <bdi dir="ltr">commit-msg</bdi> باشد؛ از <bdi dir="ltr">Git Bash</bdi> استفاده کنید</span></div><div class="pit in d2"><span class="tag r-danger">خطای <bdi dir="ltr">python: command not found</bdi> در <bdi dir="ltr">hook</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">خط آخر را به <bdi dir="ltr">python3</bdi> تغییر دهید</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">T2</bdi> با وجود <bdi dir="ltr">sign-off</bdi> درست‌نما خطا می‌دهد</span><span class="arrow-s">←</span><span class="tag r-ok">نام یا ایمیل با <bdi dir="ltr">git config</bdi> فرق دارد</span></div><div class="pit in d4"><span class="tag r-danger">کپی کردن جمله‌های کرنل</span><span class="arrow-s">←</span><span class="tag r-ok">چند خط را با ذکر منبع نقل کنید و بقیه را بازنویسی کنید</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.7 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">قاعدهٔ <bdi dir="ltr">T3</bdi> را اضافه کنید<bdi dir="ltr">: trailer</bdi> به نام <bdi dir="ltr">Fixes:</bdi> باید با ۱۲ نویسهٔ اول یک <bdi dir="ltr">commit</bdi> موجود را نام ببرد و <bdi dir="ltr">subject</bdi> واقعی آن را بیاورد. تست واحد بنویسید و سپس <bdi dir="ltr">checker</bdi> را در <bdi dir="ltr">CI</bdi> روی <bdi dir="ltr">pull request</bdi>ها اجرا کنید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="مهندسی نرم‌افزار پیشرفته · ۰۱ فرایندها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

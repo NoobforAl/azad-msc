@@ -1,0 +1,67 @@
+seeded 11 commits after m0 in /tmp/ase-lab04/repo (tags: v1.0, v1.1)
+67a61f9 (HEAD -> main, tag: v1.1) docs: mention Remove in README
+f72fb33 catalog: add Remove
+e18cd1c catalog: finish GetByTitle
+35b06e0 catalog: WIP GetByTitle
+792c10a docs: update CHANGELOG for 1.1
+f10c4bb catalog: show newest course IDs first
+32472f0 (tag: v1.0) catalog: add TotalCapacity
+8408ced docs: document the API in README
+a62ca60 catalog: add Titles
+ae78c2b catalog: add Count
+bfa6dc7 docs: add CHANGELOG
+$ go test ./...   # on HEAD
+ok  	example.com/registration/cmd/registration-api	(cached)
+--- FAIL: TestTitles (0.00s)
+    catalog_extra_test.go:16: Titles() = [Second First], want [First Second]
+--- FAIL: TestListIsSortedByID (0.00s)
+    catalog_test.go:9: List() = [{ID:SE2 Title:Requirements Capacity:30} {ID:SE1 Title:Processes Capacity:25}], want SE1 then SE2
+FAIL
+FAIL	example.com/registration/internal/catalog	0.239s
+FAIL
+$ git bisect start HEAD v1.0
+Bisecting: 2 revisions left to test after this (roughly 2 steps)
+[35b06e0730f14af5b5d9ad6cc4ee28ff972dc64c] catalog: WIP GetByTitle
+$ git bisect run bash bisect-test.sh
+running 'bash' 'term-1/advanced-software-engineering/01-processes/labs/04-git-bisect-worktrees/bisect-test.sh'
+bisect-test: build fails, skipping this commit
+Bisecting: 2 revisions left to test after this (roughly 2 steps)
+[e18cd1c242c78e1d816522936d134dbbc3bcb332] catalog: finish GetByTitle
+running 'bash' 'term-1/advanced-software-engineering/01-processes/labs/04-git-bisect-worktrees/bisect-test.sh'
+Bisecting: 1 revision left to test after this (roughly 1 step)
+[792c10adba22b8fcb2448c7bfa0d1a2ad5588dd3] docs: update CHANGELOG for 1.1
+running 'bash' 'term-1/advanced-software-engineering/01-processes/labs/04-git-bisect-worktrees/bisect-test.sh'
+Bisecting: 0 revisions left to test after this (roughly 0 steps)
+[f10c4bbc648959059cec1c25bc709ed01e35b123] catalog: show newest course IDs first
+running 'bash' 'term-1/advanced-software-engineering/01-processes/labs/04-git-bisect-worktrees/bisect-test.sh'
+f10c4bbc648959059cec1c25bc709ed01e35b123 is the first 'bad' commit
+commit f10c4bbc648959059cec1c25bc709ed01e35b123
+Author: Lab Student <student@example.com>
+Date:   Mon May 11 10:00:00 2026 +0000
+
+    catalog: show newest course IDs first
+
+ internal/catalog/catalog.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+bisect found first 'bad' commit
+Previous HEAD position was f10c4bb catalog: show newest course IDs first
+Switched to branch 'main'
+culprit: f10c4bb catalog: show newest course IDs first
+$ git worktree add ../rel-v1.0 v1.0; git worktree add ../rel-v1.1 v1.1
+Preparing worktree (detached HEAD 32472f0)
+HEAD is now at 32472f0 catalog: add TotalCapacity
+Preparing worktree (detached HEAD 67a61f9)
+HEAD is now at 67a61f9 docs: mention Remove in README
+/tmp/ase-lab04/repo     67a61f9 [main]
+/tmp/ase-lab04/rel-v1.0 32472f0 (detached HEAD)
+/tmp/ase-lab04/rel-v1.1 67a61f9 (detached HEAD)
+$ run the ordering test in both worktrees at the same time
+[v1.0] ok  	example.com/registration/internal/catalog	0.261s
+[v1.1] --- FAIL: TestListIsSortedByID (0.00s)
+[v1.1]     catalog_test.go:9: List() = [{ID:SE2 Title:Requirements Capacity:30} {ID:SE1 Title:Processes Capacity:25}], want SE1 then SE2
+[v1.1] FAIL
+[v1.1] FAIL	example.com/registration/internal/catalog	0.292s
+[v1.1] FAIL
+$ fix the regression on a branch with git revert, test, clean up
+fixed: go test ./... passes on fix-order
+/tmp/ase-lab04/repo 67a61f9 [main]

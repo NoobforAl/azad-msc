@@ -1,0 +1,42 @@
+# Reference result, Windows 11 + Git Bash, Go 1.27.4, Python 3.12.14, ruff 0.17.6, 2026-11-23.
+# The curl lines were run against ADDR=:8083 (port 8080 was busy on the capture machine); the output is identical.
+# "(cached)" means go test found nothing changed since an earlier run; your first run prints times such as 0.521s.
+
+$ make check
+go vet ./...
+ruff check analytics
+All checks passed!
+go test ./...
+ok  	example.com/registration/cmd/registration-api	(cached)
+ok  	example.com/registration/internal/catalog	(cached)
+python -m unittest discover -s analytics/tests -v
+test_half_full (test_enrollment_stats.FillRateTest.test_half_full) ... ok
+test_overbooked_is_capped (test_enrollment_stats.FillRateTest.test_overbooked_is_capped) ... ok
+test_zero_capacity_is_zero (test_enrollment_stats.FillRateTest.test_zero_capacity_is_zero) ... ok
+test_ranks_by_fill_rate_then_id (test_enrollment_stats.FullestCoursesTest.test_ranks_by_fill_rate_then_id) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK
+
+$ git log --oneline --decorate
+a71bc41 (HEAD -> main) Add CI workflow (same commands as make check)
+1dd2562 (tag: m0) m0: course registration skeleton
+
+$ curl -s localhost:8080/healthz
+{"status":"ok"}
+
+$ curl -s localhost:8080/courses | python -m json.tool
+[
+    {
+        "id": "SE101",
+        "title": "Software Processes",
+        "capacity": 40
+    },
+    {
+        "id": "SE102",
+        "title": "Requirements Engineering",
+        "capacity": 35
+    }
+]

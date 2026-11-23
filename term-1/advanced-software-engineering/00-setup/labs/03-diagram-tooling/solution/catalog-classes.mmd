@@ -1,0 +1,13 @@
+classDiagram
+  class Course {
+    +string ID
+    +string Title
+    +int Capacity
+  }
+  class Catalog {
+    -map~string, Course~ courses
+    +New(seed ...Course) *Catalog
+    +List() []Course
+    +Get(id string) (Course, bool)
+  }
+  Catalog o-- "0..*" Course : holds

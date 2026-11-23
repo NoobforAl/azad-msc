@@ -1,0 +1,20 @@
+DORA metrics for dora-demo
+(deployment = tag matching the glob, commit time = author date)
+
+Deployment frequency
+  deployments            11  (2026-03-05 10:00 to 2026-04-24 15:00, 50.2 days)
+  per week               1.53  (in 8 different weeks)
+Lead time for changes  (30 released commits, commit -> first tag containing it)
+  median                 46.5 h (1 d 22.5 h)
+  mean                   55.6 h (2 d 7.6 h)
+  90th percentile        119.0 h (4 d 23.0 h)
+Change failure rate
+  failed deployments     3 of 11  v0.2.0, v0.4.0, v0.6.0
+  rate                   27%
+Time to restore service
+  v0.2.0                 22.5 h
+  v0.4.0                 24.0 h (1 d 0.0 h)
+  v0.6.0                 126.0 h (5 d 6.0 h)
+  median                 24.0 h (1 d 0.0 h)
+Not measured
+  2 of 32 commits are not in any release yet (they have no lead time)

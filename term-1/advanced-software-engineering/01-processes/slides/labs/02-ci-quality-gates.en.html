@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 01.2 · CI quality gates: the same checks locally and in CI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.2</div>
+  <span class="eyebrow in-f">Lab 01.2 · Goal</span>
+  <h2 class="in">CI quality gates: the same checks locally and in CI</h2>
+  <p class="why in d1">Run gofmt, go vet, ruff, tests and a coverage threshold with one script, also in GitHub Actions, and make each gate fail on purpose.</p>
+  <div class="pills in d2"><span class="pill">Runs on: Go, Python, ruff, Git</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Run gofmt, go vet, ruff, tests and a coverage threshold with one script, also in GitHub Actions, and make each gate fail on purpose.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.2 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-client in d1"><h3>Gates</h3><p class="ltr-mono"><code>gofmt · vet · ruff · tests · coverage</code></p></div><div class="c-6 card edge r-service in d2"><h3>Runner</h3><p>tools/gates.py, exit code = failed gates</p></div><div class="c-6 card edge r-infra in d3"><h3>CI</h3><p>GitHub Actions runs the same script</p></div><div class="c-6 card edge r-store in d4"><h3>Start</h3><p>m0 scratch copy (prepare-m0.sh)</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.2 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 02-ci-quality-gates</div><pre><code><span class="ln"><span class="p">$</span> bash ../prepare-m0.sh &quot;$SCRATCH&quot; &amp;&amp; cd &quot;$SCRATCH&quot;</span><span class="ln"><span class="p">$</span> mkdir tools &amp;&amp; cp &quot;$LAB/gates.py&quot; tools/</span><span class="ln"><span class="p">$</span> python tools/gates.py</span><span class="ln"><span class="p">$</span> printf &#x27;\nvar   unformatted=1\n&#x27; &gt;&gt; internal/catalog/catalog.go</span><span class="ln"><span class="p">$</span> python tools/gates.py --only gofmt,vet</span><span class="ln"><span class="p">$</span> git checkout internal/catalog/catalog.go</span><span class="ln"><span class="dim"># then break lint, tests, coverage the same way (README)</span></span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.2 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> python tools/gates.py</span><span class="ln">gofmt     PASS  all Go files formatted</span><span class="ln">vet       PASS  go vet ./... is clean</span><span class="ln">ruff      PASS  All checks passed!</span><span class="ln">tests     PASS  go test and unittest pass</span><span class="ln">coverage  PASS  total 72.4% of statements (minimum 70.0%)</span><span class="ln">0 of 5 gates failed</span><span class="ln"><span class="p">$</span> python tools/gates.py --only gofmt,vet</span><span class="ln hl">gofmt     FAIL  needs gofmt: internal\catalog\catalog.go</span><span class="ln">vet       PASS  go vet ./... is clean</span><span class="ln"><span class="p">$</span> python tools/gates.py --only coverage</span><span class="ln hl">coverage  FAIL  total 61.8% of statements (minimum 70.0%)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on Windows 11, Git Bash, Python 3.12, Go, 2026-11-23.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.2 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>One break, one gate</b><br><span class="caption">vet passes unformatted code; gofmt passes untested code</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>Coverage caught what tests missed</b><br><span class="caption"><bdi dir="ltr">72.4</bdi>% → <bdi dir="ltr">61.8</bdi>% <bdi dir="ltr">with every test still green</bdi></span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>Local = CI</b><br><span class="caption">the workflow&#x27;s real step is python tools/gates.py</span></div></li><li class="in d4"><span class="callout-num">4</span><div><b>The template had a gap</b><br><span class="caption">make lint test passes unformatted code: no gofmt, no coverage</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.2 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">ruff: command not found</span><span class="arrow-s">→</span><span class="tag r-ok">pip install ruff</span></div><div class="pit in d2"><span class="tag r-danger">ruff errors only in the scratch copy</span><span class="arrow-s">→</span><span class="tag r-ok">no ruff.toml: prepare-m0.sh copies it</span></div><div class="pit in d3"><span class="tag r-danger">green locally, red in CI</span><span class="arrow-s">→</span><span class="tag r-ok">compare go version and Python version</span></div><div class="pit in d4"><span class="tag r-danger">workflow never starts</span><span class="arrow-s">→</span><span class="tag r-ok">file must be in .github/workflows/</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.2 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Add a sixth gate that runs ruff format --check. It fails on m0, so fix the formatting in a separate commit first. Then add a per-package coverage floor next to the total.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced Software Engineering · 01 Processes" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

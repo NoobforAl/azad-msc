@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 00.1 · Toolchain check</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">00.1</div>
+  <span class="eyebrow in-f">Lab 00.1 · Goal</span>
+  <h2 class="in">Toolchain check</h2>
+  <p class="why in d1">One script prints the version of every tool the course needs and flags what is missing or too old.</p>
+  <div class="pills in d2"><span class="pill">Runs on: Your machine (any OS)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: One script prints the version of every tool the course needs and flags what is missing or too old.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.1 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-service in d1"><h3>Required</h3><p class="ltr-mono"><code>Go ≥ 1.22 · Python ≥ 3.8 · ruff · git ≥ 2.28</code></p></div><div class="c-6 card edge r-infra in d2"><h3>Optional</h3><p class="ltr-mono"><code>make · Docker · Node · Java</code></p></div><div class="c-6 card edge r-client in d3"><h3>The script</h3><p>check_tools.py, standard library only</p></div><div class="c-6 card edge r-store in d4"><h3>The result</h3><p>exit code = number of problems</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.1 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 01-toolchain-check</div><pre><code><span class="ln"><span class="dim"># from the course repository root</span></span><span class="ln"><span class="p">$</span> cd term-1/advanced-software-engineering/\</span><span class="ln">    00-setup/labs/01-toolchain-check</span><span class="ln"><span class="p">$</span> python check_tools.py</span><span class="ln"><span class="p">$</span> echo $?</span><span class="ln"><span class="p">$</span> ruff check check_tools.py</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.1 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> python check_tools.py</span><span class="ln">tool     need      found    kind      status ...</span><span class="ln">go       &gt;= 1.22   1.27.4   required  OK</span><span class="ln">python   &gt;= 3.8    3.12.14  required  OK</span><span class="ln">ruff     any       0.17.6   required  OK</span><span class="ln">git      &gt;= 2.28   2.56.1   required  OK</span><span class="ln">docker   any       29.9.3   optional  OK</span><span class="ln">...</span><span class="ln hl">all required tools present</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on Windows 11 + Git Bash, 2026-11-23 (note column and some rows cut).</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.1 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Python is the interpreter running the script</b><br><span class="caption">sys.executable, not always the python on PATH</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>ruff has no minimum, but versions differ</b><br><span class="caption">lab 02 shows what a bare ruff enforces</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>Installed is not the same as running</b><br><span class="caption">Docker: &#x27;daemon NOT reachable&#x27; is its own status</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.1 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">python: command not found</span><span class="arrow-s">→</span><span class="tag r-ok">run python3 check_tools.py</span></div><div class="pit in d2"><span class="tag r-danger">MISSING right after install</span><span class="arrow-s">→</span><span class="tag r-ok">open a new terminal</span></div><div class="pit in d3"><span class="tag r-danger">OLD for Go</span><span class="arrow-s">→</span><span class="tag r-ok">install from go.dev/dl</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 00.1 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Write a second script that prints the same report as one JSON document, keeps the exit-code rule, and imports the checks instead of copying them.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced SE · 00 Setup" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

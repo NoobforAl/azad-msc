@@ -1,0 +1,6 @@
+flowchart LR
+  C[Client: web/CLI] --> A[registration-api - Go]
+  A --> D[(PostgreSQL)]
+  A -->|events| Q[[Message broker]]
+  Q --> P[analytics - Python]
+  P --> D

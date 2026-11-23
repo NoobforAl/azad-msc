@@ -17,3 +17,6 @@ exports/
 
 # built static site (make site)
 site/
+
+# Temp data
+temp/

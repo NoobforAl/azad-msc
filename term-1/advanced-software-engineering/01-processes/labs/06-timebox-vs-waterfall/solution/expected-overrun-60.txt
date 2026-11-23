@@ -1,0 +1,24 @@
+Backlog backlog.csv: 12 items, 100 developer-days estimated, 68 value points
+Team: 3 developers, focus 80% = 12.0 developer-days per week. Deadline: week 9.
+Real effort = estimate x 1.60  (overrun 60%)
+
+WATERFALL  (phase shares: Schach 8e ch. 1 Fig. 1.4, 132 HP projects, used as an assumption)
+  requirements         week   0.0 ->   2.4
+  design               week   2.4 ->   4.9
+  coding + unit tests  week   4.9 ->   9.5
+  integration          week   9.5 ->  13.3
+  everything is delivered at week 13.3 (MISSES the deadline by 4.3 weeks); nothing is delivered earlier
+
+TIMEBOXED  (3 sprints of 3 weeks, capacity 36.0 developer-days per sprint, plans use the estimates)
+  sprint 1 (week 3): committed 36.0 d  delivered REG-01, REG-02  cut REG-03, REG-04
+  sprint 2 (week 6): committed 31.5 d  delivered REG-03, REG-04, REG-05  cut REG-06
+  sprint 3 (week 9): committed 31.0 d  delivered REG-06, REG-07  cut REG-08, REG-09
+  not delivered at the deadline: REG-08, REG-09, REG-10, REG-11, REG-12
+
+SUMMARY
+                                  waterfall  timeboxed
+  value delivered by week 3              0%        38%
+  value delivered by week 6              0%        69%
+  value delivered by week 9              0%        84%
+  items delivered at the deadline       0/12       7/12
+  first delivery (week)                13.3          3

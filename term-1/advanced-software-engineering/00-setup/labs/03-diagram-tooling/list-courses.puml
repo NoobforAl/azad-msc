@@ -1,0 +1,10 @@
+@startuml
+title GET /courses
+actor Client
+participant "registration-api" as API
+participant "catalog.Catalog" as Cat
+Client -> API : GET /courses
+API -> Cat : List()
+Cat --> API : []Course (sorted by ID)
+API --> Client : 200 application/json
+@enduml

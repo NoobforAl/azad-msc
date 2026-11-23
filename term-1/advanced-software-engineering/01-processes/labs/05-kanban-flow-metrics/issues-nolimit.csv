@@ -1,0 +1,56 @@
+id,title,type,created,started,done
+ISS-001,Improve waitlist,bug,2026-03-02,2026-03-02,2026-03-04
+ISS-002,Validate capacity report,feature,2026-03-04,2026-03-04,2026-03-05
+ISS-003,Document student profile,bug,2026-03-05,2026-03-05,2026-03-09
+ISS-004,Add capacity report,feature,2026-03-09,2026-03-09,2026-03-11
+ISS-005,Add capacity report,feature,2026-03-10,2026-03-10,2026-03-27
+ISS-006,Add CSV import,feature,2026-03-11,2026-03-11,2026-03-16
+ISS-007,Validate schedule view,bug,2026-03-12,2026-03-12,2026-03-13
+ISS-008,Document capacity report,feature,2026-03-13,2026-03-13,2026-03-17
+ISS-009,Fix email notice,feature,2026-03-16,2026-03-16,2026-03-31
+ISS-010,Export capacity report,feature,2026-03-17,2026-03-17,2026-03-18
+ISS-011,Add course search,bug,2026-03-18,2026-03-18,2026-03-18
+ISS-012,Document grade export,feature,2026-03-19,2026-03-19,2026-03-24
+ISS-013,Document prerequisite check,feature,2026-03-20,2026-03-20,2026-03-26
+ISS-014,Document course search,bug,2026-03-23,2026-03-23,2026-03-26
+ISS-015,Export email notice,feature,2026-03-24,2026-03-24,2026-04-02
+ISS-016,Fix schedule view,bug,2026-03-25,2026-03-25,2026-04-29
+ISS-017,Add email notice,feature,2026-03-26,2026-03-26,2026-04-06
+ISS-018,Export grade export,bug,2026-03-27,2026-03-27,2026-04-17
+ISS-019,Validate capacity report,feature,2026-03-30,2026-03-30,2026-04-03
+ISS-020,Export student profile,feature,2026-03-31,2026-03-31,2026-04-08
+ISS-021,Validate capacity report,feature,2026-04-01,2026-04-01,2026-04-14
+ISS-022,Improve waitlist,bug,2026-04-03,2026-04-03,2026-04-10
+ISS-023,Improve student profile,feature,2026-04-07,2026-04-07,2026-04-07
+ISS-024,Improve grade export,feature,2026-04-08,2026-04-08,2026-05-18
+ISS-025,Export capacity report,feature,2026-04-09,2026-04-09,2026-05-11
+ISS-026,Export schedule view,feature,2026-04-10,2026-04-10,2026-04-27
+ISS-027,Document capacity report,feature,2026-04-13,2026-04-13,2026-04-20
+ISS-028,Add course search,bug,2026-04-14,2026-04-14,2026-04-20
+ISS-029,Improve grade export,feature,2026-04-15,2026-04-15,2026-04-16
+ISS-030,Export student profile,feature,2026-04-16,2026-04-16,2026-05-04
+ISS-031,Improve audit log,feature,2026-04-17,2026-04-17,2026-04-30
+ISS-032,Add email notice,bug,2026-04-20,2026-04-20,2026-04-28
+ISS-033,Improve student profile,feature,2026-04-21,2026-04-21,2026-04-30
+ISS-034,Improve audit log,feature,2026-04-22,2026-04-22,2026-04-28
+ISS-035,Validate prerequisite check,feature,2026-04-23,2026-04-23,2026-04-24
+ISS-036,Validate capacity report,feature,2026-04-24,2026-04-24,2026-05-11
+ISS-037,Fix CSV import,feature,2026-04-27,2026-04-27,2026-05-04
+ISS-038,Export course search,feature,2026-04-28,2026-04-28,2026-04-29
+ISS-039,Improve grade export,feature,2026-04-29,2026-04-29,2026-05-06
+ISS-040,Validate schedule view,bug,2026-04-30,2026-04-30,2026-05-14
+ISS-041,Validate course search,bug,2026-05-01,2026-05-01,2026-05-01
+ISS-042,Improve schedule view,feature,2026-05-04,2026-05-04,2026-05-14
+ISS-043,Add capacity report,bug,2026-05-05,2026-05-05,2026-05-18
+ISS-044,Fix waitlist,bug,2026-05-06,2026-05-06,2026-05-20
+ISS-045,Fix student profile,feature,2026-05-07,2026-05-07,2026-05-20
+ISS-046,Improve email notice,feature,2026-05-08,2026-05-08,2026-05-12
+ISS-047,Fix course search,feature,2026-05-11,2026-05-11,2026-05-21
+ISS-048,Add CSV import,bug,2026-05-12,2026-05-12,2026-05-15
+ISS-049,Validate email notice,feature,2026-05-13,2026-05-13,2026-05-15
+ISS-050,Export course search,bug,2026-05-14,2026-05-14,
+ISS-051,Document email notice,feature,2026-05-15,2026-05-15,
+ISS-052,Validate grade export,feature,2026-05-18,2026-05-18,2026-05-22
+ISS-053,Export course search,feature,2026-05-19,2026-05-19,2026-05-22
+ISS-054,Export waitlist,feature,2026-05-21,2026-05-21,
+ISS-055,Improve email notice,feature,2026-05-22,2026-05-22,

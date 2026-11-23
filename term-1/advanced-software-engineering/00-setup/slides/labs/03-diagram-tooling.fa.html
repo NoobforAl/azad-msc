@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 00.3 · ابزارهای نمودار و C4</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">00.3</div>
+  <span class="eyebrow in-f">آزمایش 00.3 · هدف</span>
+  <h2 class="in">ابزارهای نمودار و <bdi dir="ltr">C4</bdi></h2>
+  <p class="why in d1"><bdi dir="ltr">Mermaid</bdi> و <bdi dir="ltr">PlantUML</bdi> و یک مدل <bdi dir="ltr">C4</bdi> با <bdi dir="ltr">Structurizr</bdi> را رندر کنید و زیر <bdi dir="ltr">docs/diagrams/ commit</bdi> کنید.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: مخزن m0 شما (Docker، Node و یک مرورگر)</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Render Mermaid, PlantUML and a Structurizr C4 model, and commit them under docs/diagrams/.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 00.3 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-client in d1"><h3>Mermaid</h3><p>صفحهٔ مرورگر، یا <bdi dir="ltr">npx mermaid-cli 12.2.0</bdi></p></div><div class="c-6 card edge r-infra in d2"><h3>PlantUML</h3><p>ایمیج <bdi dir="ltr">Docker</bdi> با نام <bdi dir="ltr">plantuml/plantuml</bdi></p></div><div class="c-6 card edge r-infra in d3"><h3>Structurizr</h3><p>ایمیج <bdi dir="ltr">Docker: validate</bdi> و <bdi dir="ltr">export</bdi></p></div><div class="c-6 card edge r-store in d4"><h3>قرارداد</h3><p><bdi dir="ltr">docs/diagrams:</bdi> منبع و <bdi dir="ltr">SVG</bdi>، <bdi dir="ltr">commit</bdi> شده</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 00.3 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 03-diagram-tooling</div><pre><code><span class="ln"><span class="p">$</span> mkdir -p docs/diagrams</span><span class="ln"><span class="p">$</span> cp $SRC/00-setup/labs/03-diagram-tooling/\</span><span class="ln">    {registration-overview.mmd,list-courses.puml,\</span><span class="ln">     workspace.dsl,render-diagrams.sh} docs/diagrams/</span><span class="ln"><span class="p">$</span> bash docs/diagrams/render-diagrams.sh</span><span class="ln"><span class="p">$</span> ls -1 docs/diagrams</span><span class="ln"><span class="p">$</span> git add . &amp;&amp; git commit -m &#x27;Add docs/diagrams&#x27;</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 00.3 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> bash docs/diagrams/render-diagrams.sh</span><span class="ln hl">rendered registration-overview.svg</span><span class="ln hl">rendered list-courses.svg</span><span class="ln hl">rendered c4-containers.svg</span><span class="ln hl">rendered c4-context.svg</span><span class="ln"><span class="p">$</span> ls -1 docs/diagrams</span><span class="ln">c4</span><span class="ln">c4-containers.svg</span><span class="ln">c4-context.svg</span><span class="ln">list-courses.puml</span><span class="ln">...</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">Windows 11</bdi> و <bdi dir="ltr">Git Bash</bdi>، <bdi dir="ltr">mermaid-cli 12.2.0</bdi>، <bdi dir="ltr">PlantUML 1.2026.10</bdi>، ۲۰۲۶-۱۱-۲۳ (فهرست کوتاه شده).</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 00.3 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>یک سیستم، سه تصویر</b><br><span class="caption"><bdi dir="ltr">flowchart:</bdi> چه کسی با چه کسی · <bdi dir="ltr">sequence:</bdi> چه زمانی · <bdi dir="ltr">C4:</bdi> مالکیت</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b><bdi dir="ltr">Structurizr</bdi> یک مدل نگه می‌دارد</b><br><span class="caption"><bdi dir="ltr">view</bdi>ها از <bdi dir="ltr">workspace.dsl</bdi> ساخته می‌شوند</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>بخش‌های طرح‌شده برچسب <bdi dir="ltr">Planned</bdi> دارند</b><br><span class="caption">نمودار نباید آنچه ساخته نشده را پنهان کند</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 00.3 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">Tried to find the browser at ...</span><span class="arrow-s">←</span><span class="tag r-ok">BROWSER=&lt;path to chrome or msedge&gt;</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">docker</bdi> به <bdi dir="ltr">daemon</bdi> وصل نمی‌شود</span><span class="arrow-s">←</span><span class="tag r-ok"><bdi dir="ltr">Docker Desktop</bdi> را روشن کنید</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">SVG</bdi> روی ماشین‌ها فرق می‌کند</span><span class="arrow-s">←</span><span class="tag r-ok">نسخهٔ ابزارها را ثابت کنید، نه <bdi dir="ltr">latest</bdi></span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 00.3 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">فایل <bdi dir="ltr">docs/diagrams/catalog-classes.mmd</bdi> را بنویسید: نمودار کلاس <bdi dir="ltr">Mermaid</bdi> برای <bdi dir="ltr">catalog.Course</bdi> و <bdi dir="ltr">catalog.Catalog.</bdi> رندرش کنید و هر فیلد و متد را با <bdi dir="ltr">catalog.go</bdi> مقایسه کنید.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="مهندسی نرم‌افزار پیشرفته · ۰۰ راه‌اندازی" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Reference result, Windows 11 + Git Bash, 2026-11-23. Tools: mermaid-cli 12.2.0 (Chrome
+# installed on the machine), PlantUML 1.2026.10 (Docker image), Structurizr (Docker image structurizr/structurizr:latest).
+# First run took about 22 s (npx downloads mermaid-cli once, Docker images were already pulled).
+$ bash docs/diagrams/render-diagrams.sh
+rendered registration-overview.svg
+rendered list-courses.svg
+rendered c4-containers.svg
+rendered c4-context.svg
+
+$ ls -1 docs/diagrams
+c4
+c4-containers.svg
+c4-context.svg
+list-courses.puml
+list-courses.svg
+registration-overview.mmd
+registration-overview.svg
+render-diagrams.sh
+workspace.dsl

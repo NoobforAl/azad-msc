@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 01.4 · git bisect and git worktree on a seeded regression</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.4</div>
+  <span class="eyebrow in-f">Lab 01.4 · Goal</span>
+  <h2 class="in">git bisect and git worktree on a seeded regression</h2>
+  <p class="why in d1">Find the commit that broke the project with git bisect run and a test, then test two releases side by side with git worktree.</p>
+  <div class="pills in d2"><span class="pill">Runs on: Git, Go, Bash</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Find the commit that broke the project with git bisect run and a test, then test two releases side by side with git worktree.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.4 · Setup</span>
+  <h2 class="in">Setup</h2>
+  <div class="grid tight"><div class="c-6 card edge r-store in d1"><h3>Repo</h3><p>m0 + 11 scripted commits, tags v1.0 and v1.1</p></div><div class="c-6 card edge r-service in d2"><h3>Oracle</h3><p><bdi dir="ltr">bisect-test.sh: 0 good</bdi> · <bdi dir="ltr">1 bad</bdi> · <bdi dir="ltr">125 skip</bdi></p></div><div class="c-6 card edge r-infra in d3"><h3>Worktrees</h3><p>two releases side by side, one .git</p></div><div class="c-6 card edge r-client in d4"><h3>Result</h3><p>first bad commit, fix by git revert</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.4 · Steps</span>
+  <h2 class="in">Steps</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 04-git-bisect-worktrees</div><pre><code><span class="ln"><span class="p">$</span> bash seed_regression.sh &quot;$SCRATCH/repo&quot; &amp;&amp; cd &quot;$SCRATCH/repo&quot;</span><span class="ln"><span class="p">$</span> go test ./...                      # fails on HEAD</span><span class="ln"><span class="p">$</span> git bisect start HEAD v1.0</span><span class="ln"><span class="p">$</span> git bisect run bash &quot;$LAB/bisect-test.sh&quot;</span><span class="ln"><span class="p">$</span> git bisect reset</span><span class="ln"><span class="p">$</span> git worktree add ../rel-v1.0 v1.0</span><span class="ln"><span class="p">$</span> git worktree add ../rel-v1.1 v1.1</span><span class="ln"><span class="p">$</span> (cd ../rel-v1.0 &amp;&amp; go test ./internal/catalog -run TestListIsSortedByID -count=1) &amp;</span><span class="ln"><span class="p">$</span> (cd ../rel-v1.1 &amp;&amp; go test ./internal/catalog -run TestListIsSortedByID -count=1); wait</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.4 · Expected output</span>
+  <h2 class="in">Expected output</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln">bisect-test: build fails, skipping this commit</span><span class="ln">Bisecting: 2 revisions left to test after this (roughly 2 steps)</span><span class="ln">[e18cd1c242c78e1d816522936d134dbbc3bcb332] catalog: finish GetByTitle</span><span class="ln hl">f10c4bbc648959059cec1c25bc709ed01e35b123 is the first &#x27;bad&#x27; commit</span><span class="ln">    catalog: show newest course IDs first</span><span class="ln">bisect found first &#x27;bad&#x27; commit</span><span class="ln"><span class="p">$</span> git worktree list</span><span class="ln">/tmp/ase-lab04/rel-v1.0 32472f0 (detached HEAD)</span><span class="ln">/tmp/ase-lab04/rel-v1.1 67a61f9 (detached HEAD)</span><span class="ln">[v1.0] ok  	example.com/registration/internal/catalog	0.261s</span><span class="ln hl">[v1.1] --- FAIL: TestListIsSortedByID (0.00s)</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">Captured on Windows 11, Git Bash, Python 3.12, Go, 2026-11-23.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.4 · What to observe</span>
+  <h2 class="in">What to observe</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>Six candidates, four checkouts</b><br><span class="caption">one skipped (no build), three judged</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>Exit code 125 means skip</b><br><span class="caption">otherwise the WIP commit is named the culprit</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b>Two tests fail, one cause</b><br><span class="caption">the oracle tests the symptom you track</span></div></li><li class="in d4"><span class="callout-num">4</span><div><b>Two versions at once</b><br><span class="caption">v1.0 passes, v1.1 fails; no checkout, no stash</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.4 · Common pitfalls</span>
+  <h2 class="in">Common pitfalls</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">bisect names an innocent commit</span><span class="arrow-s">→</span><span class="tag r-ok">oracle returned 1 on build failure: use 125</span></div><div class="pit in d2"><span class="tag r-danger">go test passes on a bad commit</span><span class="arrow-s">→</span><span class="tag r-ok">test cache: add -count=1</span></div><div class="pit in d3"><span class="tag r-danger">&#x27;../rel-v1.0&#x27; already exists</span><span class="arrow-s">→</span><span class="tag r-ok">git worktree remove or prune</span></div><div class="pit in d4"><span class="tag r-danger">HEAD is detached afterwards</span><span class="arrow-s">→</span><span class="tag r-ok">git bisect reset</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">Lab 01.4 · Extension task</span>
+  <h2 class="in">Extension task</h2>
+  <p class="highlight in d1" style="font-size:38px">Write an end-to-end oracle in Python: start the API on a free port, request GET /courses, check that the first course is SE101, and return 0, 1 or 125. Confirm that bisect finds the same commit.</p>
+  <p class="caption in d2" style="margin-top:32px">Solution is in solution/ — not on slides.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="Advanced Software Engineering · 01 Processes" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

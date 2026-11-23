@@ -1,0 +1,22 @@
+# Reference solution of lab 01.2. Save it as .github/workflows/quality-gates.yml in YOUR scratch repository
+# (the one created by prepare-m0.sh, where project/ is the repository root and tools/gates.py exists).
+# It runs the same script you run locally, so a green local run and a green CI run mean the same thing.
+name: quality-gates
+on:
+  push:
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - name: Run all quality gates (gofmt, vet, ruff, tests, coverage >= 70%)
+        run: python tools/gates.py --min-coverage 70

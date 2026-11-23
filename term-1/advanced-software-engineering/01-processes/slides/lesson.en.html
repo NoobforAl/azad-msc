@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>01 · Processes — Advanced Software Engineering</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<div class="reveal course-se">
+<div class="slides">
+
+<!-- 01 TITLE -->
+<section class="layout-title">
+  <div class="motif"><i></i><i></i><i></i></div>
+  <div class="logo-tile in-f"></div>
+  <h1 class="in">Software processes and life-cycle models</h1>
+  <p class="subtitle in d1">Advanced Software Engineering · 01 Processes</p>
+  <div class="fields">
+    <span><b>Course</b>[Course name]</span><span><b>Presenter</b>[Presenter]</span>
+    <span><b>Professor</b>[Professor]</span><span><b>Faculty</b>[Faculty / Branch]</span>
+    <span><b>Term</b>[Term]</span><span><b>Date</b>[Date, Jalali]</span>
+  </div>
+  <aside class="notes">
+SAY (EN): This module asks one question: in what order, and how many times, should a team do requirements, design, code and test? The answer is a trade-off, and the data say which side of it is expensive.
+SAY (FA): این ماژول یک پرسش دارد: تیم چه ترتیبی و چند بار نیازمندی، طراحی، کدنویسی و تست را انجام دهد؟ پاسخ یک trade-off است و داده‌ها می‌گویند کدام طرفش گران است.
+KEY POINT: The order of activities is an engineering decision, not a taste.
+EXAMPLE: —
+PITFALL: Title fields are placeholders; never invent them.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 02 SECTION -->
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01</div>
+  <span class="eyebrow in-f">Module 01</span>
+  <h2 class="in">Processes</h2>
+  <p class="why in d1">Every model is an answer to a failure of the one before it, and the numbers say which failures cost the most.</p>
+  <div class="pills in d2"><span class="pill">economics</span><span class="pill">models</span><span class="pill">evidence</span></div>
+  <aside class="notes">
+SAY (EN): Code-and-fix gave unmaintainable code, waterfall gave control but late surprises, spiral and agile shortened the loop, and DORA asks whether any of it worked.
+SAY (FA): code-and-fix کدِ غیرقابل‌نگهداری داد، waterfall کنترل داد ولی غافلگیری دیرهنگام، spiral و agile حلقه را کوتاه کردند، و DORA می‌پرسد آیا هیچ‌کدام جواب داده است.
+KEY POINT: Each model fixes the previous model's failure and creates its own.
+EXAMPLE: Waterfall fixes uncontrolled work; prototyping fixes "built what was asked, not what was needed".
+PITFALL: Learning the models as a list of names instead of as answers.
+TIME: 30
+  </aside>
+</section>
+
+<!-- 03 AGENDA -->
+<section>
+  <span class="eyebrow in-f">01 · Processes</span>
+  <h2 class="in">Five questions, from economics to evidence</h2>
+  <ol class="agenda">
+    <li class="current in d1">Why is the order of activities an economic decision?</li>
+    <li class="in d2">What are workflows, iteration and incrementation?</li>
+    <li class="in d3">What does each model fix, and where does it fail?</li>
+    <li class="in d4">How do Linux and OpenBSD write a process down?</li>
+    <li class="in d5">How do we know a process change helped?</li>
+  </ol>
+  <aside class="notes">
+SAY (EN): We go from money, to vocabulary, to models, to two real projects, to evidence.
+SAY (FA): از پول شروع می‌کنیم، بعد واژگان، بعد مدل‌ها، دو پروژهٔ واقعی و در پایان شواهد.
+KEY POINT: Seven labs on project/ (m0 to m1) turn each answer into something you run.
+EXAMPLE: —
+PITFALL: —
+TIME: 20
+  </aside>
+</section>
+
+<!-- 04 DATA_CHART -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · economics</span>
+  <h2 class="in">A 10% saving in maintenance is worth about nine times a 10% saving in coding</h2>
+  <div class="diagram in-p d1" style="margin-top:-8px"><img src="assets/economics.svg" style="max-height:520px" alt="Bar chart: a 10% cheaper coding saves 0.85% of total cost; a 10% cheaper maintenance saves 7.5%"></div>
+  <p class="caption in d2">Schach 8e, ch. 1 §1.3.2, p. 12: coding with unit testing is 34% of the 25% development share (8.5% of total); maintenance is 75%.</p>
+  <aside class="notes">
+SAY (EN): Schach's data say most of the lifetime cost is postdelivery maintenance. So a technique that makes coding 10% cheaper saves at most 0.85% of everything, while one that makes maintenance 10% cheaper saves about 7.5%. 7.5 over 0.85 is about nine.
+SAY (FA): داده‌های Schach می‌گویند بیشتر هزینهٔ عمر نرم‌افزار در نگهداری پس از تحویل است. پس تکنیکی که کدنویسی را ۱۰٪ ارزان‌تر کند حداکثر ۰٫۸۵٪ کل هزینه را صرفه‌جویی می‌کند، ولی تکنیکی که نگهداری را ۱۰٪ ارزان‌تر کند حدود ۷٫۵٪. نسبت ۷٫۵ به ۰٫۸۵ حدود نه است.
+KEY POINT: Where the money goes decides which process decisions matter.
+EXAMPLE: 0.10 × 8.5% = 0.85% and 0.10 × 75% = 7.5% (lab 03 reproduces both).
+PITFALL: Applying the 34%-of-25% share to your own team without measuring it; it is an industry average from older data.
+ASK: What would you measure in your own repository to find your coding share?
+TIME: 90
+  </aside>
+</section>
+
+<!-- 05 CONCEPT_DIAGRAM -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · vocabulary</span>
+  <h2 class="in">Projects iterate and increment in every workflow</h2>
+  <div class="diagram in-p d1" style="margin-top:-16px"><img src="assets/iterative-incremental.svg" style="max-height:520px" alt="Grid of five workflows across three builds: artifacts get a new version in each build (iteration), implementation adds one feature per build (incrementation), and tests accumulate"></div>
+  <div class="grid tight" style="margin-top:16px">
+    <div class="c-4 row"><span class="callout-num">1</span><span>Each build adds a piece</span></div>
+    <div class="c-4 row"><span class="callout-num">2</span><span>Each artifact gets better</span></div>
+    <div class="c-4 row"><span class="callout-num">3</span><span>Every build runs the tests</span></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Schach's iterative-and-incremental model is the baseline he compares everything with. Columns are builds, rows are workflows. Implementation adds a feature each build, which is incrementation. Requirements, model and design get a new version, which is iteration. Each build includes the test workflow, so faults are found while they are cheap.
+SAY (FA): مدل iterative-and-incremental از Schach مبنایی است که همه‌چیز را با آن مقایسه می‌کند. ستون‌ها buildها هستند و ردیف‌ها workflowها. پیاده‌سازی در هر build یک ویژگی اضافه می‌کند که incrementation است. نیازمندی‌ها، مدل و طراحی نسخهٔ تازه می‌گیرند که iteration است. هر build شامل workflow تست است، پس خطاها زمانی پیدا می‌شوند که ارزان‌اند.
+KEY POINT: Different questions: "how can this be better?" (iteration) versus "what do we add next?" (incrementation).
+EXAMPLE: Schach 8e, ch. 2 §2.5 and §2.7. The labels (reqs v2, + feature B) are illustrative, not from the book.
+PITFALL: Treating the two words as synonyms.
+ASK: Your last three releases: did they only add, or did they also rework the design?
+TIME: 90
+  </aside>
+</section>
+
+<!-- 06 TWO_COLUMN_COMPARE -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · in a Git repository</span>
+  <h2 class="in">Iteration improves an artifact; incrementation adds a piece</h2>
+  <div class="compare">
+    <div class="in d1"><h3>Iteration</h3><ul>
+      <li>Rewrite the repository layer after a load test</li>
+      <li>A revised design document</li>
+      <li>Refactoring commits</li>
+      <li>Asks: how can this be better?</li>
+    </ul></div>
+    <div class="in d2"><h3>Incrementation</h3><ul>
+      <li>Tagged releases <code>v0.2.0</code>, <code>v0.3.0</code></li>
+      <li>Each build adds functionality</li>
+      <li>A feature merged weekly with passing tests</li>
+      <li>Asks: what do we add next?</li>
+    </ul></div>
+  </div>
+  <aside class="notes">
+SAY (EN): In a repository, increments are the tagged releases that each add an endpoint. Iterations are the commits that make the same artifact better. A project that only increments piles up design debt; one that only iterates never ships.
+SAY (FA): در یک مخزن، incrementها همان releaseهای tag‌شده‌اند که هر کدام یک endpoint اضافه می‌کنند. iterationها commitهایی‌اند که همان artifact را بهتر می‌کنند. پروژه‌ای که فقط increment کند بدهی طراحی جمع می‌کند و پروژه‌ای که فقط iterate کند هرگز تحویل نمی‌دهد.
+KEY POINT: Real work does both, workflow by workflow.
+EXAMPLE: "Add a new endpoint every sprint" is incrementation; it becomes iteration only when the design is reworked.
+PITFALL: Calling every release an iteration.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 07 TWO_COLUMN_COMPARE -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · models</span>
+  <h2 class="in">Plan-driven control versus agile feedback</h2>
+  <div class="compare">
+    <div class="in d1"><h3>Plan-driven: waterfall, V-model</h3><ul>
+      <li>Control: documents and sign-off per phase</li>
+      <li>Fits: stable requirements, fixed-scope contract</li>
+      <li>Fails: the wrong product is found late</li>
+      <li>In a repo: required reviews and status checks</li>
+    </ul></div>
+    <div class="in d2"><h3>Agile: XP, Scrum, Kanban</h3><ul>
+      <li>Control: a short feedback loop</li>
+      <li>Fits: unclear needs, client reachable daily</li>
+      <li>Fails: evidence is mostly observational</li>
+      <li>In a repo: CI on every push, WIP limits</li>
+    </ul></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Plan-driven models answer "how do we keep a 200-person project under control" with order and documents. Agile answers "what if we do not know what the client needs" with a short feedback loop. Neither is the right answer everywhere, and most real projects mix them.
+SAY (FA): مدل‌های plan-driven به پرسش «یک پروژهٔ دویست‌نفره را چطور کنترل کنیم» با نظم و مستندات پاسخ می‌دهند. agile به پرسش «اگر نمی‌دانیم مشتری چه می‌خواهد چه کنیم» با حلقهٔ بازخورد کوتاه. هیچ‌کدام در همه‌جا درست نیست و بیشتر پروژه‌های واقعی ترکیبی‌اند.
+KEY POINT: Choose from the situation, then mix: agile inside, plan-driven gates around.
+EXAMPLE: A hardware or regulatory gate in the middle of a project calls for a mix.
+PITFALL: "Agile means no plan and no documents." The Manifesto values working software over comprehensive documentation, not instead of it (Schach 8e, ch. 2 §2.9.5). Evidence for agile versus plan-driven is `OPINION / CONTESTED`.
+TIME: 75
+  </aside>
+</section>
+
+<!-- 08 QUOTE / DEFINITION -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · a classic source</span>
+  <h2 class="in">The waterfall people criticise is the first picture in Royce's paper</h2>
+  <p class="quote in d1">Royce draws the straight-line sequence, then says that implementing that concept "is risky and invites failure".</p>
+  <p class="source in d2">Royce 1970, "Managing the Development of Large Software Systems", IEEE WESCON, pp. 1-9 · Schach 8e, ch. 2 §2.9.2</p>
+  <aside class="notes">
+SAY (EN): Schach credits Royce with the waterfall. The paper itself shows the simple sequence first, calls it risky because testing at the end is the first time timing and storage are experienced, and then recommends five additions, including doing the job twice and involving the customer.
+SAY (FA): Schach مدل waterfall را به Royce نسبت می‌دهد. خود مقاله اول توالی ساده را نشان می‌دهد، آن را پرریسک می‌نامد چون تست در پایان اولین باری است که زمان‌بندی و حافظه تجربه می‌شود، و بعد پنج افزودنی پیشنهاد می‌کند، از جمله دوبار انجام دادن کار و درگیر کردن مشتری.
+KEY POINT: The model people criticise is the first figure of a paper that argues for iteration and a prototype.
+EXAMPLE: Royce's five additions: program design first, document the design, do it twice, plan and monitor testing, involve the customer. Opened as a reprint on 2026-11-23 (third-party copy).
+PITFALL: Citing Boehm's 1988 spiral paper as if it were read: it was NOT opened (UNVERIFIED beyond Schach's summary, §2.9.7).
+TIME: 75
+  </aside>
+</section>
+
+<!-- 09 FLOW_TIMELINE -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · risk-driven</span>
+  <h2 class="in">The Unified Process spends its risk early, in four phases</h2>
+  <div class="flow">
+    <div class="step fragment"><span class="callout-num">1</span><div>Inception</div><code>business case</code></div>
+    <div class="step fragment"><span class="callout-num">2</span><div>Elaboration</div><code>architecture, top risks</code></div>
+    <div class="step fragment"><span class="callout-num">3</span><div>Construction</div><code>build the product</code></div>
+    <div class="step fragment"><span class="callout-num">4</span><div>Transition</div><code>hand over</code></div>
+  </div>
+  <p class="takeaway">The spiral model asks the same question in every loop: what single thing could kill this project?</p>
+  <aside class="notes">
+SAY (EN): Phases are time intervals that end in a milestone; workflows keep running through them. Elaboration is where architecture is settled and the top risks are retired. In a repository it looks like a time-boxed spike branch, or an ADR that records the risk and the decision.
+SAY (FA): phaseها بازه‌های زمانی‌اند که به یک milestone ختم می‌شوند؛ workflowها در طول آن‌ها ادامه دارند. elaboration جایی است که معماری تثبیت و ریسک‌های بزرگ برطرف می‌شود. در مخزن شبیه یک شاخهٔ spike محدود به زمان است، یا یک ADR که ریسک و تصمیم را ثبت می‌کند.
+KEY POINT: A phase is not a workflow.
+EXAMPLE: Schach 8e, ch. 3 §3.10 (four phases); ch. 2 §2.9.7 (spiral, via Boehm 1988, not opened).
+PITFALL: Treating the spiral as a model for every project: Schach restricts it to internal, large-scale projects.
+TIME: 75
+  </aside>
+</section>
+
+<!-- 10 CODE_WALKTHROUGH: Linux merge window -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · real source</span>
+  <h2 class="in">Linux writes its stabilization cycle as text</h2>
+  <div class="code-card in d1">
+    <div class="file-chip"><span>linux/Documentation/process/2.Process.rst · merge window</span><span>v6.18.63 · L49-55</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1">The merge window lasts for approximately two weeks.  At the end of this</span><span class="ln">time, Linus Torvalds will declare that the window is closed and release the</span><span class="ln">first of the "rc" kernels.  For the kernel which is destined to be 5.6,</span><span class="ln">for example, the release which happens at the end of the merge window will</span><span class="ln fragment hl-on" data-fragment-index="2">be called 5.6-rc1.  The -rc1 release is the signal that the time to</span><span class="ln fragment hl-on" data-fragment-index="3">merge new features has passed, and that the time to stabilize the next</span><span class="ln fragment hl-on" data-fragment-index="3">kernel has begun.</span></code></pre>
+  </div>
+  <div class="grid tight" style="margin-top:32px">
+    <div class="c-4 row"><span class="callout-num">1</span><span>About two weeks for big changes</span></div>
+    <div class="c-4 row"><span class="callout-num">2</span><span><code>-rc1</code> closes the window</span></div>
+    <div class="c-4 row"><span class="callout-num">3</span><span>Then stabilize: fixes only</span></div>
+  </div>
+  <aside class="notes">
+SAY (EN): Excerpt copied from our checkout with sed. The merge window is a bounded period in which risk is taken; -rc1 is the signal that new features are over and stabilization begins. Schach's synchronize-and-stabilize cycle has a similar shape inside one company; the analogy is ours, not Schach's.
+SAY (FA): این بخش با sed از checkout خودمان کپی شده است. merge window یک بازهٔ محدود است که در آن ریسک پذیرفته می‌شود؛ -rc1 نشانه است که ویژگی‌های جدید تمام شده و پایدارسازی شروع می‌شود. چرخهٔ synchronize-and-stabilize در Schach شکل مشابهی دارد، درون یک شرکت؛ این قیاس از ماست، نه از Schach.
+KEY POINT: Both separate the period that takes risk from the period that pays it down.
+EXAMPLE: The lines after L55 (not shown) say that only fixes go in for the next weeks, with weekly -rc releases; see case-study.en.md §2.
+PITFALL: Schach (2011) says open-source projects "generally have no specifications or design". Linux v6.18.63 ships a whole Documentation/process/ directory.
+ASK: Which part of "sufficiently stable and accepted by the community" is technical, which is social?
+TIME: 90
+  </aside>
+</section>
+
+<!-- 11 CODE_WALKTHROUGH: OpenBSD style.9 -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · real source</span>
+  <h2 class="in">OpenBSD says when a style rule applies</h2>
+  <div class="code-card in d1">
+    <div class="file-chip"><span>openbsd/share/man/man9/style.9 · DESCRIPTION</span><span>8cada8c · L38-43</span></div>
+<pre class="code"><code><span class="ln fragment hl-on" data-fragment-index="1">These guidelines should be followed for all new code.</span><span class="ln fragment hl-on" data-fragment-index="2">In general, code can be considered</span><span class="ln fragment hl-on" data-fragment-index="2">.Dq new code</span><span class="ln fragment hl-on" data-fragment-index="2">when it makes up about 50% or more of the file(s) involved.</span><span class="ln fragment hl-on" data-fragment-index="3">This is enough to break precedents in the existing code and use the</span><span class="ln fragment hl-on" data-fragment-index="3">current style guidelines.</span></code></pre>
+  </div>
+  <div class="grid tight" style="margin-top:32px">
+    <div class="c-4 row"><span class="callout-num">1</span><span>A flat rule: "should be followed"</span></div>
+    <div class="c-4 row"><span class="callout-num">2</span><span>New code: 50% or more of the file</span></div>
+    <div class="c-4 row"><span class="callout-num">3</span><span>Enough to break old precedents</span></div>
+  </div>
+  <aside class="notes">
+SAY (EN): The standard is a manual page, style(9), in the same system as every kernel interface. It tells you when the rule applies: new code follows the current style, and "new code" means half or more of the files involved. That is an explicit policy for style debt. Linux's coding-style says the same thing as a preference with a rationale, and ships a .clang-format file.
+SAY (FA): استاندارد یک صفحهٔ manual به نام style(9) است، در همان سامانه‌ای که هر interface کرنل. می‌گوید قاعده کِی اعمال می‌شود: کد جدید از سبک فعلی پیروی می‌کند و «کد جدید» یعنی نیمی یا بیشتر از فایل‌های درگیر. این یک سیاست صریح برای بدهی سبک است. coding-style در Linux همین را به‌صورت ترجیح همراه با دلیل می‌گوید و فایل .clang-format هم دارد.
+KEY POINT: A coding standard is a process artifact; the carrier differs (a man page versus a document plus a tool config).
+EXAMPLE: In the man-page source, .Dq is the macro that prints double quotes around "new code".
+PITFALL: Repeating "OpenBSD has a strict review culture" without a source: the case study could not verify review and commit rules (UNVERIFIED).
+TIME: 90
+  </aside>
+</section>
+
+<!-- 12 TWO_COLUMN_COMPARE: Linux vs OpenBSD -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · case study</span>
+  <h2 class="in">Same problem, two written processes</h2>
+  <div class="compare">
+    <div class="in d1"><h3>Linux · v6.18.63</h3><ul>
+      <li>Release: merge window about 2 weeks, weekly <code>-rc</code></li>
+      <li>Style: a preference with a rationale, plus <code>.clang-format</code></li>
+      <li>Old code: no rule in the lines read</li>
+      <li>Form: reStructuredText in <code>Documentation/process/</code></li>
+    </ul></div>
+    <div class="in d2"><h3>OpenBSD · 8cada8c</h3><ul>
+      <li>Release: every six months, from <code>-current</code></li>
+      <li>Style: a flat rule, "should be followed"</li>
+      <li>Old code: "new code" is 50% or more of the file</li>
+      <li>Form: a manual page, <code>style(9)</code></li>
+    </ul></div>
+  </div>
+  <p class="takeaway in d3">OpenBSD review and commit rules are UNVERIFIED here.</p>
+  <aside class="notes">
+SAY (EN): Both projects are decades old; they differ in how much process they write down and in the carrier they choose. Linux persuades and ships a tool config; OpenBSD states a rule in the manual page system. Only the rows we could verify are on this slide.
+SAY (FA): هر دو پروژه چند دهه قدمت دارند؛ تفاوتشان در این است که چقدر فرایند را مکتوب می‌کنند و چه قالبی برمی‌گزینند. Linux اقناع می‌کند و تنظیمات ابزار هم می‌دهد؛ OpenBSD قاعده را در سامانهٔ manual page بیان می‌کند. فقط ردیف‌هایی که توانستیم راستی‌آزمایی کنیم روی این اسلاید آمده‌اند.
+KEY POINT: Predictability (a date) versus readiness (until it is stable) is the central release trade-off.
+EXAMPLE: OpenBSD release cadence: openbsd.org FAQ 5, fetched 2026-11-23 (case-study.en.md §6).
+PITFALL: Filling the empty cells from memory. The review and commit rules of OpenBSD, whether style is enforced by a tool, and its release engineering are all UNVERIFIED.
+ASK: Which row would you need an external source to fill for OpenBSD, and which page would you open?
+TIME: 90
+  </aside>
+</section>
+
+<!-- 13 BENTO: DORA -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · evidence</span>
+  <h2 class="in">DORA asks whether the process worked, with five delivery metrics</h2>
+  <div class="grid tight">
+    <div class="c-4 card edge r-brand in d1"><h3>Lead time</h3><p>Change lead time</p></div>
+    <div class="c-4 card edge r-brand in d2"><h3>Frequency</h3><p>Deployment frequency</p></div>
+    <div class="c-4 card edge r-brand in d3"><h3>Recovery</h3><p>Failed-deployment recovery time</p></div>
+    <div class="c-6 card edge r-brand in d4"><h3>Instability</h3><p>Change fail rate</p></div>
+    <div class="c-6 card edge r-brand in d5"><h3>Instability</h3><p>Deployment rework rate</p></div>
+  </div>
+  <p class="takeaway in d5">Diagnostics, not targets. VERSION-DEPENDENT: dora.dev, page of 2026-01-05.</p>
+  <aside class="notes">
+SAY (EN): The first three metrics describe throughput, the last two describe instability. Read them together. In the lesson's illustrative example (invented numbers, not data), a team that ships 80 times as often with a higher failure rate but much faster recovery is not obviously worse. Whether it is better is a business question about the cost of a failure.
+SAY (FA): سه معیار اول توان عملیاتی را توصیف می‌کنند و دو معیار آخر ناپایداری را. باید آن‌ها را با هم خواند. در مثال تصویری درس (عددهای ساختگی، نه داده)، تیمی که ۸۰ برابر بیشتر تحویل می‌دهد، با نرخ خرابی بالاتر ولی بازیابی بسیار سریع‌تر، آشکارا بدتر نیست. بهتر بودنش یک پرسش کسب‌وکاری دربارهٔ هزینهٔ یک خرابی است.
+KEY POINT: A metric is not a goal: once it is a target, teams can game it.
+EXAMPLE: Lab 01 computes deployment frequency and lead time from the Git history of project/.
+PITFALL: Earlier DORA versions listed four key metrics. The five here come from the page fetched on 2026-11-23; check the current version.
+TIME: 75
+  </aside>
+</section>
+
+<!-- 14 BENTO: choosing -->
+<section>
+  <span class="eyebrow in-f">01 · Processes · choosing</span>
+  <h2 class="in">Choose a model from the situation, then mix</h2>
+  <div class="grid tight">
+    <div class="c-6 card edge r-brand in d1"><h3>Stable, safety-critical</h3><p>Plan-driven: V-model, waterfall with iteration</p></div>
+    <div class="c-6 card edge r-brand in d2"><h3>Large, technically risky</h3><p>Spiral, or Unified Process elaboration</p></div>
+    <div class="c-6 card edge r-brand in d3"><h3>Unclear needs, client on call</h3><p>Agile: XP or Scrum</p></div>
+    <div class="c-6 card edge r-brand in d4"><h3>Unpredictable work arrival</h3><p>Kanban: flow and WIP limits</p></div>
+  </div>
+  <p class="takeaway in d5">Hardware or regulatory gate in the middle: agile inside, plan-driven gates around.</p>
+  <aside class="notes">
+SAY (EN): Schach's own advice is that each organization should choose the model that fits its management, employees and process, and that the iterative-and-incremental model is closest to reality. Use the table to start the conversation, then mix.
+SAY (FA): توصیهٔ خود Schach این است که هر سازمان مدلی را برگزیند که با مدیریت، کارکنان و فرایندش جور است، و اینکه مدل iterative-and-incremental به واقعیت نزدیک‌تر است. جدول را برای شروع گفتگو به کار ببرید و بعد ترکیب کنید.
+KEY POINT: A mix-and-match model is normal, not a failure of discipline.
+EXAMPLE: Schach 8e, ch. 2 §2.10.
+PITFALL: Scrum is a management framework for timeboxed iterations, not a life-cycle model: it says nothing about how you test or architect.
+TIME: 60
+  </aside>
+</section>
+
+<!-- 15 QUIZ -->
+<section class="layout-quiz">
+  <span class="eyebrow">Quick check</span>
+  <h2>A team adds one new endpoint every sprint and never touches the design. Which is it?</h2>
+  <div class="quiz-options">
+    <div><b>A</b> Iteration</div>
+    <div><b>B</b> Incrementation</div>
+    <div><b>C</b> Both</div>
+    <div><b>D</b> Neither</div>
+  </div>
+  <aside class="notes">
+SAY (EN): Take 20 seconds. Ask "did we add a piece, or improve a piece?"
+SAY (FA): ۲۰ ثانیه فکر کنید. بپرسید «یک تکه اضافه کردیم یا یک تکه را بهتر کردیم؟»
+KEY POINT: Answer on the next slide.
+EXAMPLE: —
+PITFALL: —
+ASK: Who picked A or C? What did the team change besides adding?
+TIME: 45
+  </aside>
+</section>
+
+<!-- 16 QUIZ answer (DEFINITION) -->
+<section>
+  <span class="eyebrow">Answer: B</span>
+  <h2>Adding pieces is incrementation; reworking one is iteration</h2>
+  <p class="quote">It would count as iteration only if the design were reworked after learning from a release.</p>
+  <p class="source">Schach 8e, ch. 2 §2.5 · lesson §2.3</p>
+  <aside class="notes">
+SAY (EN): Each sprint only adds functionality, so it is incrementation. If they reworked the repository layer after a load test, that rework would be iteration.
+SAY (FA): هر sprint فقط قابلیت اضافه می‌کند، پس incrementation است. اگر پس از یک load test لایهٔ repository را بازنویسی می‌کردند، آن بازنویسی iteration می‌بود.
+KEY POINT: Real projects need both words.
+EXAMPLE: Git tags are increments; refactoring commits are iterations.
+PITFALL: Option C is true of most real projects, but not of this team as described.
+TIME: 45
+  </aside>
+</section>
+
+<!-- 17 SUMMARY -->
+<section>
+  <span class="eyebrow in-f">01 · Processes</span>
+  <h2 class="in">Summary</h2>
+  <ul class="summary">
+    <li class="in d1"><span class="callout-num">1</span>Maintenance dominates cost, so the order of activities is an economic decision</li>
+    <li class="in d2"><span class="callout-num">2</span>Iterate to improve, increment to add; every model answers a failure of the last</li>
+    <li class="in d3"><span class="callout-num">3</span>Read real processes in repositories, and judge a change with metrics, not slogans</li>
+  </ul>
+  <p class="next in d4">Module 02 · Requirements Engineering</p>
+  <aside class="notes">
+SAY (EN): You now have the vocabulary, a map of the models, two real written processes and a way to ask whether a change helped. The labs turn each of these into a script or a pipeline on project/.
+SAY (FA): حالا واژگان، نقشهٔ مدل‌ها، دو فرایند واقعی مکتوب و راهی برای پرسیدن اینکه آیا یک تغییر کمک کرد را دارید. آزمایش‌ها هرکدام را به یک اسکریپت یا pipeline روی project/ تبدیل می‌کنند.
+KEY POINT: Requirements are one workflow of the process, so module 02 builds directly on this.
+EXAMPLE: —
+PITFALL: —
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../_shared/theme/azad-deck.js" data-course="Advanced Software Engineering · 01 Processes" data-logo="../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>

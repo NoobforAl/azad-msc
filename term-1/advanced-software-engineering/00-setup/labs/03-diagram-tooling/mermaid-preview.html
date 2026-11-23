@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mermaid preview (no install)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; }
+    .row { display: flex; gap: 24px; flex-wrap: wrap; }
+    textarea { width: 420px; height: 260px; font: 15px/1.4 monospace; }
+    #out { min-width: 420px; }
+    #err { color: #b4123a; font-family: monospace; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Mermaid preview</h1>
+  <p>Edit the diagram on the left; it renders on the right. Needs internet once (loads Mermaid from a CDN). Nothing is uploaded.</p>
+  <div class="row">
+    <textarea id="src" spellcheck="false">flowchart LR
+  C[Client: web/CLI] --> A[registration-api - Go]
+  A --> D[(PostgreSQL)]
+  A -->|events| Q[[Message broker]]
+  Q --> P[analytics - Python]
+  P --> D</textarea>
+    <div id="out"></div>
+  </div>
+  <p id="err"></p>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: false });
+    const src = document.getElementById("src");
+    const out = document.getElementById("out");
+    const err = document.getElementById("err");
+    let n = 0;
+    async function draw() {
+      try {
+        const { svg } = await mermaid.render("d" + n++, src.value);
+        out.innerHTML = svg;
+        err.textContent = "";
+      } catch (e) {
+        err.textContent = String(e.message || e);
+      }
+    }
+    src.addEventListener("input", draw);
+    await draw();
+  </script>
+</body>
+</html>

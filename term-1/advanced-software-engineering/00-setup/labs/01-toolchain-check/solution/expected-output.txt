@@ -1,0 +1,11 @@
+tool     need      found    kind      status   note
+go       >= 1.22   1.27.4   required  OK       builds the registration-api service
+python   >= 3.8    3.12.14  required  OK       analytics service and lab scripts
+ruff     any       0.17.6   required  OK       Python lint gate used by make lint and CI
+git      >= 2.28   2.56.1   required  OK       git init -b needs 2.28; every lab commits
+make     any       4.4.1    optional  OK       make check; without it run the commands by hand
+docker   any       29.9.3   optional  OK       daemon reachable
+node     any       26.13.1  optional  OK       npx mermaid-cli in lab 03
+java     any       25.0.5   optional  OK       PlantUML jar in lab 03 (alternative to Docker)
+
+all required tools present

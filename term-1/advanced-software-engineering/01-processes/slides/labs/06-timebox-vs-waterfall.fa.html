@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>آزمایش 01.6 · اسپرینت‌های زمان‌بسته در برابر طرح آبشاری</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Vazirmatn:wght@400..800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="../../../../../_shared/theme/azad-theme.css">
+</head>
+<body>
+<!-- Generated from one EN/FA content table so both versions stay in sync. -->
+<div class="reveal course-os">
+<div class="slides">
+
+<section class="layout-section" data-transition="slide">
+  <div class="numeral in-f">01.6</div>
+  <span class="eyebrow in-f">آزمایش 01.6 · هدف</span>
+  <h2 class="in">اسپرینت‌های زمان‌بسته در برابر طرح آبشاری</h2>
+  <p class="why in d1">همین <bdi dir="ltr">backlog</bdi> را یک بار به‌صورت پروژهٔ آبشاری و یک بار با <bdi dir="ltr">timebox</bdi>های سه‌هفته‌ای برنامه‌ریزی کنید و ببینید وقتی تخمین‌ها غلط‌اند هر کدام تا مهلت چه چیزی تحویل می‌دهد.</p>
+  <div class="pills in d2"><span class="pill">محل اجرا: فقط Python</span></div>
+  <aside class="notes">
+SAY (EN): State the goal in one sentence and where the lab runs.
+SAY (FA): هدف را در یک جمله بگویید و بگویید آزمایش کجا اجرا می‌شود.
+KEY POINT: Plan the same backlog as a waterfall project and as 3-week timeboxes, and see what each delivers by the deadline when estimates are wrong.
+TIME: 30
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.6 · آماده‌سازی</span>
+  <h2 class="in">آماده‌سازی</h2>
+  <div class="grid tight"><div class="c-6 card edge r-store in d1"><h3>backlog</h3><p>۱۲ مورد، ۱۰۰ نفر-روز، ۶۸ امتیاز ارزش (ساختگی)</p></div><div class="c-6 card edge r-service in d2"><h3>آبشاری</h3><p>۴ فاز با سهم‌های شکل ۱٫۴ کتاب <bdi dir="ltr">Schach</bdi></p></div><div class="c-6 card edge r-infra in d3"><h3>timebox</h3><p>اسپرینت سه‌هفته‌ای؛ هرچه جا نشود حذف می‌شود</p></div><div class="c-6 card edge r-client in d4"><h3>مهلت</h3><p>هفتهٔ ۹، فزونی تلاش ۰ تا ۶۰٪</p></div></div>
+  <aside class="notes">
+SAY (EN): Walk through what must be true before the first command.
+SAY (FA): پیش از اولین دستور چه چیزهایی باید برقرار باشد.
+KEY POINT: Preconditions decide whether the lab is reproducible.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.6 · گام‌ها</span>
+  <h2 class="in">گام‌ها</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; 06-timebox-vs-waterfall</div><pre><code><span class="ln"><span class="p">$</span> cat backlog.csv</span><span class="ln"><span class="p">$</span> python plan_compare.py</span><span class="ln"><span class="p">$</span> python plan_compare.py --overrun 0.3</span><span class="ln"><span class="p">$</span> python plan_compare.py --overrun 0.6</span><span class="ln"><span class="p">$</span> for o in 0.08 0.09; do</span><span class="ln">    python plan_compare.py --overrun $o | grep -E &quot;everything|items delivered&quot;; done</span></code></pre></div>
+  <aside class="notes">
+SAY (EN): Run each command and say what it changes.
+SAY (FA): هر دستور را اجرا کنید و بگویید چه چیزی را تغییر می‌دهد.
+KEY POINT: Commands are copied from the lab README.
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.6 · خروجی مورد انتظار</span>
+  <h2 class="in">خروجی مورد انتظار</h2>
+  <div class="term in d1"><div class="bar"><i></i><i></i><i></i>&nbsp; output</div><pre><code><span class="ln"><span class="p">$</span> python plan_compare.py --overrun 0.3</span><span class="ln hl">  everything is delivered at week 10.8 (MISSES the deadline by 1.8 weeks); nothing is delivered earlier</span><span class="ln">  sprint 1 (week 3): committed 36.0 d  delivered REG-01, REG-02, REG-03  cut REG-04</span><span class="ln">  sprint 3 (week 9): committed 35.6 d  delivered REG-07, REG-08, REG-09, REG-10  cut REG-12</span><span class="ln">  not delivered at the deadline: REG-11, REG-12</span><span class="ln">                                  waterfall  timeboxed</span><span class="ln">  value delivered by week 3              0%        50%</span><span class="ln">  value delivered by week 9              0%        96%</span><span class="ln hl">  items delivered at the deadline       0/12       10/12</span></code></pre></div>
+  <p class="caption" style="margin-top:24px">خروجی واقعی، گرفته‌شده روی <bdi dir="ltr">Windows 11</bdi>، <bdi dir="ltr">Git Bash</bdi>، <bdi dir="ltr">Python 3.12</bdi>، <bdi dir="ltr">Go</bdi>، ۱۴۰۵/۰۹/۰۲.</p>
+  <aside class="notes">
+SAY (EN): Point at the highlighted lines: these prove success.
+SAY (FA): به خط‌های برجسته اشاره کنید؛ این‌ها موفقیت را ثابت می‌کنند.
+KEY POINT: Real output from the test VM.
+PITFALL: Your numbers will differ; the shape should not.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.6 · به چه دقت کنید</span>
+  <h2 class="in">به چه دقت کنید</h2>
+  <ul class="summary observe"><li class="in d1"><span class="callout-num">1</span><div><b>تخمین دقیق: همان نتیجه، زمان‌بندی متفاوت</b><br><span class="caption">۶۲٪ ارزش تا هفتهٔ ۳ در برابر اولین <bdi dir="ltr">release</bdi> در هفتهٔ ۸٫۳</span></div></li><li class="in d2"><span class="callout-num">2</span><div><b>۳۰٪ فزونی تلاش آبشاری را می‌شکند</b><br><span class="caption">هفتهٔ ۱۰٫۸ و هیچ تحویلی تا مهلت؛ <bdi dir="ltr">timebox:</bdi> ‏۱۰ از ۱۲</span></div></li><li class="in d3"><span class="callout-num">3</span><div><b><bdi dir="ltr">timebox</bdi> رایگان نیست</b><br><span class="caption">با ۸٪ فزونی تلاش: آبشاری ۱۲/۱۲ و <bdi dir="ltr">timebox</bdi> ‏۱۱/۱۲</span></div></li></ul>
+  <aside class="notes">
+SAY (EN): Each observation previews a later module.
+SAY (FA): هر مشاهده پیش‌نمایشی از یک ماژول بعدی است.
+KEY POINT: Observation turns a setup task into a lesson.
+ASK: Which of these surprised you?
+TIME: 90
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.6 · اشتباه‌های رایج</span>
+  <h2 class="in">اشتباه‌های رایج</h2>
+  <div class="pits"><div class="pit in d1"><span class="tag r-danger">درصد ارزش را مثل نتیجهٔ واقعی نقل کردن</span><span class="arrow-s">←</span><span class="tag r-ok">ارزش‌ها ساختگی‌اند؛ بگویید «در این مدل»</span></div><div class="pit in d2"><span class="tag r-danger"><bdi dir="ltr">timebox</bdi> کمتر از ظرفیت تحویل می‌دهد</span><span class="arrow-s">←</span><span class="tag r-ok">هر مورد باید کامل جا شود (قاعدهٔ <bdi dir="ltr">first-fit</bdi>)</span></div><div class="pit in d3"><span class="tag r-danger"><bdi dir="ltr">ValueError</bdi> هنگام خواندن <bdi dir="ltr">backlog.csv</bdi></span><span class="arrow-s">←</span><span class="tag r-ok">عنوان‌های دارای ویرگول را داخل گیومه بگذارید</span></div></div>
+  <aside class="notes">
+SAY (EN): Symptom on the left, fix on the right; the README has the full table.
+SAY (FA): نشانه در یک سو و رفع در سوی دیگر؛ جدول کامل در README است.
+KEY POINT: Read the error message before searching.
+TIME: 60
+  </aside>
+</section>
+
+<section>
+  <span class="eyebrow in-f">آزمایش 01.6 · تمرین تکمیلی</span>
+  <h2 class="in">تمرین تکمیلی</h2>
+  <p class="highlight in d1" style="font-size:38px">یک تغییر در میانهٔ کار اضافه کنید: یک مورد فوری ۱۰ روزه در هفتهٔ ۴ می‌رسد. مقایسه کنید هر طرح آن را چگونه جذب می‌کند و بگویید کدام فرض شما نتیجه را تعیین می‌کند.</p>
+  <p class="caption in d2" style="margin-top:32px">راه‌حل در پوشهٔ solution/ است، نه روی اسلاید.</p>
+  <aside class="notes">
+SAY (EN): Give the task, not the solution.
+SAY (FA): تمرین را بدهید، نه راه‌حل را.
+KEY POINT: Solutions live in solution/, never on slides.
+TIME: 30
+  </aside>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="../../../../../_shared/theme/azad-deck.js" data-course="مهندسی نرم‌افزار پیشرفته · ۰۱ فرایندها" data-logo="../../../../../_shared/brand/azad-logo.svg"></script>
+</body>
+</html>
